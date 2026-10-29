@@ -1,13 +1,19 @@
+import {Routes, Route } from "react-router-dom";
+import Login from "./features/auth/Login";
+import Navbar from "./features/ui/components/Navbar";
 
-function App() {
 
+
+export default function App() {
   return (
-    <>
-    <h1 className="text-3xl">Hello World</h1>
-    <h1 className="text-3xl">Anand</h1>
- 
-    </>
-  )
-}
+  <>
+  
 
-export default App
+<Navbar/>
+      <Routes>
+        <Route path="/login" element={<Login/>} />
+      
+      </Routes>
+    </>
+  );
+}
