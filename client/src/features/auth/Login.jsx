@@ -7,7 +7,6 @@ export default function Login() {
   const navigate = useNavigate();
 
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -29,10 +28,6 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // Connect your backend login API here.
-      // Verify credentials and role on the server before redirecting.
-      // Do not trust a role supplied by the client.
-
       setError("Login API is not connected yet.");
     } catch {
       setError("Unable to sign in. Please try again.");
@@ -95,7 +90,7 @@ export default function Login() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#f4f8ff] font-sans text-slate-900">
+    <div className="h-[calc(100vh-76px)] overflow-hidden bg-[#f4f8ff] font-sans text-slate-900">
    
 
       {/* Main Layout */}
@@ -161,7 +156,7 @@ export default function Login() {
         </section>
 
         {/* Right Login Section */}
-        <section className="relative flex items-center justify-center overflow-hidden bg-gradient-to-br from-[#f5f8ff] via-[#edf3ff] to-[#e1e9ff] px-5 py-10 sm:px-10 lg:px-8 xl:px-12">
+        <section className="relative flex items-center justify-center overflow-hidden px-5 py-10 sm:px-10 lg:px-8 xl:px-12">
           <div className="pointer-events-none absolute -bottom-24 -right-20 h-72 w-72 rounded-full bg-violet-200/40 blur-3xl" />
 
           <div className="relative w-full max-w-[650px] rounded-[24px] border border-white/80 bg-white/95 p-6 shadow-[0_24px_80px_rgba(53,93,180,0.10)] sm:p-9 lg:p-8 xl:p-10">
@@ -285,18 +280,6 @@ export default function Login() {
                   </button>
                 </div>
               </div>
-
-              {/* Remember Me */}
-              <label className="flex w-fit cursor-pointer items-center gap-3">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="h-5 w-5 cursor-pointer rounded border-slate-300 accent-blue-600"
-                />
-                <span className="text-sm text-slate-500">Remember me</span>
-              </label>
-
               {/* Error Message */}
               {error && (
                 <p
