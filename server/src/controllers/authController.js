@@ -73,6 +73,9 @@ const register = async (req, res) => {
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
+        // Vendors start unverified until admin approves; customers and admins start verified
+        const isVerified = userRole === "vendor" ? false : true;
+
         // Create User account
         const user = await User.create({
             name: userName,
@@ -80,10 +83,10 @@ const register = async (req, res) => {
             phone: userPhone,
             password: hashedPassword,
             role: userRole,
-            isVerified: true
+            isVerified: isVerified
         });
 
-        // If Vendor, create Vendor profile
+        // If Vendor, create Vendor profile with pending status
         let vendorProfile = null;
         if (userRole === "vendor") {
             vendorProfile = await Vendor.create({
@@ -92,7 +95,7 @@ const register = async (req, res) => {
                 storeName: vendorStoreName,
                 gstNumber: vendorGstNumber,
                 category: vendorCategory,
-                status: "approved"
+                status: "pending"
             });
         }
 
@@ -102,8 +105,8 @@ const register = async (req, res) => {
             let emailText = `Hello ${userName}, welcome to MultiVendor App!`;
 
             if (userRole === "vendor") {
-                emailSubject = "Welcome to MultiVendor App - Vendor Account Created";
-                emailText = `Hello ${userName},\n\nYour vendor account has been created successfully!\nStore Name: ${vendorStoreName}\nBusiness Name: ${vendorBusinessName}\n\nYou can now log in and manage your products.`;
+                emailSubject = "MultiVendor App - Vendor Application Received (Pending Approval)";
+                emailText = `Hello ${userName},\n\nThank you for registering as a vendor with MultiVendor App!\n\nStore Name: ${vendorStoreName}\nBusiness Name: ${vendorBusinessName}\nGST Number: ${vendorGstNumber}\n\nYour vendor account is currently PENDING approval by our administrator. You will receive an email as soon as your store is approved.\n\nBest regards,\nMultiVendor Team`;
             } else if (userRole === "admin") {
                 emailSubject = "MultiVendor App - Admin Account Registered";
                 emailText = `Hello ${userName},\n\nYour Admin account has been registered successfully.`;
@@ -119,8 +122,8 @@ const register = async (req, res) => {
             console.error("Warning: Failed to send registration email:", mailError.message);
         }
 
-        // Generate JWT token
-        const token = generateToken({ id: user.id, role: user.role });
+        // Generate JWT token (only for verified users; vendors receive token once approved by admin)
+        const token = isVerified ? generateToken({ id: user.id, role: user.role }) : null;
 
         // Prepare response without password
         const userData = user.toJSON();
@@ -129,8 +132,12 @@ const register = async (req, res) => {
             userData.vendorProfile = vendorProfile;
         }
 
+        const successMessage = userRole === "vendor"
+            ? "Vendor registered successfully and is pending admin approval"
+            : `${userRole.charAt(0).toUpperCase() + userRole.slice(1)} registered successfully`;
+
         res.status(201).json({
-            message: `${userRole.charAt(0).toUpperCase() + userRole.slice(1)} registered successfully`,
+            message: successMessage,
             token,
             user: userData
         });
@@ -183,7 +190,10 @@ const login = async (req, res) => {
 
         // Check verification status
         if (user.isVerified === false) {
-            return res.status(401).json({ message: "User account is not verified" });
+            const message = user.role === "vendor"
+                ? "Your vendor account is pending admin approval. You will be able to log in once approved."
+                : "User account is not verified";
+            return res.status(401).json({ message, isVerified: false });
         }
 
         // Generate JWT token

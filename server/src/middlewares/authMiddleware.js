@@ -56,4 +56,17 @@ const restrictTo = (...roles) => {
     };
 };
 
-module.exports = { protect, restrictTo };
+// Middleware to ensure vendor is approved by admin before accessing vendor resources
+const isApprovedVendor = (req, res, next) => {
+    if (req.user?.role === "vendor") {
+        if (!req.user.vendorProfile || req.user.vendorProfile.status !== "approved") {
+            return res.status(403).json({
+                message: "Access denied: Your vendor account is pending admin approval",
+                vendorStatus: req.user.vendorProfile?.status || "pending"
+            });
+        }
+    }
+    next();
+};
+
+module.exports = { protect, restrictTo, isApprovedVendor };
