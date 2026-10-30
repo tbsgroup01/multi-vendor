@@ -35,7 +35,19 @@ const Vendor = sequelize.define("Vendor", {
     },
     status: {
         type: DataTypes.ENUM("pending", "approved", "rejected"),
-        defaultValue: "approved"
+        defaultValue: "pending"
+    },
+    plan: {
+        type: DataTypes.ENUM("free", "starter", "professional", "premium"),
+        defaultValue: "free"
+    },
+    productsLimit: {
+        type: DataTypes.INTEGER,
+        defaultValue: 10
+    },
+    commissionRate: {
+        type: DataTypes.INTEGER,
+        defaultValue: 10
     }
 });
 
