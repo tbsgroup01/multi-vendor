@@ -4,9 +4,13 @@ const morgan = require('morgan')
 
 const app = express();
 
-
-const testRoute = require("./routes/testRoute");
+const testRoutes = require("./routes/testRoutes");
 const authRoutes = require("./routes/authRoutes");
+const vendorRoutes = require("./routes/vendorRoute");
+const adminRoutes = require("./routes/adminRoutes");
+const subscriptionRoutes = require("./routes/subscriptionRoutes");
+const categoryRoutes = require("./routes/categoryRoutes");
+const productRoutes = require("./routes/productRoutes");
 
 app.use(cors());
 app.use(morgan("dev"));
@@ -19,10 +23,13 @@ app.get("/", (req, res) => {
 });
 
 
-
-
-app.use("/api/test", testRoute);
+app.use("/api/test", testRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/vendors", vendorRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/subscriptions", subscriptionRoutes);
+app.use("/api/categories", categoryRoutes);
+app.use("/api/products", productRoutes);
 
 
 module.exports = app;
