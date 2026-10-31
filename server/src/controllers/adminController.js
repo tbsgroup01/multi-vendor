@@ -1,5 +1,5 @@
 const { sequelize } = require("../config/db");
-const { SubscriptionPlan, VendorSubscription, Vendor, User, Category } = require("../models");
+const { SubscriptionPlan, VendorSubscription, Vendor, User, Category, SubCategory } = require("../models");
 
 // 1. Create a new Subscription Plan (Admin only)
 const createPlan = async (req, res) => {
@@ -306,6 +306,13 @@ const createCategories = async (req, res) => {
 const getAllCategories = async (req, res) => {
     try {
         const categories = await Category.findAll({
+            include: [
+                {
+                    model: SubCategory,
+                    as: "subCategories",
+                    attributes: ["id", "name", "image", "description", "isActive"]
+                }
+            ],
             order: [["name", "ASC"]]
         });
         res.status(200).json({
@@ -323,7 +330,15 @@ const getAllCategories = async (req, res) => {
 
 const getCategoryById = async (req, res) => {
     try {
-        const category = await Category.findByPk(req.params.id);
+        const category = await Category.findByPk(req.params.id, {
+            include: [
+                {
+                    model: SubCategory,
+                    as: "subCategories",
+                    attributes: ["id", "name", "image", "description", "isActive"]
+                }
+            ]
+        });
         if (!category) {
             return res.status(404).json({ message: "Category not found" });
         }

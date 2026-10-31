@@ -11,10 +11,9 @@ const {
 
 const { protect, restrictTo } = require("../middlewares/authMiddleware");
 
-// All routes here require authentication
+
 router.use(protect);
 
-// View single vendor by ID (Vendor themselves or Admin)
 router.get("/:id", getVendorById);
 
 // Admin-only routes

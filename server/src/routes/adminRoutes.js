@@ -17,6 +17,14 @@ const {
     dropDatabase
 } = require("../controllers/adminController");
 
+const {
+    createSubCategory,
+    getAllSubCategories,
+    getSubCategoryById,
+    updateSubCategory,
+    deleteSubCategory
+} = require("../controllers/subCategoryController");
+
 const { protect, restrictTo } = require("../middlewares/authMiddleware");
 
 // Testing utility route: Drop entire database and recreate fresh schema (Temporary for testing)
@@ -42,5 +50,12 @@ router.get("/categories", getAllCategories);
 router.get("/categories/:id", getCategoryById);
 router.put("/categories/:id", updateCategory);
 router.delete("/categories/:id", deleteCategory);
+
+// SubCategories management
+router.post("/subcategories", createSubCategory);
+router.get("/subcategories", getAllSubCategories);
+router.get("/subcategories/:id", getSubCategoryById);
+router.put("/subcategories/:id", updateSubCategory);
+router.delete("/subcategories/:id", deleteSubCategory);
 
 module.exports = router;

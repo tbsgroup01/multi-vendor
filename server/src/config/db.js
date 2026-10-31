@@ -77,11 +77,48 @@ const ensureTableColumns = async () => {
 
         // Users columns
         await checkAndAddColumn("Users", "isVerified", "TINYINT(1) DEFAULT 0");
+        await checkAndAddColumn("Users", "resetPasswordOtp", "VARCHAR(255) NULL");
+        await checkAndAddColumn("Users", "resetPasswordOtpExpires", "DATETIME NULL");
+        await checkAndAddColumn("Users", "isResetOtpVerified", "TINYINT(1) DEFAULT 0");
 
         // Vendors columns
         await checkAndAddColumn("Vendors", "status", "ENUM('pending', 'approved', 'rejected') DEFAULT 'pending'");
         await checkAndAddColumn("Vendors", "productsLimit", "INT DEFAULT 10");
         await checkAndAddColumn("Vendors", "commissionRate", "INT DEFAULT 10");
+
+        // Products columns
+        await checkAndAddColumn("Products", "subCategoryId", "INT NULL");
+        await checkAndAddColumn("Products", "rating", "DECIMAL(10, 2) NULL DEFAULT 0.00");
+        await checkAndAddColumn("Products", "reviewCount", "INT NULL DEFAULT 0");
+        await checkAndAddColumn("Products", "isFeatured", "TINYINT(1) DEFAULT 0");
+        await checkAndAddColumn("Products", "discountPrice", "DECIMAL(10, 2) NULL");
+        await checkAndAddColumn("Products", "sku", "VARCHAR(255) NULL");
+
+        // Dynamic check across all models to ensure no column is ever missing
+        const queryInterface = sequelize.getQueryInterface();
+        const models = sequelize.models;
+        for (const modelName of Object.keys(models)) {
+            const model = models[modelName];
+            const tableName = typeof model.getTableName === "function" ? model.getTableName() : modelName;
+
+            let existingColumns = [];
+            try {
+                const [cols] = await sequelize.query(`SHOW COLUMNS FROM \`${tableName}\``);
+                existingColumns = cols.map(c => c.Field);
+            } catch (err) {
+                continue;
+            }
+
+            const attributes = model.rawAttributes;
+            for (const attrName of Object.keys(attributes)) {
+                if (!existingColumns.includes(attrName)) {
+                    try {
+                        await queryInterface.addColumn(tableName, attrName, attributes[attrName]);
+                        console.log(`[DB Migration] Added missing column '${attrName}' to '${tableName}'.`);
+                    } catch (addErr) {}
+                }
+            }
+        }
     } catch (err) {
         console.error("Column verification error:", err.message);
     }
@@ -98,7 +135,11 @@ const connectDB = async () => {
         await cleanDuplicateIndexes("VendorSubscriptions");
         await cleanDuplicateIndexes("SubscriptionPlans");
         await cleanDuplicateIndexes("Categories");
+        await cleanDuplicateIndexes("SubCategories");
         await cleanDuplicateIndexes("Products");
+        await cleanDuplicateIndexes("CartItems");
+        await cleanDuplicateIndexes("Orders");
+        await cleanDuplicateIndexes("OrderItems");
 
         // Sync all models to create tables
         await sequelize.sync();

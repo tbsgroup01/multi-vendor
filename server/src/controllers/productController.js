@@ -1,5 +1,5 @@
 const { Op } = require("sequelize");
-const { Product, Vendor, Category, VendorSubscription, SubscriptionPlan } = require("../models");
+const { Product, Vendor, Category, SubCategory, VendorSubscription, SubscriptionPlan } = require("../models");
 
 // 1. Create a Product on behalf of a verified vendor with active subscription quota
 const createProduct = async (req, res) => {
@@ -14,7 +14,8 @@ const createProduct = async (req, res) => {
             sku,
             images,
             status,
-            categoryId
+            categoryId,
+            subCategoryId
         } = req.body;
 
         const productName = (name || title || "").trim();
@@ -84,9 +85,28 @@ const createProduct = async (req, res) => {
             });
         }
 
-        // 5. Check Category if provided
-        if (categoryId) {
-            const categoryExists = await Category.findByPk(categoryId);
+        // 5. Check Category and SubCategory if provided
+        let targetCategoryId = categoryId ? Number(categoryId) : null;
+        let targetSubCategoryId = subCategoryId ? Number(subCategoryId) : null;
+
+        if (targetSubCategoryId) {
+            const subCategoryExists = await SubCategory.findByPk(targetSubCategoryId);
+            if (!subCategoryExists) {
+                return res.status(400).json({ message: "Specified subcategory does not exist" });
+            }
+
+            // Auto-assign or validate matching categoryId
+            if (!targetCategoryId) {
+                targetCategoryId = subCategoryExists.categoryId;
+            } else if (targetCategoryId !== subCategoryExists.categoryId) {
+                return res.status(400).json({
+                    message: "The specified subcategory does not belong to the selected category"
+                });
+            }
+        }
+
+        if (targetCategoryId) {
+            const categoryExists = await Category.findByPk(targetCategoryId);
             if (!categoryExists) {
                 return res.status(400).json({ message: "Specified category does not exist" });
             }
@@ -102,7 +122,8 @@ const createProduct = async (req, res) => {
 
         const product = await Product.create({
             vendorId: vendor.id,
-            categoryId: categoryId || null,
+            categoryId: targetCategoryId,
+            subCategoryId: targetSubCategoryId,
             name: productName,
             description: description ? description.trim() : null,
             price: Number(price),
@@ -167,6 +188,11 @@ const getMyProducts = async (req, res) => {
                     model: Category,
                     as: "category",
                     attributes: ["id", "name", "image"]
+                },
+                {
+                    model: SubCategory,
+                    as: "subCategory",
+                    attributes: ["id", "name", "image"]
                 }
             ],
             order: [["createdAt", "DESC"]],
@@ -221,6 +247,7 @@ const getAllProducts = async (req, res) => {
         const {
             search,
             categoryId,
+            subCategoryId,
             vendorId,
             minPrice,
             maxPrice,
@@ -246,6 +273,10 @@ const getAllProducts = async (req, res) => {
 
         if (categoryId) {
             whereClause.categoryId = categoryId;
+        }
+
+        if (subCategoryId) {
+            whereClause.subCategoryId = subCategoryId;
         }
 
         if (vendorId) {
@@ -288,6 +319,11 @@ const getAllProducts = async (req, res) => {
                     attributes: ["id", "name", "image"]
                 },
                 {
+                    model: SubCategory,
+                    as: "subCategory",
+                    attributes: ["id", "name", "image"]
+                },
+                {
                     model: Vendor,
                     as: "vendor",
                     attributes: ["id", "storeName", "businessName", "category"]
@@ -324,6 +360,11 @@ const getProductById = async (req, res) => {
                 {
                     model: Category,
                     as: "category",
+                    attributes: ["id", "name", "image", "description"]
+                },
+                {
+                    model: SubCategory,
+                    as: "subCategory",
                     attributes: ["id", "name", "image", "description"]
                 },
                 {
@@ -379,7 +420,8 @@ const updateProduct = async (req, res) => {
             sku,
             images,
             status,
-            categoryId
+            categoryId,
+            subCategoryId
         } = req.body;
 
         if (name !== undefined || title !== undefined) product.name = (name || title).trim();
@@ -398,14 +440,36 @@ const updateProduct = async (req, res) => {
             }
         }
 
+        if (subCategoryId !== undefined) {
+            if (subCategoryId) {
+                const subCategoryExists = await SubCategory.findByPk(subCategoryId);
+                if (!subCategoryExists) {
+                    return res.status(400).json({ message: "Specified subcategory does not exist" });
+                }
+                product.subCategoryId = Number(subCategoryId);
+
+                if (categoryId !== undefined && categoryId && Number(categoryId) !== subCategoryExists.categoryId) {
+                    return res.status(400).json({
+                        message: "The specified subcategory does not belong to the selected category"
+                    });
+                } else if (!categoryId) {
+                    product.categoryId = subCategoryExists.categoryId;
+                }
+            } else {
+                product.subCategoryId = null;
+            }
+        }
+
         if (categoryId !== undefined) {
             if (categoryId) {
                 const categoryExists = await Category.findByPk(categoryId);
                 if (!categoryExists) {
                     return res.status(400).json({ message: "Specified category does not exist" });
                 }
+                product.categoryId = Number(categoryId);
+            } else {
+                product.categoryId = null;
             }
-            product.categoryId = categoryId || null;
         }
 
         await product.save();
