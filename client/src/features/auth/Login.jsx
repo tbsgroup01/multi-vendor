@@ -90,19 +90,19 @@ export default function Login() {
   ];
 
   return (
-    <div className="h-[calc(100vh-76px)] overflow-hidden bg-[#f4f8ff] font-sans text-slate-900">
+    <div className="min-h-[calc(100vh-72px)] overflow-y-auto bg-[#f4f8ff] font-sans text-slate-900">
    
 
       {/* Main Layout */}
-      <main className="mx-auto grid min-h-[calc(100vh-76px)] max-w-[1800px] lg:grid-cols-2">
+      <main className="mx-auto grid min-h-[calc(100vh-72px)] max-w-[1800px] lg:grid-cols-2">
         {/* Left Hero Section */}
-        <section className="relative flex min-h-[650px] flex-col overflow-hidden bg-gradient-to-br from-white via-[#eff6ff] to-[#dce9ff] px-6 py-10 sm:px-10 lg:min-h-[calc(100vh-76px)] lg:px-10 lg:py-10 xl:px-16">
+        <section className="relative flex h-full flex-col justify-center overflow-hidden bg-gradient-to-br from-white via-[#eff6ff] to-[#dce9ff] px-6 py-6 sm:px-10 lg:px-10 xl:px-14">
           {/* Background decoration */}
           <div className="pointer-events-none absolute -right-20 top-44 h-80 w-80 rounded-full bg-blue-200/30 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-24 left-0 h-80 w-80 rounded-full bg-violet-200/40 blur-3xl" />
 
           <div className="relative z-10">
-            <h1 className="max-w-xl text-4xl font-extrabold leading-[1.12] tracking-tight text-slate-900 sm:text-5xl xl:text-[56px]">
+            <h1 className="max-w-xl text-3xl font-extrabold leading-[1.14] tracking-tight text-slate-900 sm:text-4xl xl:text-[46px]">
               Shop Smarter,
               <br />
               <span className="bg-gradient-to-r from-blue-500 to-indigo-600 bg-clip-text text-transparent">
@@ -110,29 +110,29 @@ export default function Login() {
               </span>
             </h1>
 
-            <p className="mt-5 max-w-md text-base leading-7 text-slate-500 sm:text-lg">
+            <p className="mt-2.5 max-w-md text-sm leading-6 text-slate-500 sm:text-base">
               Discover amazing products, unbeatable prices,
               and trusted sellers — all in one place.
             </p>
 
             {/* Benefits */}
-            <div className="mt-7 space-y-3.5 sm:mt-8 sm:space-y-4">
+            <div className="mt-4 space-y-2.5 sm:space-y-3">
               {benefits.map((benefit) => (
                 <div
                   key={benefit.title}
-                  className="flex items-center gap-4"
+                  className="flex items-center gap-3.5"
                 >
                   <div
-                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${benefit.color}`}
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${benefit.color}`}
                   >
                     {benefit.icon}
                   </div>
 
                   <div>
-                    <h3 className="text-sm font-bold text-slate-800 sm:text-base">
+                    <h3 className="text-xs font-bold text-slate-800 sm:text-sm">
                       {benefit.title}
                     </h3>
-                    <p className="mt-1 text-xs text-slate-500 sm:text-sm">
+                    <p className="text-[11px] text-slate-500 sm:text-xs">
                       {benefit.description}
                     </p>
                   </div>
@@ -141,14 +141,14 @@ export default function Login() {
             </div>
           </div>
 
-          {/* Product Image */}
-          <div className="relative mt-7 flex flex-1 items-end justify-center lg:mt-3 lg:min-h-[230px]">
-            <div className="absolute bottom-0 h-24 w-4/5 rounded-[50%] bg-blue-300/30 blur-3xl" />
+          {/* Product Image - Positioned right below benefits without large gap */}
+          <div className="relative mt-4 sm:mt-5 flex items-center justify-center">
+            <div className="absolute bottom-2 h-20 w-4/5 rounded-[50%] bg-blue-300/30 blur-2xl" />
 
             <img
               src={Img}
               alt="MarketPlace shopping collection with shopping bag, laptop, camera, shoes, phone and plant"
-              className="relative z-10 max-h-[340px] w-full max-w-[590px] object-contain drop-shadow-xl sm:max-h-[390px] lg:max-h-[340px] xl:max-h-[390px]"
+              className="relative z-10 max-h-[290px] sm:max-h-[330px] xl:max-h-[360px] w-auto max-w-full object-contain drop-shadow-xl"
             />
           </div>
 
@@ -156,7 +156,7 @@ export default function Login() {
         </section>
 
         {/* Right Login Section */}
-        <section className="relative flex items-center justify-center overflow-hidden px-5 py-10 sm:px-10 lg:px-8 xl:px-12">
+        <section className="relative flex items-center justify-center overflow-hidden px-5 py-6 sm:px-10 lg:px-8 xl:px-12">
           <div className="pointer-events-none absolute -bottom-24 -right-20 h-72 w-72 rounded-full bg-violet-200/40 blur-3xl" />
 
           <div className="relative w-full max-w-[650px] rounded-[24px] border border-white/80 bg-white/95 p-6 shadow-[0_24px_80px_rgba(53,93,180,0.10)] sm:p-9 lg:p-8 xl:p-10">
@@ -302,7 +302,7 @@ export default function Login() {
             </form>
 
             {/* Sign Up Link */}
-            <div className="my-7 flex items-center gap-4">
+            <div className="mt-7 flex items-center gap-4">
               <div className="h-px flex-1 bg-slate-200" />
 
               <p className="whitespace-nowrap text-xs text-slate-500 sm:text-sm">
@@ -316,49 +316,6 @@ export default function Login() {
               </p>
 
               <div className="h-px flex-1 bg-slate-200" />
-            </div>
-
-            {/* Access Information */}
-            <div className="grid grid-cols-3 divide-x divide-slate-200 rounded-2xl bg-slate-50/90 px-2 py-5">
-              <div className="flex flex-col items-center gap-2 px-1 text-center">
-                <svg viewBox="0 0 24 24" fill="currentColor"
-                  className="h-5 w-5 text-slate-500">
-                  <path d="M12 2 3 6v5c0 5.5 3.8 9.8 9 11 5.2-1.2 9-5.5 9-11V6l-9-4Zm-1 14-4-4 1.4-1.4L11 13.2l4.6-4.6L17 10l-6 6Z" />
-                </svg>
-                <span className="text-xs font-bold text-slate-700">
-                  Secure Access
-                </span>
-                <span className="text-[11px] text-slate-400">
-                  For customers
-                </span>
-              </div>
-
-              <div className="flex flex-col items-center gap-2 px-1 text-center">
-                <svg viewBox="0 0 24 24" fill="currentColor"
-                  className="h-5 w-5 text-blue-600">
-                  <path d="M16 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4ZM8 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm8 2c-2.7 0-8 1.3-8 4v3h16v-3c0-2.7-5.3-4-8-4ZM8 13c-3 0-7 1.4-7 4v3h4v-3c0-1.6 1-2.8 2.7-3.6L8 13Z" />
-                </svg>
-                <span className="text-xs font-bold text-slate-700">
-                  Approved Vendors
-                </span>
-                <span className="text-[11px] text-slate-400">
-                  For verified sellers
-                </span>
-              </div>
-
-              <div className="flex flex-col items-center gap-2 px-1 text-center">
-                <svg viewBox="0 0 24 24" fill="currentColor"
-                  className="h-5 w-5 text-slate-500">
-                  <path d="m12 2 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3-5.6-3-5.6 3 1.1-6.3L3 8.6l6.3-.9L12 2Z" />
-                  <path d="M5 21h14v-2H5v2Z" />
-                </svg>
-                <span className="text-xs font-bold text-slate-700">
-                  Admin Panel
-                </span>
-                <span className="text-[11px] text-slate-400">
-                  For administrators
-                </span>
-              </div>
             </div>
           </div>
         </section>

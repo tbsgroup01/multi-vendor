@@ -1,13 +1,10 @@
-import React, { useState, useEffect } from "react";
+import{ useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Zap,
   MapPin,
   ArrowRight,
-  ShoppingBag,
   Sparkles,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import Img from "../../../assets/multi.png";
 
@@ -37,7 +34,7 @@ export default function Hero() {
       title: "Daily Fresh Essentials",
       highlight: "At Your Doorstep.",
       subtitle:
-        "Farm fresh veggies, organic dairy, gourmet snacks, and beverages delivered in 10-15 minutes.",
+        "Farm fresh veggies, organic dairy, gourmet snacks, and beverages delivered ",
       ctaText: "Order Groceries",
       ctaLink: "/category/grocery",
       gradient: "from-[#064E3B] via-[#065F46] to-[#047857]",
@@ -61,8 +58,6 @@ export default function Hero() {
       discount: "NEW SEASON ARRIVALS",
     },
   ];
-
-  // Quick categories with REAL miniature product photos (no icons)
   const categories = [
     {
       name: "Vegetables & Fruits",
@@ -100,8 +95,6 @@ export default function Hero() {
         "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=80&h=80&fit=crop&q=80",
     },
   ];
-
-  // Auto-play for carousel
   useEffect(() => {
     const slideTimer = setInterval(() => {
       setCurrentSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
@@ -110,66 +103,46 @@ export default function Hero() {
   }, [slides.length]);
 
   return (
-    <div className="w-full bg-[#F4F6FC]">
-      
-      {/* ================= TOP STRIP: CATEGORIES WITH REAL PHOTOS ================= */}
-      <div className="bg-white border-b border-slate-200/70 shadow-xs">
+    <div className="w-full bg-transparent">
+      <div className="bg-white/65 backdrop-blur-xl border-b border-white/80 shadow-[0_4px_25px_rgba(109,40,217,0.03)] transition-all">
         <div className="max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between gap-3 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          
-          {/* 10-Min Delivery Promise */}
-          <div className="flex items-center gap-2.5 shrink-0 bg-emerald-50 text-emerald-800 px-3.5 py-1.5 rounded-full border border-emerald-200/60">
-            <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
-            <Zap className="w-4 h-4 text-emerald-600 fill-emerald-600" />
-            <span className="text-xs font-black tracking-wide">
-              Delivery in 10-15 mins
-            </span>
-            <span className="text-emerald-400">|</span>
+          <div className="flex items-center gap-2.5 shrink-0 bg-emerald-50/80 backdrop-blur-md text-emerald-800 px-3.5 py-1.5 rounded-full border border-emerald-200/60 shadow-xs">
             <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-700">
               <MapPin className="w-3.5 h-3.5" />
               <span>Deliver to: <b>Delhi NCR - 110001</b></span>
             </div>
           </div>
-
-          {/* Categories with Real Miniature Images */}
           <div className="flex items-center gap-2 shrink-0">
             {categories.map((cat) => (
               <Link
                 key={cat.name}
                 to="/register"
-                className="group flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-purple-50 border border-slate-200/80 hover:border-purple-300 transition-all text-xs font-bold text-slate-700 hover:text-purple-700 whitespace-nowrap"
+                className="group flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/70 hover:bg-white/95 border border-white/80 hover:border-purple-300 transition-all text-xs font-bold text-slate-700 hover:text-purple-700 whitespace-nowrap backdrop-blur-md shadow-2xs"
               >
                 <img
                   src={cat.image}
                   alt={cat.name}
-                  className="w-5 h-5 rounded-full object-cover shrink-0 shadow-2xs"
+                  className="w-5 h-5 rounded-full object-contain mix-blend-multiply shrink-0 shadow-2xs"
                 />
                 <span>{cat.name}</span>
               </Link>
             ))}
           </div>
-
         </div>
       </div>
-
-      {/* ================= 3 GENUINE BANNERS HERO GRID ================= */}
       <div className="max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 pt-5 pb-2">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
-          
-          {/* ================= BANNER 1: MAIN HERO CAROUSEL BANNER (8 Columns) ================= */}
-          <div className="lg:col-span-8 relative rounded-3xl overflow-hidden shadow-xl min-h-[460px] sm:min-h-[500px] flex flex-col justify-between p-6 sm:p-9 text-white transition-all">
-            
-            {/* Background Multi-Gradient */}
+          <div className="lg:col-span-8 relative rounded-3xl overflow-hidden shadow-[0_15px_45px_rgba(76,29,149,0.35)] min-h-[460px] sm:min-h-[500px] flex flex-col justify-between p-6 sm:p-9 text-white transition-all border border-white/20 backdrop-blur-sm">
+            {/* Glass Top Highlight Sheen */}
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent z-20" />
+
             <div
               className={`absolute inset-0 bg-gradient-to-br ${slides[currentSlide].gradient} transition-all duration-700`}
             />
-
-            {/* Glowing Ambient Mesh */}
             <div
               className={`absolute -top-24 -right-24 h-96 w-96 rounded-full ${slides[currentSlide].accentGlow} blur-3xl pointer-events-none`}
             />
             <div className="absolute -bottom-20 left-10 h-80 w-80 rounded-full bg-blue-500/20 blur-3xl pointer-events-none" />
-
-            {/* Top Row: Promo Badge & Discount */}
             <div className="relative z-10 flex items-center justify-between gap-3">
               <span
                 className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs uppercase tracking-wider shadow-sm ${slides[currentSlide].badgeColor}`}
@@ -177,16 +150,11 @@ export default function Hero() {
                 <Sparkles className="w-3.5 h-3.5" />
                 {slides[currentSlide].badge}
               </span>
-
-              <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-3.5 py-1 rounded-full border border-white/20 text-xs font-black tracking-wide text-amber-300">
+              <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-3.5 py-1 rounded-full border border-white/20 text-xs font-black tracking-wide text-amber-300 shadow-xs">
                 <span>{slides[currentSlide].discount}</span>
               </div>
             </div>
-
-            {/* Center Content & Product Graphic */}
             <div className="relative z-10 grid grid-cols-1 sm:grid-cols-12 gap-6 items-center my-auto py-4">
-              
-              {/* Left Copy */}
               <div className="sm:col-span-7 space-y-3.5">
                 <h1 className="text-3xl sm:text-4xl xl:text-5xl font-black tracking-tight leading-[1.12]">
                   {slides[currentSlide].title}
@@ -195,31 +163,22 @@ export default function Hero() {
                     {slides[currentSlide].highlight}
                   </span>
                 </h1>
-
                 <p className="text-sm sm:text-base text-slate-200/90 max-w-md font-medium leading-relaxed">
                   {slides[currentSlide].subtitle}
                 </p>
-
-                {/* Promo Code */}
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-white/15 backdrop-blur-sm border border-white/20 text-xs font-semibold text-amber-200">
                   <span>{slides[currentSlide].promoCode}</span>
                 </div>
-
-                {/* CTAs */}
                 <div className="flex flex-wrap items-center gap-3 pt-2">
                   <Link
                     to="/register"
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white text-slate-900 font-extrabold text-sm shadow-xl hover:bg-slate-100 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white text-slate-900 font-extrabold text-sm shadow-xl hover:bg-slate-100 hover:scale-105 active:scale-95 transition-all cursor-pointer border border-white/40"
                   >
                     <span>{slides[currentSlide].ctaText}</span>
                     <ArrowRight className="w-4 h-4 stroke-[2.5]" />
                   </Link>
-
-               
                 </div>
               </div>
-
-              {/* Right Hero Image (multi.png product showcase) */}
               <div className="sm:col-span-5 relative flex items-center justify-center">
                 <div className="absolute inset-0 bg-purple-500/30 rounded-full blur-2xl transform scale-90" />
                 <img
@@ -228,60 +187,18 @@ export default function Hero() {
                   className="relative z-10 w-full max-w-[320px] sm:max-w-none object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.5)] transform hover:scale-105 transition-transform duration-500"
                 />
               </div>
-
             </div>
-
-            {/* Bottom Slider Dots & Controls */}
-            <div className="relative z-10 flex items-center justify-between pt-2 border-t border-white/10">
-              <div className="flex items-center gap-2">
-                {slides.map((_, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => setCurrentSlide(idx)}
-                    className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
-                      currentSlide === idx
-                        ? "w-8 bg-amber-400"
-                        : "w-2 bg-white/40 hover:bg-white/70"
-                    }`}
-                  />
-                ))}
-              </div>
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setCurrentSlide((prev) =>
-                      prev === 0 ? slides.length - 1 : prev - 1
-                    )
-                  }
-                  className="p-2 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur-md text-white transition-all cursor-pointer"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setCurrentSlide((prev) =>
-                      prev === slides.length - 1 ? 0 : prev + 1
-                    )
-                  }
-                  className="p-2 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur-md text-white transition-all cursor-pointer"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
           </div>
           <div className="lg:col-span-4 flex flex-col gap-4">
             <Link
               to="/register"
-              className="group relative flex-1 min-h-[225px] sm:min-h-[235px] rounded-3xl overflow-hidden p-6 sm:p-7 flex items-center justify-between bg-gradient-to-br from-[#1E1B4B] via-[#2E1065] to-[#4338CA] text-white shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer"
+              className="group relative flex-1 min-h-[225px] sm:min-h-[235px] rounded-3xl overflow-hidden p-6 sm:p-7 flex items-center justify-between bg-gradient-to-br from-[#1E1B4B]/95 via-[#2E1065]/95 to-[#4338CA]/95 border border-white/20 backdrop-blur-xl text-white shadow-[0_10px_35px_rgba(109,40,217,0.18)] hover:shadow-2xl transition-all duration-300 cursor-pointer"
             >
+              {/* Glass Top Highlight Sheen */}
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent z-20" />
               <div className="absolute -top-12 -right-12 h-44 w-44 rounded-full bg-purple-500/25 blur-2xl pointer-events-none" />
               <div className="relative z-10 space-y-2 max-w-[58%]">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-[11px] font-black uppercase tracking-wider text-amber-300">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-[11px] font-black uppercase tracking-wider text-amber-300 border border-white/20">
                   <Sparkles className="w-3 h-3" />
                   Premium Audio
                 </span>
@@ -308,11 +225,13 @@ export default function Hero() {
             </Link>
             <Link
               to="/register"
-              className="group relative flex-1 min-h-[225px] sm:min-h-[235px] rounded-3xl overflow-hidden p-6 sm:p-7 flex items-center justify-between bg-gradient-to-br from-[#064E3B] via-[#065F46] to-[#047857] text-white shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer"
+              className="group relative flex-1 min-h-[225px] sm:min-h-[235px] rounded-3xl overflow-hidden p-6 sm:p-7 flex items-center justify-between bg-gradient-to-br from-[#064E3B]/95 via-[#065F46]/95 to-[#047857]/95 border border-white/20 backdrop-blur-xl text-white shadow-[0_10px_35px_rgba(5,150,105,0.18)] hover:shadow-2xl transition-all duration-300 cursor-pointer"
             >
+              {/* Glass Top Highlight Sheen */}
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent z-20" />
               <div className="absolute -bottom-12 -right-12 h-44 w-44 rounded-full bg-emerald-400/25 blur-2xl pointer-events-none" />
               <div className="relative z-10 space-y-2 max-w-[58%]">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-[11px] font-black uppercase tracking-wider text-emerald-300">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-[11px] font-black uppercase tracking-wider text-emerald-300 border border-white/20">
                   <Zap className="w-3 h-3 fill-emerald-300" />
                   10-Min Express
                 </span>
@@ -337,12 +256,9 @@ export default function Hero() {
                 />
               </div>
             </Link>
-
           </div>
-
         </div>
       </div>
-
     </div>
   );
 }

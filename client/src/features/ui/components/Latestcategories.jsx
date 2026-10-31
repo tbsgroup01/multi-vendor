@@ -1,4 +1,3 @@
-import React from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight, ArrowRight } from "lucide-react";
 
@@ -9,7 +8,7 @@ export default function Latestcategories() {
       title: "Electronics & Audio",
       subtitle: "Starting ₹499",
       link: "/category/electronics",
-      bgColor: "bg-[#F0EEFF]",
+      glowColor: "bg-purple-500/20",
       subColor: "text-[#7C3AED]",
       btnColor: "text-[#7C3AED]",
       image:
@@ -21,7 +20,7 @@ export default function Latestcategories() {
       title: "Grocery & Kitchen",
       subtitle: "Instant 10-min delivery",
       link: "/category/grocery",
-      bgColor: "bg-[#EBFBF3]",
+      glowColor: "bg-emerald-500/20",
       subColor: "text-[#059669]",
       btnColor: "text-[#059669]",
       image:
@@ -33,7 +32,7 @@ export default function Latestcategories() {
       title: "Trendy Fashion",
       subtitle: "Top Brands",
       link: "/category/fashion",
-      bgColor: "bg-[#FDF0F4]",
+      glowColor: "bg-pink-500/20",
       subColor: "text-[#DB2777]",
       btnColor: "text-[#DB2777]",
       image:
@@ -45,7 +44,7 @@ export default function Latestcategories() {
       title: "Home Decor & Appliances",
       subtitle: "Upgrade Your Space",
       link: "/category/home",
-      bgColor: "bg-[#FFF5EB]",
+      glowColor: "bg-amber-500/20",
       subColor: "text-[#D97706]",
       btnColor: "text-[#D97706]",
       image:
@@ -56,56 +55,57 @@ export default function Latestcategories() {
 
   return (
     <section className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-      {/* Section Header */}
       <div className="flex items-center justify-between mb-4 sm:mb-5">
         <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
           Popular Categories
         </h2>
         <Link
           to="/category/electronics"
-          className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#4F46E5] hover:text-[#4338CA] transition-colors group cursor-pointer"
+          className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#7C3AED] hover:text-[#6D28D9] bg-purple-100/60 hover:bg-purple-100/90 border border-purple-200/50 px-3.5 py-1.5 rounded-full backdrop-blur-md transition-all shadow-xs group cursor-pointer"
         >
           <span>View All</span>
           <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform group-hover:translate-x-1" />
         </Link>
       </div>
 
-      {/* Categories Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         {categories.map((cat) => (
           <Link
             key={cat.id}
             to={cat.link}
-            className={`group relative flex items-center justify-between overflow-hidden rounded-2xl sm:rounded-3xl ${cat.bgColor} border border-black/5 p-4 sm:p-5 h-[135px] sm:h-[145px] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 cursor-pointer`}
+            className="group relative flex items-center justify-between overflow-hidden rounded-2xl sm:rounded-3xl bg-white/65 backdrop-blur-2xl border border-white/80 p-4 sm:p-5 h-[135px] sm:h-[145px] shadow-[0_8px_32px_0_rgba(109,40,217,0.06)] hover:shadow-[0_12px_40px_0_rgba(109,40,217,0.12)] hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
           >
-            {/* Left Content */}
+            {/* Top Glass Highlight Reflection */}
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent" />
+            
+            {/* Soft Ambient Tint Glow Inside Card */}
+            <div className={`pointer-events-none absolute -left-10 -bottom-10 w-32 h-32 rounded-full ${cat.glowColor} blur-2xl`} />
+
             <div className="flex flex-col justify-between h-full z-10 shrink-0 pr-2">
               <div className="space-y-1">
                 <h3 className="text-sm sm:text-base font-black text-slate-900 tracking-tight leading-snug">
                   {cat.title}
                 </h3>
-                <p className={`text-xs font-semibold ${cat.subColor}`}>
+                <p className={`text-xs font-bold ${cat.subColor}`}>
                   {cat.subtitle}
                 </p>
               </div>
-
-              {/* Circular Action Arrow Button */}
               <div className="pt-2">
                 <div
-                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/90 shadow-xs flex items-center justify-center ${cat.btnColor} group-hover:bg-white group-hover:scale-110 transition-all duration-200`}
+                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/80 backdrop-blur-md border border-white/90 shadow-xs flex items-center justify-center ${cat.btnColor} group-hover:bg-white group-hover:scale-110 transition-all duration-200`}
                 >
                   <ChevronRight className="w-4 h-4 stroke-[2.5]" />
                 </div>
               </div>
             </div>
 
-            {/* Right Product Image */}
-            <div className="relative h-full w-[48%] sm:w-[50%] flex items-center justify-end overflow-hidden">
+            {/* Right Product Image with Glass Tint */}
+            <div className="relative h-full w-[48%] sm:w-[50%] flex items-center justify-end overflow-hidden z-10">
               <img
                 src={cat.image}
                 alt={cat.imageAlt}
                 loading="lazy"
-                className="h-full w-full object-cover rounded-xl transform group-hover:scale-105 transition-transform duration-500 shadow-2xs"
+                className="h-full w-full object-cover rounded-2xl transform group-hover:scale-105 transition-transform duration-500 shadow-xs border border-white/60"
               />
             </div>
           </Link>
@@ -114,4 +114,3 @@ export default function Latestcategories() {
     </section>
   );
 }
-

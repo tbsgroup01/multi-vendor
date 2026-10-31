@@ -165,17 +165,19 @@ export default function SuggestedItem() {
     <section className="w-full py-6">
       <div className="max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Flipkart-Style Main Box Container */}
-        <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 p-5 sm:p-7 shadow-[0_2px_14px_rgba(0,0,0,0.03)]">
+        {/* Glassmorphic Main Box Container */}
+        <div className="bg-white/65 backdrop-blur-2xl rounded-3xl border border-white/80 p-5 sm:p-7 shadow-[0_8px_32px_0_rgba(109,40,217,0.06)] relative overflow-hidden transition-all">
+          {/* Glass Top Highlight Sheen */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent" />
           
           {/* Section Header */}
-          <div className="flex items-center justify-between pb-4 mb-5 border-b border-slate-100">
+          <div className="flex items-center justify-between pb-4 mb-5 border-b border-purple-100/60">
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                   Suggested for You
                 </h2>
-                <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-700 text-xs font-bold border border-purple-200">
+                <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-purple-100/70 text-purple-700 text-xs font-bold border border-purple-200/60 backdrop-blur-md shadow-2xs">
                   <Zap className="w-3 h-3 fill-purple-600 text-purple-600" />
                   Top Picks
                 </span>
@@ -188,23 +190,23 @@ export default function SuggestedItem() {
             {/* Navigation Arrows & View All */}
             <div className="flex items-center gap-2 sm:gap-3">
               <Link
-                to="/category/electronics"
-                className="text-xs sm:text-sm font-bold text-purple-600 hover:text-purple-700 tracking-wide uppercase px-2 py-1"
+                to="/shop"
+                className="text-xs sm:text-sm font-bold text-purple-600 hover:text-purple-700 bg-purple-100/60 hover:bg-purple-100/90 border border-purple-200/50 px-3 py-1 rounded-full backdrop-blur-md transition-all tracking-wide uppercase"
               >
                 VIEW ALL
               </Link>
-              <div className="hidden sm:flex items-center gap-1.5 pl-2 border-l border-slate-200">
+              <div className="hidden sm:flex items-center gap-1.5 pl-2 border-l border-purple-100">
                 <button
                   onClick={() => scroll("left")}
                   aria-label="Previous Products"
-                  className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
+                  className="w-8 h-8 rounded-full border border-purple-200/60 bg-white/70 backdrop-blur-md flex items-center justify-center text-purple-600 hover:bg-purple-50 transition-colors cursor-pointer shadow-2xs"
                 >
                   <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
                 </button>
                 <button
                   onClick={() => scroll("right")}
                   aria-label="Next Products"
-                  className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
+                  className="w-8 h-8 rounded-full border border-purple-200/60 bg-white/70 backdrop-blur-md flex items-center justify-center text-purple-600 hover:bg-purple-50 transition-colors cursor-pointer shadow-2xs"
                 >
                   <ChevronRight className="w-4 h-4 stroke-[2.5]" />
                 </button>
@@ -212,7 +214,7 @@ export default function SuggestedItem() {
             </div>
           </div>
 
-          {/* Flipkart-Style Product Carousel / Rail */}
+          {/* Product Carousel / Rail */}
           <div
             ref={scrollContainerRef}
             className="flex items-stretch gap-4 sm:gap-5 overflow-x-auto pb-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
@@ -224,22 +226,23 @@ export default function SuggestedItem() {
               return (
                 <Link
                   key={item.id}
-                  to={`/category/${item.categorySlug}`}
-                  className="group relative flex-none w-[230px] sm:w-[260px] bg-white rounded-2xl border border-slate-200/70 p-3.5 sm:p-4 flex flex-col justify-between hover:shadow-xl hover:border-slate-300 transition-all duration-300 cursor-pointer"
+                  to={`/product/${item.id}`}
+                  state={{ product: item, categoryName: item.categorySlug }}
+                  className="group relative flex-none w-[230px] sm:w-[260px] bg-white/70 backdrop-blur-xl rounded-2xl sm:rounded-3xl border border-white/85 p-3.5 sm:p-4 flex flex-col justify-between hover:shadow-xl hover:border-purple-200 transition-all duration-300 cursor-pointer shadow-xs overflow-hidden"
                 >
+                  {/* Glass Top Highlight Sheen */}
+                  <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/80 to-transparent" />
               
                   {/* Product Image Area */}
                   <div>
-                    <div className="w-full h-44 sm:h-48 rounded-xl bg-slate-50/70 p-3 flex items-center justify-center overflow-hidden mb-3.5">
+                    <div className="w-full h-44 sm:h-48 rounded-2xl bg-white/75 backdrop-blur-md border border-white/90 p-3 flex items-center justify-center overflow-hidden mb-3.5 shadow-2xs">
                       <img
                         src={item.image}
                         alt={item.title}
-                        className="w-full h-full object-contain group-hover:scale-108 transition-transform duration-500"
+                        className="w-full h-full object-contain mix-blend-multiply group-hover:scale-108 transition-transform duration-500"
                         loading="lazy"
                       />
                     </div>
-
-              
 
                     {/* Product Title */}
                     <h3 className="text-xs sm:text-[13px] font-bold text-slate-900 leading-snug line-clamp-2 min-h-[36px] group-hover:text-purple-600 transition-colors">
@@ -251,9 +254,9 @@ export default function SuggestedItem() {
                       {item.specs}
                     </p>
 
-                    {/* Rating Badge (Flipkart Style Green Badge) */}
+                    {/* Rating Badge */}
                     <div className="flex items-center gap-2 mt-2">
-                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-emerald-700 text-white font-bold text-[11px] shadow-2xs">
+                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-emerald-600 text-white font-bold text-[11px] shadow-2xs">
                         <span>{item.rating}</span>
                         <Star className="w-2.5 h-2.5 fill-white text-white" />
                       </span>
@@ -264,8 +267,8 @@ export default function SuggestedItem() {
                   </div>
 
                   {/* Bottom Price, Delivery Tag & Add Button */}
-                  <div className="pt-3 border-t border-slate-100 mt-3">
-                    <div className="flex items-baseline gap-2 mb-1">
+                  <div className="pt-3 border-t border-purple-100/60 mt-3">
+                    <div className="flex items-baseline gap-2 mb-2">
                       <span className="text-base sm:text-lg font-black text-slate-900 leading-none">
                         ₹{item.price.toLocaleString("en-IN")}
                       </span>
@@ -276,14 +279,13 @@ export default function SuggestedItem() {
                       )}
                     </div>
 
-
-                    {/* Minimal Add to Cart Button */}
+                    {/* Add to Cart Button */}
                     <button
                       onClick={(e) => handleAddToCart(item.id, e)}
                       className={`w-full py-2 px-3 rounded-xl font-bold text-xs transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-95 ${
                         isAdded
                           ? "bg-emerald-600 text-white"
-                          : "bg-purple-600 hover:bg-purple-700 text-white"
+                          : "bg-purple-100/70 hover:bg-[#7C3AED] text-[#7C3AED] hover:text-white border border-purple-200/60 backdrop-blur-md"
                       }`}
                     >
                       {isAdded ? (
@@ -311,4 +313,3 @@ export default function SuggestedItem() {
     </section>
   );
 }
-

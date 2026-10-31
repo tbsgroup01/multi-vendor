@@ -1,33 +1,50 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
-  Menu,
-  ChevronDown,
   Search,
-  Heart,
   ShoppingCart,
   X,
+  CircleUserRound,
+  Package,
+  MapPin,
+  LogOut,
+  ChevronRight,
+  User,
 } from "lucide-react";
 
 export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState("All Categories");
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+  const timeoutRef = useRef(null);
 
-  const categories = [
-    "All Categories",
-    "Electronics & Gadgets",
-    "Fashion & Clothing",
-    "Home & Kitchen",
-    "Beauty & Personal Care",
-    "Books & Stationery",
-    "Sports & Fitness",
-    "Toys & Baby",
-  ];
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsUserMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleMouseEnter = () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    setIsUserMenuOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    timeoutRef.current = setTimeout(() => {
+      setIsUserMenuOpen(false);
+    }, 200);
+  };
 
   return (
     <header className="sticky top-0 z-50 h-[72px] bg-white border-b border-slate-100 shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
       <div className="h-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+        
+        {/* Brand Logo */}
         <div className="flex items-center gap-5 sm:gap-7 shrink-0">
           <Link to="/" className="flex items-center gap-2.5 group">
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-[#7C3AED] to-[#9333EA] flex items-center justify-center text-white shadow-md shadow-purple-500/25 transition-transform group-hover:scale-105">
@@ -49,31 +66,33 @@ export default function Navbar() {
               ShopMore
             </span>
           </Link>
-
-       
         </div>
 
+        {/* Global Search Bar */}
         <div className="flex-1 max-w-2xl mx-2 sm:mx-4">
           <form
             onSubmit={(e) => {
               e.preventDefault();
             }}
-            className="relative flex items-center w-full"
+            className="w-full"
           >
-            <div className="w-full flex items-center bg-[#F8FAFC] border border-slate-200/90 rounded-2xl p-1.5 focus-within:border-[#7C3AED] focus-within:ring-4 focus-within:ring-purple-500/10 transition-all">
+            <div className="relative flex items-center bg-[#F8FAFC] border border-slate-200/80 rounded-2xl p-1.5 focus-within:border-[#7C3AED] focus-within:ring-2 focus-within:ring-[#7C3AED]/15 transition-all">
+              <div className="pl-3 pr-2 text-slate-400">
+                <Search className="w-4 h-4 stroke-[2]" />
+              </div>
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search for products, brands and more..."
-                className="w-full bg-transparent px-3.5 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none"
+                className="w-full bg-transparent text-sm text-slate-800 placeholder-slate-400 font-medium outline-none px-1"
               />
 
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  className="p-1 text-slate-400 hover:text-slate-600 mr-1"
+                  className="p-1 text-slate-400 hover:text-slate-600 mr-1 cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -87,14 +106,10 @@ export default function Navbar() {
             </div>
           </form>
         </div>
-        <div className="flex items-center gap-3 sm:gap-6 shrink-0">
-          <Link
-            to="/wishlist"
-            className="hidden sm:flex items-center gap-2 text-slate-700 hover:text-[#7C3AED] transition-colors"
-          >
-            <Heart className="w-5 h-5 stroke-[2]" />
-            <span className="text-xs sm:text-sm font-bold">Wishlist</span>
-          </Link>
+
+        {/* Right Action Icons (Cart & Interactive User Avatar Dropdown) */}
+        <div className="flex items-center gap-3 sm:gap-5 shrink-0">     
+          {/* Cart Icon */}
           <Link
             to="/cart"
             className="relative flex items-center p-1.5 text-slate-700 hover:text-[#7C3AED] transition-colors"
@@ -104,12 +119,93 @@ export default function Navbar() {
               2
             </span>
           </Link>
-          <Link
-            to="/profile"
-            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#E0E7FF] text-[#4F46E5] hover:ring-2 hover:ring-purple-400 flex items-center justify-center font-extrabold text-sm transition-all"
+
+          {/* Interactive User Avatar Dropdown (Hover or Click) */}
+          <div
+            ref={menuRef}
+            className="relative"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
           >
-            S
-          </Link>
+            <button
+              onClick={() => setIsUserMenuOpen((prev) => !prev)}
+              aria-label="User Account Menu"
+              aria-expanded={isUserMenuOpen}
+              className="p-1 text-slate-700 hover:text-[#7C3AED] transition-colors flex items-center justify-center cursor-pointer rounded-full focus:outline-none"
+            >
+              <CircleUserRound className="w-7 h-7 sm:w-8 sm:h-8 stroke-[1.8]" />
+            </button>
+
+            {/* Dropdown Menu (Blinkit Style) */}
+            {isUserMenuOpen && (
+              <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl border border-slate-200/90 shadow-xl py-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+                {/* User Info Header */}
+                <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-purple-100 text-purple-700 font-black text-sm flex items-center justify-center shrink-0">
+                    S
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-xs font-bold text-slate-900 truncate">Shashank</h3>
+                    <p className="text-[11px] text-slate-500 truncate">+91 9800000000</p>
+                  </div>
+                </div>
+
+                {/* Menu Items */}
+                <div className="p-1.5 space-y-0.5">
+                  <Link
+                    to="/orders?tab=orders"
+                    onClick={() => setIsUserMenuOpen(false)}
+                    className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-purple-50 hover:text-purple-700 transition-colors cursor-pointer group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Package className="w-4 h-4 text-purple-600 group-hover:scale-110 transition-transform" />
+                      <span>My Orders</span>
+                    </div>
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                  </Link>
+
+                  <Link
+                    to="/orders?tab=addresses"
+                    onClick={() => setIsUserMenuOpen(false)}
+                    className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-purple-50 hover:text-purple-700 transition-colors cursor-pointer group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <MapPin className="w-4 h-4 text-purple-600 group-hover:scale-110 transition-transform" />
+                      <span>My Addresses</span>
+                    </div>
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                  </Link>
+
+                  <Link
+                    to="/cart"
+                    onClick={() => setIsUserMenuOpen(false)}
+                    className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-purple-50 hover:text-purple-700 transition-colors cursor-pointer group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <ShoppingCart className="w-4 h-4 text-purple-600 group-hover:scale-110 transition-transform" />
+                      <span>My Cart</span>
+                    </div>
+                    <span className="text-[10px] px-1.5 py-0.5 bg-purple-100 text-purple-800 rounded-full font-bold">
+                      2
+                    </span>
+                  </Link>
+                </div>
+
+                {/* Log Out */}
+                <div className="p-1.5 pt-1 border-t border-slate-100">
+                  <Link
+                    to="/login"
+                    onClick={() => setIsUserMenuOpen(false)}
+                    className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Log Out</span>
+                  </Link>
+                </div>
+
+              </div>
+            )}
+          </div>
         </div>
 
       </div>

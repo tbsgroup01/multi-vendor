@@ -22,8 +22,8 @@ import {
   CheckCircle2,
   Sparkles,
 } from "lucide-react";
-import customerImage from "../../assets/imag.png";
-import vendorImage from "../../assets/imm.png";
+import customerImage from "../../assets/multi.png";
+import vendorImage from "../../assets/multi.png";
 
 export default function Register() {
   const [role, setRole] = useState("customer");
@@ -116,7 +116,7 @@ export default function Register() {
   const benefits = role === "customer" ? customerBenefits : vendorBenefits;
 
   return (
-    <div className="h-full w-full overflow-hidden bg-[#f4f8ff] font-sans text-slate-900 select-none">
+    <div className="h-[calc(100vh-72px)] w-full overflow-hidden bg-[#f4f8ff] font-sans text-slate-900 select-none">
       {submitted && (
         <div className="fixed top-6 right-6 z-50 flex items-center space-x-3 rounded-2xl bg-emerald-600 px-6 py-4 text-white shadow-2xl animate-bounce">
           <CheckCircle2 className="h-6 w-6 text-emerald-200" />
@@ -130,15 +130,15 @@ export default function Register() {
         </div>
       )}
       <main className="h-full w-full max-w-[1800px] mx-auto grid grid-cols-1 lg:grid-cols-2 overflow-hidden">
-        <section className="relative hidden lg:flex h-full flex-col justify-between overflow-hidden bg-gradient-to-br from-white via-[#eff6ff] to-[#dce9ff] px-8 py-8 lg:px-12 xl:px-18">
+        <section className="relative hidden lg:flex h-full flex-col justify-between overflow-hidden bg-gradient-to-br from-white via-[#eff6ff] to-[#dce9ff] px-8 py-6 lg:px-10 xl:px-14">
           <div className="pointer-events-none absolute -right-20 top-40 h-80 w-80 rounded-full bg-blue-200/30 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-20 left-0 h-80 w-80 rounded-full bg-violet-200/40 blur-3xl" />
           <div className="relative z-10 shrink-0">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-1.5 text-sm font-semibold text-blue-600">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-blue-50 px-3.5 py-1 text-xs sm:text-sm font-semibold text-blue-600">
               <Sparkles className="h-4 w-4" />
               {role === "customer" ? "Join Our Community" : "Sell with MarketPlace"}
             </div>
-            <h1 className="max-w-xl text-4xl sm:text-5xl xl:text-[54px] font-extrabold leading-[1.12] tracking-tight text-slate-900">
+            <h1 className="max-w-xl text-3xl sm:text-4xl xl:text-[44px] font-extrabold leading-[1.14] tracking-tight text-slate-900">
               {role === "customer" ? (
                 <>
                   Create Your
@@ -157,24 +157,24 @@ export default function Register() {
                 </>
               )}
             </h1>
-            <p className="mt-3.5 max-w-lg text-base sm:text-lg leading-relaxed text-slate-500">
+            <p className="mt-2.5 max-w-lg text-sm sm:text-base leading-relaxed text-slate-500">
               {role === "customer"
                 ? "Start shopping or become a seller — your journey begins here."
                 : "Join thousands of sellers and reach millions of customers across India."}
             </p>
-            <div className="mt-6 space-y-4">
+            <div className="mt-4 sm:mt-5 space-y-2.5 sm:space-y-3">
               {benefits.map((benefit) => (
-                <div key={benefit.title} className="flex items-center gap-4">
+                <div key={benefit.title} className="flex items-center gap-3.5">
                   <div
-                    className={`flex h-11 w-11 xl:h-12 xl:w-12 shrink-0 items-center justify-center rounded-2xl ${benefit.color}`}
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${benefit.color}`}
                   >
                     {benefit.icon}
                   </div>
                   <div>
-                    <h3 className="text-sm sm:text-base font-bold text-slate-800 leading-snug">
+                    <h3 className="text-xs sm:text-sm font-bold text-slate-800 leading-snug">
                       {benefit.title}
                     </h3>
-                    <p className="text-xs sm:text-sm text-slate-500 mt-0.5 leading-snug">
+                    <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 leading-snug">
                       {benefit.description}
                     </p>
                   </div>
@@ -182,20 +182,23 @@ export default function Register() {
               ))}
             </div>
           </div>
-          <div className="relative flex flex-1 items-end justify-center min-h-0 pt-4 overflow-hidden">
-            <div className="absolute bottom-0 h-20 w-4/5 rounded-[50%] bg-blue-300/30 blur-3xl pointer-events-none" />
+          {/* Hero Illustration */}
+          <div className="relative flex flex-1 items-end justify-center min-h-0 -translate-y-4 sm:-translate-y-6 w-full max-w-[560px] mx-auto">
+            <div className="absolute bottom-2 h-20 w-4/5 rounded-[50%] bg-blue-300/30 blur-3xl pointer-events-none" />
+
+            {/* Main Image with Smooth Drop-Shadow */}
             <img
               src={role === "customer" ? customerImage : vendorImage}
               alt={role === "customer" ? "Customer Registration" : "Vendor Registration"}
-              className="relative z-10 max-h-[250px] xl:max-h-[400px] w-full max-w-[660px] object-contain drop-shadow-2xl transition duration-500 hover:scale-[1.02]"
+              className="relative z-10 max-h-[300px] sm:max-h-[340px] xl:max-h-[380px] w-auto max-w-full object-contain drop-shadow-2xl transition duration-500 hover:scale-[1.02]"
             />
           </div>
         </section>
-        <section className="relative flex h-full items-center justify-center overflow-hidden px-6 py-6 sm:px-10 lg:px-8 xl:px-14">
+        <section className="relative flex h-full items-center justify-center overflow-hidden px-6 py-4 sm:px-10 lg:px-8 xl:px-12">
           <div className="pointer-events-none absolute -bottom-24 -right-20 h-72 w-72 rounded-full bg-violet-200/30 blur-3xl" />
           <div
-            className={`relative w-full rounded-[28px] border border-white/80 bg-white/95 p-7 sm:p-9 xl:p-10 shadow-[0_24px_80px_rgba(53,93,180,0.10)] transition-all ${
-              role === "vendor" ? "max-w-[700px]" : "max-w-[640px]"
+            className={`relative w-full rounded-[24px] border border-white/80 bg-white/95 p-5 sm:p-6 lg:p-7 shadow-[0_24px_80px_rgba(53,93,180,0.10)] transition-all max-h-[calc(100vh-92px)] overflow-y-auto [scrollbar-width:none] ${
+              role === "vendor" ? "max-w-[700px]" : "max-w-[620px]"
             }`}
           >
             <div>
