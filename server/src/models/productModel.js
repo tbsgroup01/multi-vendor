@@ -15,6 +15,10 @@ const Product = sequelize.define("Product", {
         type: DataTypes.INTEGER,
         allowNull: true
     },
+    subCategoryId: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+    },
     name: {
         type: DataTypes.STRING,
         allowNull: false

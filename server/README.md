@@ -11,10 +11,11 @@ Welcome to the backend engineering documentation for the **Multi-Vendor E-Commer
 3. [Authentication & Role-Based Authorization](#3-authentication--role-based-authorization)
 4. [Vendor Lifecycle: Pending vs. Approved](#4-vendor-lifecycle-pending-vs-approved)
 5. [The Subscription & Product Listing Quota Engine](#5-the-subscription--product-listing-quota-engine)
-6. [Database Schema & Relationships](#6-database-schema--relationships)
-7. [API Route Directory & Payload Examples](#7-api-route-directory--payload-examples)
-8. [Project Structure](#8-project-structure)
-9. [Local Setup & Environment](#9-local-setup--environment)
+6. [Cart & Multi-Vendor Checkout Architecture](#6-cart--multi-vendor-checkout-architecture)
+7. [Database Schema & Relationships](#7-database-schema--relationships)
+8. [API Route Directory & Payload Examples](#8-api-route-directory--payload-examples)
+9. [Project Structure](#9-project-structure)
+10. [Local Setup & Environment](#10-local-setup--environment)
 
 ---
 
@@ -124,6 +125,7 @@ The marketplace defines 3 distinct roles:
                      │
                      ▼
 4. Client stores Token and sends it in header: "Authorization: Bearer <token>"
+
 ```
 
 ### 🛡️ The 3 Defense Middlewares
@@ -220,13 +222,67 @@ Vendors cannot list products for free or infinitely. Listing is governed by a **
 
 ---
 
-## 6. Database Schema & Relationships
+## 6. Cart & Multi-Vendor Checkout Architecture
+
+The cart and checkout system is engineered specifically for a **multi-vendor marketplace**, where a single customer cart can contain products from multiple independent vendors, but must checkout cleanly in a single unified payment flow.
+
+```
+[ Customer Cart ]
+  ├── Item A (Vendor 1 - Jane Gadgets)
+  └── Item B (Vendor 2 - Tech World)
+         │
+         ▼
+[ Checkout Validation ] ──► Pessimistic DB Lock on Products & Stock Verification
+         │
+         ▼
+[ DB Transaction Commit ]
+  ├── 1 Master Order created (Totals, Shipping Address, Payment Status)
+  ├── 2 OrderItem snapshots created (Stores vendorId, historical price, product name)
+  ├── Stock decremented on Products (Auto-flagged if 0)
+  ├── User Cart cleared
+  └── Order confirmation email dispatched
+         │
+         ▼
+[ Vendor Order Fulfillment ]
+  ├── Jane Gadgets views Item A in `/api/orders/vendor/my-orders`
+  └── Tech World views Item B in `/api/orders/vendor/my-orders`
+```
+
+### Key Architectural Highlights:
+1. **Cart Persistence & Idempotency:**
+   - Backed by the `CartItems` table with a composite unique index on `(userId, productId)`.
+   - Adding an existing item automatically increments its quantity.
+   - Setting quantity to `0` or calling delete removes the item.
+2. **Dynamic Price & Stock Verification:**
+   - Real-time stock status is returned on `GET /api/cart` and `GET /api/cart/checkout-preview`.
+   - If a product price changed or discount was applied, the cart immediately reflects current pricing.
+3. **Multi-Vendor Item Grouping:**
+   - Cart responses group items under their respective `vendorId` and `storeName` so users clearly see which vendor is fulfilling which product.
+4. **ACID Transaction & Concurrency Safety:**
+   - Stock deduction and order creation occur within a managed `sequelize.transaction()` with `lock: true`.
+   - Prevents overselling and race conditions when multiple users buy the last available item at the exact same moment.
+5. **Historical Price Snapshotting:**
+   - `OrderItems` records store a snapshot of `productPrice`, `productName`, and `productImage` at the moment of checkout. If a vendor later modifies their product title or price, existing orders remain accurate.
+6. **Separated Vendor Order Management:**
+   - Each vendor can track orders containing their products (`GET /api/orders/vendor/my-orders`) and update their fulfillment status (`pending` ➔ `processing` ➔ `shipped` ➔ `delivered`) without seeing other vendors' items.
+
+---
+
+## 7. Database Schema & Relationships
 
 ```mermaid
 erDiagram
     USERS ||--o| VENDORS : "has one"
+    USERS ||--o{ CART_ITEMS : "has many"
+    USERS ||--o{ ORDERS : "places"
+    PRODUCTS ||--o{ CART_ITEMS : "added to"
+    ORDERS ||--o{ ORDER_ITEMS : "contains"
+    PRODUCTS ||--o{ ORDER_ITEMS : "purchased as"
+    VENDORS ||--o{ ORDER_ITEMS : "fulfills"
     VENDORS ||--o{ PRODUCTS : "owns"
+    CATEGORIES ||--o{ SUBCATEGORIES : "contains"
     CATEGORIES ||--o{ PRODUCTS : "contains"
+    SUBCATEGORIES ||--o{ PRODUCTS : "contains"
     SUBSCRIPTION_PLANS ||--o{ VENDOR_SUBSCRIPTIONS : "defines"
     VENDORS ||--o{ VENDOR_SUBSCRIPTIONS : "purchases"
 
@@ -238,6 +294,41 @@ erDiagram
         string password
         enum role "user | vendor | admin"
         boolean isVerified
+    }
+
+    CART_ITEMS {
+        int id PK
+        int userId FK
+        int productId FK
+        int quantity
+    }
+
+    ORDERS {
+        int id PK
+        string orderNumber UK
+        int userId FK
+        decimal totalAmount
+        decimal subTotal
+        decimal taxAmount
+        decimal shippingAmount
+        json shippingAddress
+        enum paymentMethod "cod | card | upi | netbanking"
+        enum paymentStatus "pending | completed | failed"
+        enum orderStatus "placed | processing | shipped | delivered | cancelled"
+        text notes
+    }
+
+    ORDER_ITEMS {
+        int id PK
+        int orderId FK
+        int productId FK
+        int vendorId FK
+        string productName
+        decimal productPrice
+        int quantity
+        decimal totalPrice
+        string productImage
+        enum status "pending | processing | shipped | delivered | cancelled"
     }
 
     VENDORS {
@@ -280,10 +371,20 @@ erDiagram
         text description
     }
 
+    SUBCATEGORIES {
+        int id PK
+        int categoryId FK
+        string name
+        string image
+        text description
+        boolean isActive
+    }
+
     PRODUCTS {
         int id PK
         int vendorId FK
         int categoryId FK
+        int subCategoryId FK
         string name
         decimal price
         decimal discountPrice
@@ -296,7 +397,7 @@ erDiagram
 
 ---
 
-## 7. API Route Directory & Payload Examples
+## 8. API Route Directory & Payload Examples
 
 ### 🔐 1. Authentication (`/api/auth`)
 
@@ -335,6 +436,41 @@ erDiagram
 }
 ```
 
+#### Password Reset via Email OTP Flow
+
+1. **Request OTP:** `POST /api/auth/forgot-password`
+```json
+{
+  "email": "jane@store.com"
+}
+```
+
+2. **Verify OTP:** `POST /api/auth/verify-otp`
+```json
+{
+  "email": "jane@store.com",
+  "otp": "491823"
+}
+```
+*Returns `resetToken` (valid for 15 minutes).*
+
+3. **Reset Password:** `POST /api/auth/reset-password`
+```json
+{
+  "resetToken": "eyJhbGciOi...",
+  "newPassword": "NewSecurePassword@123",
+  "confirmPassword": "NewSecurePassword@123"
+}
+```
+*(Also supports direct email reset if OTP verified: `{ "email": "jane@store.com", "newPassword": "...", "confirmPassword": "..." }`)*
+
+4. **Resend OTP:** `POST /api/auth/resend-otp`
+```json
+{
+  "email": "jane@store.com"
+}
+```
+
 ---
 
 ### 👑 2. Admin Operations (`/api/admin`)
@@ -360,11 +496,32 @@ erDiagram
     "description": "Men and women clothing"
   }
   ```
+- **Create SubCategory:** `POST /api/admin/subcategories`
+  ```json
+  {
+    "categoryId": 1,
+    "name": "Men's Sneakers",
+    "image": "https://example.com/sneakers.png",
+    "description": "Casual and athletic footwear for men"
+  }
+  ```
 - **Reset DB for Testing:** `POST /api/admin/dropexist` *(Drops and recreates fresh schema)*
 
 ---
 
-### 🏪 3. Vendor Oversight (`/api/vendors`)
+### 📂 3. Categories & SubCategories (`/api/categories` & `/api/subcategories`)
+
+- **List All Categories (Includes SubCategories):** `GET /api/categories`
+- **Get Single Category (Includes SubCategories):** `GET /api/categories/:id`
+- **List SubCategories of Category:** `GET /api/categories/:categoryId/subcategories`
+- **Browse All SubCategories:** `GET /api/subcategories` *(Query: `?categoryId=1&search=sneakers`)*
+- **Get SubCategory Details:** `GET /api/subcategories/:id`
+- **Admin Update SubCategory:** `PUT /api/admin/subcategories/:id`
+- **Admin Delete SubCategory:** `DELETE /api/admin/subcategories/:id`
+
+---
+
+### 🏪 4. Vendor Oversight (`/api/vendors`)
 *Requires `Authorization: Bearer <ADMIN_TOKEN>`*
 
 - **List All Vendors:** `GET /api/vendors?status=pending`
@@ -410,6 +567,7 @@ erDiagram
     "stock": 50,
     "sku": "EAR-ANC-01",
     "categoryId": 1,
+    "subCategoryId": 2,
     "images": [
       "https://example.com/earbuds1.jpg",
       "https://example.com/earbuds2.jpg"
@@ -417,14 +575,111 @@ erDiagram
   }
   ```
 - **Vendor's My Products + Quota:** `GET /api/products/my-products` *(Vendor only)*
-- **Public Catalog:** `GET /api/products?search=earbuds&minPrice=1000&maxPrice=5000&sortBy=price_asc`
+- **Public Catalog:** `GET /api/products?search=earbuds&categoryId=1&subCategoryId=2&minPrice=1000&maxPrice=5000&sortBy=price_asc`
 - **Product Details:** `GET /api/products/:id`
 - **Update Product:** `PUT /api/products/:id` *(Vendor owner or Admin)*
 - **Delete Product:** `DELETE /api/products/:id` *(Frees up 1 quota slot)*
 
 ---
 
-## 8. Project Structure
+### 🛒 6. Cart & Checkout (`/api/cart`)
+*Requires `Authorization: Bearer <USER_TOKEN>`*
+
+#### 1. View User's Cart
+`GET /api/cart`
+- Returns cart items grouped by vendor (`vendorMap`), calculates live subtotals, shipping, tax, grand total, and verifies stock availability flags.
+
+#### 2. Add Product to Cart
+`POST /api/cart/add`
+```json
+{
+  "productId": 1,
+  "quantity": 2
+}
+```
+- If the item already exists in the cart, the quantity is safely incremented.
+- Prevents adding more than the available stock.
+
+#### 3. Update Cart Item Quantity
+`PUT /api/cart/update/:id`
+*(Accepts either `CartItem.id` or `productId`)*
+```json
+{
+  "quantity": 3
+}
+```
+- Setting `quantity: 0` removes the item from the cart.
+
+#### 4. Remove Item from Cart
+`DELETE /api/cart/remove/:id`
+*(Accepts either `CartItem.id` or `productId`)*
+
+#### 5. Clear Entire Cart
+`DELETE /api/cart/clear`
+
+#### 6. Pre-Checkout Validation & Breakdown
+`GET /api/cart/checkout-preview`
+- Validates that products are still active and in stock.
+- Returns full vendor grouping, shipping cost, tax, grand total, and any `stockIssues` if items became unavailable.
+
+#### 7. Execute Checkout (Place Multi-Vendor Order)
+`POST /api/cart/checkout`
+```json
+{
+  "shippingAddress": {
+    "fullName": "John Doe",
+    "phone": "9876543210",
+    "addressLine1": "Flat 402, Sunshine Apartments",
+    "addressLine2": "MG Road",
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "postalCode": "400001",
+    "country": "India"
+  },
+  "paymentMethod": "cod",
+  "notes": "Please deliver between 10am and 5pm"
+}
+```
+**Checkout execution performs within a managed database transaction:**
+1. Validates all cart items and locks product records.
+2. Deducts product stock (`stock -= quantity`). Auto-updates product status if stock reaches 0.
+3. Generates master `Order` record with human-readable `orderNumber` (e.g., `ORD-1730360000000-8429`).
+4. Creates `OrderItem` snapshots with `vendorId`, `productName`, and `productPrice`.
+5. Clears user's cart.
+6. Dispatches order confirmation email to the user with the complete items breakdown.
+
+---
+
+### 📦 7. Orders & Fulfillment (`/api/orders`)
+*Requires `Authorization: Bearer <TOKEN>`*
+
+#### 1. Customer: View My Orders
+`GET /api/orders/my-orders?page=1&limit=10&status=placed`
+- Returns paginated list of user's past orders with order items and vendor store names.
+
+#### 2. Customer or Admin: View Order Details
+`GET /api/orders/:id`
+- Returns full master order, delivery address, buyer details, and item snapshots.
+- Non-admin users are restricted to viewing only their own orders.
+
+#### 3. Vendor: View Orders for My Store
+`GET /api/orders/vendor/my-orders?status=pending&page=1&limit=20` *(Vendor token)*
+- Returns only the order items corresponding to products listed by the logged-in vendor.
+- Vendors cannot see other vendors' items from the same customer cart.
+
+#### 4. Vendor or Admin: Update Order Item Fulfillment Status
+`PUT /api/orders/items/:id/status`
+```json
+{
+  "status": "shipped"
+}
+```
+- Status enum: `"pending"`, `"processing"`, `"shipped"`, `"delivered"`, `"cancelled"`.
+- Vendors can only modify the status of items belonging to their own store.
+
+---
+
+## 9. Project Structure
 
 ```
 server/
@@ -438,8 +693,11 @@ server/
     │   └── mail.js           # Nodemailer transport config
     ├── controllers/
     │   ├── adminController.js         # Plan CRUD, Categories CRUD, DB reset
-    │   ├── authController.js          # Unified Register, Login, Me
+    │   ├── authController.js          # Unified Register, Login, Me, OTP
+    │   ├── cartController.js          # Cart CRUD, Checkout Preview, Transactional Checkout
+    │   ├── orderController.js         # Customer & Vendor Order tracking and fulfillment
     │   ├── productController.js       # Product CRUD with quota enforcement
+    │   ├── subCategoryController.js   # SubCategory CRUD
     │   ├── subscriptionController.js  # Plan purchase, preview, invoice
     │   └── vendorController.js        # Admin vendor approval/rejection
     ├── middlewares/
@@ -451,13 +709,21 @@ server/
     │   ├── subscriptionPlanModel.js   # Admin plan definitions
     │   ├── vendorSubscriptionModel.js # Active subscriptions & invoices
     │   ├── categories.js              # Store categories
-    │   └── productModel.js            # Listed products
+    │   ├── subCategoryModel.js        # Store subcategories
+    │   ├── productModel.js            # Listed products
+    │   ├── cartItemModel.js           # Customer cart items
+    │   ├── orderModel.js              # Master orders
+    │   └── orderItemModel.js          # Order items snapshots & vendor fulfillment
     ├── routes/
     │   ├── adminRoutes.js
     │   ├── authRoutes.js
+    │   ├── cartRoutes.js
     │   ├── categoryRoutes.js
+    │   ├── orderRoutes.js
     │   ├── productRoutes.js
+    │   ├── subCategoryRoutes.js
     │   ├── subscriptionRoutes.js
+    │   ├── testRoutes.js
     │   └── vendorRoute.js
     └── utils/
         └── jwt.js                     # generateToken & verifyToken helpers
@@ -465,7 +731,7 @@ server/
 
 ---
 
-## 9. Local Setup & Environment
+## 10. Local Setup & Environment
 
 ### Prerequisites
 - Node.js (v18+)
