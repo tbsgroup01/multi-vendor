@@ -15,19 +15,17 @@ const CartItem = sequelize.define("CartItem", {
         type: DataTypes.INTEGER,
         allowNull: false
     },
+    variantId: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+    },
     quantity: {
         type: DataTypes.INTEGER,
         allowNull: false,
         defaultValue: 1
     }
 }, {
-    timestamps: true,
-    indexes: [
-        {
-            unique: true,
-            fields: ["userId", "productId"]
-        }
-    ]
+    timestamps: true
 });
 
 module.exports = CartItem;

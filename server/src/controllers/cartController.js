@@ -1,5 +1,5 @@
 const { sequelize } = require("../config/db");
-const { CartItem, Product, Vendor, Category, SubCategory, Order, OrderItem, User } = require("../models");
+const { CartItem, Product, ProductVariant, Vendor, Category, SubCategory, Order, OrderItem, User } = require("../models");
 const transporter = require("../config/mail");
 
 // Helper: Calculate Cart Totals
@@ -10,10 +10,26 @@ const computeCartTotals = (cartItems) => {
 
     const items = cartItems.map((item) => {
         const product = item.product;
-        const unitPrice = product.discountPrice ? Number(product.discountPrice) : Number(product.price);
+        const variant = item.variant;
+
+        let unitPrice = product.discountPrice ? Number(product.discountPrice) : Number(product.price);
+        let availableStock = product.stock;
+        let isAvailable = product.status === "active" && product.stock > 0;
+        let displayName = product.name;
+        let displayImages = product.images;
+
+        if (variant) {
+            unitPrice = variant.discountPrice ? Number(variant.discountPrice) : Number(variant.price);
+            availableStock = variant.stock;
+            isAvailable = product.status === "active" && variant.status === "active" && variant.stock > 0;
+            displayName = `${product.name} (${variant.name})`;
+            if (variant.images && variant.images.length > 0) {
+                displayImages = variant.images;
+            }
+        }
+
+        const isStockSufficient = availableStock >= item.quantity;
         const lineTotal = unitPrice * item.quantity;
-        const isAvailable = product.status === "active" && product.stock > 0;
-        const isStockSufficient = product.stock >= item.quantity;
 
         subTotal += lineTotal;
         totalItems += item.quantity;
@@ -35,15 +51,18 @@ const computeCartTotals = (cartItems) => {
         const itemData = {
             id: item.id,
             productId: product.id,
-            name: product.name,
-            sku: product.sku,
-            images: product.images,
+            variantId: variant ? variant.id : null,
+            variantName: variant ? variant.name : null,
+            variantAttributes: variant ? variant.attributes : null,
+            name: displayName,
+            sku: variant && variant.sku ? variant.sku : product.sku,
+            images: displayImages,
             unitPrice,
-            originalPrice: Number(product.price),
-            discountPrice: product.discountPrice ? Number(product.discountPrice) : null,
+            originalPrice: variant ? Number(variant.price) : Number(product.price),
+            discountPrice: variant ? (variant.discountPrice ? Number(variant.discountPrice) : null) : (product.discountPrice ? Number(product.discountPrice) : null),
             quantity: item.quantity,
             lineTotal,
-            availableStock: product.stock,
+            availableStock,
             isAvailable,
             isStockSufficient,
             vendor: {
@@ -92,6 +111,10 @@ const getCart = async (req, res) => {
                         { model: Category, as: "category", attributes: ["id", "name"] },
                         { model: SubCategory, as: "subCategory", attributes: ["id", "name"] }
                     ]
+                },
+                {
+                    model: ProductVariant,
+                    as: "variant"
                 }
             ],
             order: [["createdAt", "DESC"]]
@@ -112,10 +135,10 @@ const getCart = async (req, res) => {
     }
 };
 
-// 2. Add Product to Cart
+// 2. Add Product / Variant to Cart
 const addToCart = async (req, res) => {
     try {
-        const { productId, quantity } = req.body;
+        const { productId, variantId, quantity } = req.body;
 
         if (!productId) {
             return res.status(400).json({ message: "productId is required" });
@@ -125,7 +148,10 @@ const addToCart = async (req, res) => {
 
         // Check if product exists and is available
         const product = await Product.findByPk(productId, {
-            include: [{ model: Vendor, as: "vendor", attributes: ["id", "storeName"] }]
+            include: [
+                { model: Vendor, as: "vendor", attributes: ["id", "storeName"] },
+                { model: ProductVariant, as: "variants" }
+            ]
         });
 
         if (!product) {
@@ -136,42 +162,75 @@ const addToCart = async (req, res) => {
             return res.status(400).json({ message: "This product is currently inactive or unavailable" });
         }
 
-        if (product.stock <= 0) {
-            return res.status(400).json({ message: "This product is currently out of stock" });
+        let variant = null;
+        let targetStock = product.stock;
+
+        // If product has variants, variantId is strongly recommended/required
+        if (variantId) {
+            variant = await ProductVariant.findOne({
+                where: { id: variantId, productId: product.id }
+            });
+
+            if (!variant) {
+                return res.status(404).json({ message: "Specified product variant was not found" });
+            }
+
+            if (variant.status !== "active") {
+                return res.status(400).json({ message: `Variant '${variant.name}' is currently unavailable` });
+            }
+
+            targetStock = variant.stock;
+        } else if (product.hasVariants && product.variants && product.variants.length > 0) {
+            // Default to first active variant if none chosen
+            variant = product.variants.find(v => v.status === "active") || product.variants[0];
+            targetStock = variant ? variant.stock : product.stock;
         }
 
-        // Check if item already in user's cart
-        let cartItem = await CartItem.findOne({
-            where: { userId: req.user.id, productId }
-        });
+        if (targetStock <= 0) {
+            return res.status(400).json({
+                message: variant ? `Variant '${variant.name}' is currently out of stock` : "This product is currently out of stock"
+            });
+        }
+
+        // Check if item (product + variant combination) is already in user's cart
+        const whereClause = {
+            userId: req.user.id,
+            productId: product.id,
+            variantId: variant ? variant.id : null
+        };
+
+        let cartItem = await CartItem.findOne({ where: whereClause });
 
         if (cartItem) {
             const newQuantity = cartItem.quantity + qty;
-            if (newQuantity > product.stock) {
+            if (newQuantity > targetStock) {
                 return res.status(400).json({
-                    message: `Cannot add ${qty} more. You already have ${cartItem.quantity} in cart, and only ${product.stock} are available in stock.`,
-                    availableStock: product.stock,
+                    message: `Cannot add ${qty} more. You already have ${cartItem.quantity} in cart, and only ${targetStock} are available in stock.`,
+                    availableStock: targetStock,
                     currentInCart: cartItem.quantity
                 });
             }
             cartItem.quantity = newQuantity;
             await cartItem.save();
         } else {
-            if (qty > product.stock) {
+            if (qty > targetStock) {
                 return res.status(400).json({
-                    message: `Requested quantity (${qty}) exceeds available stock (${product.stock}).`,
-                    availableStock: product.stock
+                    message: `Requested quantity (${qty}) exceeds available stock (${targetStock}).`,
+                    availableStock: targetStock
                 });
             }
             cartItem = await CartItem.create({
                 userId: req.user.id,
-                productId,
+                productId: product.id,
+                variantId: variant ? variant.id : null,
                 quantity: qty
             });
         }
 
+        const itemName = variant ? `${product.name} (${variant.name})` : product.name;
+
         res.status(200).json({
-            message: `Added '${product.name}' to cart successfully`,
+            message: `Added '${itemName}' to cart successfully`,
             cartItem
         });
     } catch (error) {
@@ -186,7 +245,7 @@ const addToCart = async (req, res) => {
 // 3. Update Cart Item Quantity
 const updateCartItem = async (req, res) => {
     try {
-        const { id } = req.params; // Can be cartItem id OR productId
+        const { id } = req.params;
         const { quantity } = req.body;
 
         if (quantity === undefined || isNaN(Number(quantity))) {
@@ -195,7 +254,6 @@ const updateCartItem = async (req, res) => {
 
         const qty = parseInt(quantity, 10);
 
-        // Find by cartItem ID or by productId
         const cartItem = await CartItem.findOne({
             where: {
                 userId: req.user.id,
@@ -204,7 +262,10 @@ const updateCartItem = async (req, res) => {
                     { productId: isNaN(Number(id)) ? 0 : Number(id) }
                 ]
             },
-            include: [{ model: Product, as: "product" }]
+            include: [
+                { model: Product, as: "product" },
+                { model: ProductVariant, as: "variant" }
+            ]
         });
 
         if (!cartItem) {
@@ -220,11 +281,12 @@ const updateCartItem = async (req, res) => {
             });
         }
 
-        // Check stock availability
-        if (qty > cartItem.product.stock) {
+        // Check stock availability (variant or product)
+        const availableStock = cartItem.variant ? cartItem.variant.stock : cartItem.product.stock;
+        if (qty > availableStock) {
             return res.status(400).json({
-                message: `Requested quantity (${qty}) exceeds available stock (${cartItem.product.stock})`,
-                availableStock: cartItem.product.stock
+                message: `Requested quantity (${qty}) exceeds available stock (${availableStock})`,
+                availableStock
             });
         }
 
@@ -309,6 +371,10 @@ const checkoutPreview = async (req, res) => {
                         { model: Vendor, as: "vendor", attributes: ["id", "storeName", "businessName"] },
                         { model: Category, as: "category", attributes: ["id", "name"] }
                     ]
+                },
+                {
+                    model: ProductVariant,
+                    as: "variant"
                 }
             ]
         });
@@ -359,7 +425,6 @@ const checkout = async (req, res) => {
             notes
         } = req.body;
 
-        // Validation for shipping address
         if (!shippingAddress) {
             await t.rollback();
             return res.status(400).json({ message: "Shipping address is required" });
@@ -373,7 +438,7 @@ const checkout = async (req, res) => {
             });
         }
 
-        // Fetch user's cart items
+        // Fetch user's cart items with variants
         const cartItems = await CartItem.findAll({
             where: { userId: req.user.id },
             include: [
@@ -381,6 +446,10 @@ const checkout = async (req, res) => {
                     model: Product,
                     as: "product",
                     include: [{ model: Vendor, as: "vendor", attributes: ["id", "storeName"] }]
+                },
+                {
+                    model: ProductVariant,
+                    as: "variant"
                 }
             ],
             transaction: t,
@@ -398,6 +467,7 @@ const checkout = async (req, res) => {
 
         for (const item of cartItems) {
             const product = item.product;
+            const variant = item.variant;
 
             if (!product || product.status !== "active") {
                 await t.rollback();
@@ -406,22 +476,36 @@ const checkout = async (req, res) => {
                 });
             }
 
-            if (product.stock < item.quantity) {
+            const availableStock = variant ? variant.stock : product.stock;
+            const itemName = variant ? `${product.name} (${variant.name})` : product.name;
+
+            if (availableStock < item.quantity) {
                 await t.rollback();
                 return res.status(400).json({
-                    message: `Insufficient stock for '${product.name}'. Available: ${product.stock}, requested: ${item.quantity}.`
+                    message: `Insufficient stock for '${itemName}'. Available: ${availableStock}, requested: ${item.quantity}.`
                 });
             }
 
-            const unitPrice = product.discountPrice ? Number(product.discountPrice) : Number(product.price);
+            let unitPrice = product.discountPrice ? Number(product.discountPrice) : Number(product.price);
+            if (variant) {
+                unitPrice = variant.discountPrice ? Number(variant.discountPrice) : Number(variant.price);
+            }
+
             const lineTotal = unitPrice * item.quantity;
             subTotal += lineTotal;
 
+            const displayImage = variant && variant.images && variant.images.length > 0
+                ? variant.images[0]
+                : (Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : null);
+
             validatedItems.push({
                 product,
+                variant,
                 unitPrice,
                 quantity: item.quantity,
-                lineTotal
+                lineTotal,
+                itemName,
+                displayImage
             });
         }
 
@@ -453,23 +537,35 @@ const checkout = async (req, res) => {
         const orderItemsData = [];
         for (const item of validatedItems) {
             const product = item.product;
+            const variant = item.variant;
 
             const orderItem = await OrderItem.create({
                 orderId: order.id,
                 productId: product.id,
+                variantId: variant ? variant.id : null,
+                variantName: variant ? variant.name : null,
                 vendorId: product.vendorId,
-                productName: product.name,
+                productName: item.itemName,
                 productPrice: item.unitPrice,
                 quantity: item.quantity,
                 totalPrice: item.lineTotal,
-                productImage: Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : null,
+                productImage: item.displayImage,
                 status: "pending"
             }, { transaction: t });
 
             orderItemsData.push(orderItem);
 
-            // Deduct stock
-            product.stock -= item.quantity;
+            // Deduct stock from variant if present
+            if (variant) {
+                variant.stock = Math.max(0, variant.stock - item.quantity);
+                if (variant.stock === 0) {
+                    variant.status = "out_of_stock";
+                }
+                await variant.save({ transaction: t });
+            }
+
+            // Deduct overall product stock
+            product.stock = Math.max(0, product.stock - item.quantity);
             if (product.stock === 0) {
                 product.status = "out_of_stock";
             }
@@ -485,7 +581,7 @@ const checkout = async (req, res) => {
         // Commit transaction
         await t.commit();
 
-        // Send Order Confirmation Email (outside transaction)
+        // Send Order Confirmation Email
         try {
             await transporter.sendMail({
                 from: `"MultiVendor App" <${process.env.EMAIL_USER}>`,
@@ -496,22 +592,16 @@ const checkout = async (req, res) => {
                         <h2 style="color: #2563eb; margin-top: 0;">Thank You for Your Order! 🎉</h2>
                         <p>Hello <strong>${fullName}</strong>,</p>
                         <p>Your order <strong>${orderNumber}</strong> has been placed successfully and is being prepared by our sellers.</p>
-                        
                         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 15px; margin: 20px 0;">
                             <h3 style="margin-top: 0; color: #334155;">Order Summary</h3>
                             <p style="margin: 4px 0;"><strong>Order Number:</strong> ${orderNumber}</p>
                             <p style="margin: 4px 0;"><strong>Payment Method:</strong> ${paymentMethod.toUpperCase()}</p>
-                            <p style="margin: 4px 0;"><strong>Payment Status:</strong> ${paymentMethod === "cod" ? "Pending on Delivery" : "Paid"}</p>
                             <p style="margin: 4px 0;"><strong>Shipping To:</strong> ${addressLine1}, ${city}, ${state} - ${postalCode}</p>
                             <p style="margin: 4px 0; font-size: 16px; color: #1e40af;"><strong>Total Paid:</strong> ₹${totalAmount}</p>
                         </div>
-
-                        <p style="color: #64748b; font-size: 13px;">You can track your order status in your account dashboard anytime.</p>
-                        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
-                        <p style="color: #94a3b8; font-size: 12px; text-align: center;">MultiVendor Marketplace Team</p>
                     </div>
                 `,
-                text: `Hello ${fullName},\n\nYour order ${orderNumber} for ₹${totalAmount} has been placed successfully!\n\nThank you for shopping with us.`
+                text: `Hello ${fullName},\n\nYour order ${orderNumber} for ₹${totalAmount} has been placed successfully!`
             });
         } catch (mailErr) {
             console.error("Warning: Failed to send order confirmation email:", mailErr.message);
@@ -520,19 +610,7 @@ const checkout = async (req, res) => {
         res.status(201).json({
             message: "Order placed successfully!",
             orderNumber: order.orderNumber,
-            order: {
-                id: order.id,
-                orderNumber: order.orderNumber,
-                subTotal: order.subTotal,
-                taxAmount: order.taxAmount,
-                shippingAmount: order.shippingAmount,
-                totalAmount: order.totalAmount,
-                paymentMethod: order.paymentMethod,
-                paymentStatus: order.paymentStatus,
-                orderStatus: order.orderStatus,
-                shippingAddress: order.shippingAddress,
-                createdAt: order.createdAt
-            },
+            order,
             items: orderItemsData
         });
 

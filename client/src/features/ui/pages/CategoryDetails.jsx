@@ -5,29 +5,51 @@ import {
   Star,
   Plus,
   Minus,
-  SlidersHorizontal,
   ArrowUpDown,
   X,
-  RotateCcw,
   Check,
-  ChevronDown,
+  Zap,
 } from "lucide-react";
 import Footer from "../components/Footer";
+import dairyBreadEggsImg from "../../../assets/category/dairy-bread-eggs.png";
 
-// Structured PLP Catalog Data with Subcategories, Brands, and Attributes
+// Blinkit-style PLP Catalog Data with Visual Subcategories
 const PLP_DATA = {
   "dairy-bread-eggs": {
     name: "Dairy, Bread & Eggs",
-    description: "Farm-fresh dairy, artisan bakery items, eggs, and organic spreads.",
+    description: "Farm-fresh milk, artisan bakery items, eggs, and dairy essentials.",
     subcategories: [
-      "All",
-      "Milk & Cream",
-      "Bread & Bakery",
-      "Eggs",
-      "Butter & Cheese",
-      "Curd & Yogurt",
+      {
+        name: "All Products",
+        image: dairyBreadEggsImg,
+      },
+      {
+        name: "Milk & Cream",
+        image:
+          "https://pngimg.com/uploads/milk/milk_PNG12734.png",
+      },
+      {
+        name: "Bread & Bakery",
+        image:
+          "https://pngimg.com/uploads/bread/bread_PNG2301.png",
+      },
+      {
+        name: "Eggs",
+        image:
+          "https://pngimg.com/uploads/egg/egg_PNG40.png",
+      },
+      {
+        name: "Butter & Cheese",
+        image:
+          "https://pngimg.com/uploads/cheese/cheese_PNG25313.png",
+      },
+      {
+        name: "Curd & Yogurt",
+        image:
+          "https://pngimg.com/uploads/yogurt/yogurt_PNG15214.png",
+      },
     ],
-    brands: ["Amul", "Britannia", "Harvest Gold", "Mother Dairy", "Epigamia", "Nestle"],
+    brands: ["All Brands", "Amul", "Britannia", "Harvest Gold", "Mother Dairy", "Epigamia"],
     products: [
       {
         id: "d1",
@@ -41,7 +63,7 @@ const PLP_DATA = {
         reviews: 2420,
         inStock: true,
         image:
-          "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400&h=400&fit=crop&q=80",
+          "https://pngimg.com/uploads/milk/milk_PNG12734.png",
       },
       {
         id: "d2",
@@ -55,7 +77,7 @@ const PLP_DATA = {
         reviews: 1840,
         inStock: true,
         image:
-          "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=400&fit=crop&q=80",
+          "https://pngimg.com/uploads/bread/bread_PNG2301.png",
       },
       {
         id: "d3",
@@ -69,7 +91,7 @@ const PLP_DATA = {
         reviews: 950,
         inStock: true,
         image:
-          "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=400&h=400&fit=crop&q=80",
+          "https://pngimg.com/uploads/egg/egg_PNG40.png",
       },
       {
         id: "d4",
@@ -83,7 +105,7 @@ const PLP_DATA = {
         reviews: 3200,
         inStock: true,
         image:
-          "https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?w=400&h=400&fit=crop&q=80",
+          "https://pngimg.com/uploads/butter/butter_PNG26.png",
       },
       {
         id: "d5",
@@ -97,7 +119,7 @@ const PLP_DATA = {
         reviews: 1120,
         inStock: true,
         image:
-          "https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400&h=400&fit=crop&q=80",
+          "https://pngimg.com/uploads/yogurt/yogurt_PNG15214.png",
       },
       {
         id: "d6",
@@ -137,7 +159,7 @@ const PLP_DATA = {
         mrp: 230,
         rating: 4.6,
         reviews: 490,
-        inStock: false,
+        inStock: true,
         image:
           "https://images.unsplash.com/photo-1528750997573-59b89d56f4f7?w=400&h=400&fit=crop&q=80",
       },
@@ -146,8 +168,34 @@ const PLP_DATA = {
   "fruits-vegetables": {
     name: "Fruits & Vegetables",
     description: "Hand-picked farm fresh produce, organic vegetables, and seasonal fruits.",
-    subcategories: ["All", "Fresh Fruits", "Daily Vegetables", "Organic Greens", "Exotics"],
-    brands: ["Farm Fresh", "Organic India", "Fresh Pick"],
+    subcategories: [
+      {
+        name: "All Products",
+        image:
+          "https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=160&h=160&fit=crop&q=80",
+      },
+      {
+        name: "Fresh Fruits",
+        image:
+          "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=160&h=160&fit=crop&q=80",
+      },
+      {
+        name: "Daily Vegetables",
+        image:
+          "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=160&h=160&fit=crop&q=80",
+      },
+      {
+        name: "Organic Greens",
+        image:
+          "https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=160&h=160&fit=crop&q=80",
+      },
+      {
+        name: "Exotics",
+        image:
+          "https://images.unsplash.com/photo-1585059895524-72359e06133a?w=160&h=160&fit=crop&q=80",
+      },
+    ],
+    brands: ["All Brands", "Farm Fresh", "Organic India", "Fresh Pick"],
     products: [
       {
         id: "fv1",
@@ -238,8 +286,34 @@ const PLP_DATA = {
   "cold-drinks-juices": {
     name: "Cold Drinks & Juices",
     description: "Chilled soft drinks, 100% natural juices, cold brews, and energy cans.",
-    subcategories: ["All", "Soft Drinks", "Fruit Juices", "Energy Drinks", "Coconut Water"],
-    brands: ["Coca-Cola", "Tropicana", "Red Bull", "Real", "Raw Pressery"],
+    subcategories: [
+      {
+        name: "All Products",
+        image:
+          "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=160&h=160&fit=crop&q=80",
+      },
+      {
+        name: "Soft Drinks",
+        image:
+          "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=160&h=160&fit=crop&q=80",
+      },
+      {
+        name: "Fruit Juices",
+        image:
+          "https://images.unsplash.com/photo-1613478223719-2ab802602423?w=160&h=160&fit=crop&q=80",
+      },
+      {
+        name: "Energy Drinks",
+        image:
+          "https://images.unsplash.com/photo-1527661591475-527312dd65f5?w=160&h=160&fit=crop&q=80",
+      },
+      {
+        name: "Coconut Water",
+        image:
+          "https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=160&h=160&fit=crop&q=80",
+      },
+    ],
+    brands: ["All Brands", "Coca-Cola", "Tropicana", "Red Bull", "Real", "Raw Pressery"],
     products: [
       {
         id: "cd1",
@@ -316,8 +390,29 @@ const PLP_DATA = {
   "snacks-munchies": {
     name: "Snacks & Munchies",
     description: "Crispy snacks, gourmet chips, traditional namkeen, and popcorn.",
-    subcategories: ["All", "Chips & Crisps", "Namkeen & Bhujia", "Popcorn"],
-    brands: ["Lay's", "Doritos", "Haldiram's", "Act II", "Pringles"],
+    subcategories: [
+      {
+        name: "All Products",
+        image:
+          "https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=160&h=160&fit=crop&q=80",
+      },
+      {
+        name: "Chips & Crisps",
+        image:
+          "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=160&h=160&fit=crop&q=80",
+      },
+      {
+        name: "Namkeen & Bhujia",
+        image:
+          "https://images.unsplash.com/photo-1599490659213-e2b9527bd087?w=160&h=160&fit=crop&q=80",
+      },
+      {
+        name: "Popcorn",
+        image:
+          "https://images.unsplash.com/photo-1585647347384-2593bc35786b?w=160&h=160&fit=crop&q=80",
+      },
+    ],
+    brands: ["All Brands", "Lay's", "Doritos", "Haldiram's", "Act II"],
     products: [
       {
         id: "sn1",
@@ -380,8 +475,34 @@ const PLP_DATA = {
   electronics: {
     name: "Electronics & Audio",
     description: "Premium wireless audio, smartwatches, cables, and charging tech.",
-    subcategories: ["All", "Audio & Earbuds", "Smart Watches", "Storage & Cables", "Power Banks"],
-    brands: ["boAt", "Noise", "SanDisk", "JBL", "Portronics", "Mi"],
+    subcategories: [
+      {
+        name: "All Products",
+        image:
+          "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=160&h=160&fit=crop&q=80",
+      },
+      {
+        name: "Audio & Earbuds",
+        image:
+          "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=160&h=160&fit=crop&q=80",
+      },
+      {
+        name: "Smart Watches",
+        image:
+          "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=160&h=160&fit=crop&q=80",
+      },
+      {
+        name: "Storage & Cables",
+        image:
+          "https://images.unsplash.com/photo-1628135848208-a5b6f3a743ef?w=160&h=160&fit=crop&q=80",
+      },
+      {
+        name: "Power Banks",
+        image:
+          "https://images.unsplash.com/photo-1609081219090-a6d81d3085bf?w=160&h=160&fit=crop&q=80",
+      },
+    ],
+    brands: ["All Brands", "boAt", "Noise", "SanDisk", "JBL", "Portronics"],
     products: [
       {
         id: "el1",
@@ -461,17 +582,14 @@ export default function CategoryDetails() {
   const { slug } = useParams();
   const currentSlug = slug || "dairy-bread-eggs";
 
-  // State: Subcategories, Filters, Sorting, and Cart
-  const [selectedSubcategory, setSelectedSubcategory] = useState("All");
-  const [selectedBrands, setSelectedBrands] = useState([]);
-  const [priceRange, setPriceRange] = useState("all");
+  // State
+  const [selectedSubcategory, setSelectedSubcategory] = useState("All Products");
+  const [selectedBrand, setSelectedBrand] = useState("All Brands");
   const [onlyInStock, setOnlyInStock] = useState(false);
-  const [minRating, setMinRating] = useState(0);
   const [sortBy, setSortBy] = useState("popular");
   const [cartQuantities, setCartQuantities] = useState({});
-  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
-  // Dynamic Fallback Generator for any unlisted category
+  // Dynamic Fallback Generator
   const categoryData = useMemo(() => {
     if (PLP_DATA[currentSlug]) {
       return PLP_DATA[currentSlug];
@@ -485,8 +603,29 @@ export default function CategoryDetails() {
     return {
       name: title,
       description: `Explore all products and top brands in ${title}.`,
-      subcategories: ["All", "Popular Picks", "Best Sellers", "New Arrivals"],
-      brands: ["MarketPlace Brand", "Premium Choice", "Daily Essentials"],
+      subcategories: [
+        {
+          name: "All Products",
+          image:
+            "https://images.unsplash.com/photo-1542838132-92c53300491e?w=160&h=160&fit=crop&q=80",
+        },
+        {
+          name: "Popular Picks",
+          image:
+            "https://images.unsplash.com/photo-1506617420156-8e4536971650?w=160&h=160&fit=crop&q=80",
+        },
+        {
+          name: "Best Sellers",
+          image:
+            "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=160&h=160&fit=crop&q=80",
+        },
+        {
+          name: "New Arrivals",
+          image:
+            "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=160&h=160&fit=crop&q=80",
+        },
+      ],
+      brands: ["All Brands", "MarketPlace Brand", "Premium Choice", "Daily Essentials"],
       products: [
         {
           id: `${currentSlug}-1`,
@@ -534,13 +673,11 @@ export default function CategoryDetails() {
     };
   }, [currentSlug]);
 
-  // Reset filters when changing category slug
+  // Reset states on category slug change
   React.useEffect(() => {
-    setSelectedSubcategory("All");
-    setSelectedBrands([]);
-    setPriceRange("all");
+    setSelectedSubcategory("All Products");
+    setSelectedBrand("All Brands");
     setOnlyInStock(false);
-    setMinRating(0);
     setSortBy("popular");
   }, [currentSlug]);
 
@@ -548,38 +685,22 @@ export default function CategoryDetails() {
   const filteredProducts = useMemo(() => {
     let list = [...categoryData.products];
 
-    // 1. Subcategory filter
-    if (selectedSubcategory !== "All") {
+    // Subcategory Filter
+    if (selectedSubcategory !== "All Products") {
       list = list.filter((p) => p.subcategory === selectedSubcategory);
     }
 
-    // 2. Brand filter
-    if (selectedBrands.length > 0) {
-      list = list.filter((p) => selectedBrands.includes(p.brand));
+    // Brand Filter
+    if (selectedBrand !== "All Brands") {
+      list = list.filter((p) => p.brand === selectedBrand);
     }
 
-    // 3. Price Range filter
-    if (priceRange === "under-50") {
-      list = list.filter((p) => p.price < 50);
-    } else if (priceRange === "50-100") {
-      list = list.filter((p) => p.price >= 50 && p.price <= 100);
-    } else if (priceRange === "100-500") {
-      list = list.filter((p) => p.price > 100 && p.price <= 500);
-    } else if (priceRange === "above-500") {
-      list = list.filter((p) => p.price > 500);
-    }
-
-    // 4. In Stock filter
+    // In Stock Filter
     if (onlyInStock) {
       list = list.filter((p) => p.inStock);
     }
 
-    // 5. Min Rating filter
-    if (minRating > 0) {
-      list = list.filter((p) => p.rating >= minRating);
-    }
-
-    // 6. Sorting
+    // Sorting
     if (sortBy === "price-asc") {
       list.sort((a, b) => a.price - b.price);
     } else if (sortBy === "price-desc") {
@@ -589,37 +710,22 @@ export default function CategoryDetails() {
     }
 
     return list;
-  }, [categoryData, selectedSubcategory, selectedBrands, priceRange, onlyInStock, minRating, sortBy]);
+  }, [categoryData, selectedSubcategory, selectedBrand, onlyInStock, sortBy]);
 
-  // Helper: toggle brand
-  const toggleBrand = (brand) => {
-    setSelectedBrands((prev) =>
-      prev.includes(brand) ? prev.filter((b) => b !== brand) : [...prev, brand]
-    );
-  };
-
-  // Helper: clear all filters
-  const clearAllFilters = () => {
-    setSelectedSubcategory("All");
-    setSelectedBrands([]);
-    setPriceRange("all");
-    setOnlyInStock(false);
-    setMinRating(0);
-  };
-
-  const hasActiveFilters =
-    selectedSubcategory !== "All" ||
-    selectedBrands.length > 0 ||
-    priceRange !== "all" ||
-    onlyInStock ||
-    minRating > 0;
-
-  // Cart quantity actions
-  const handleAdd = (id) => {
+  // Cart actions
+  const handleAdd = (id, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setCartQuantities((prev) => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
   };
 
-  const handleRemove = (id) => {
+  const handleRemove = (id, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setCartQuantities((prev) => {
       const cur = prev[id] || 0;
       if (cur <= 1) {
@@ -633,342 +739,187 @@ export default function CategoryDetails() {
 
   return (
     <div className="w-full min-h-screen bg-[#F6F8FD] flex flex-col font-sans">
-      {/* Breadcrumb Bar */}
+      {/* Clean Minimal Breadcrumb */}
       <div className="w-full bg-white border-b border-slate-100">
-        <div className="max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+        <div className="max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-            <Link to="/" className="hover:text-purple-600 transition-colors">
+            <Link to="/" className="hover:text-emerald-700 transition-colors">
               Home
             </Link>
             <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-            <Link to="/" className="hover:text-purple-600 transition-colors">
+            <Link to="/" className="hover:text-emerald-700 transition-colors">
               Categories
             </Link>
             <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
             <span className="font-semibold text-slate-900">{categoryData.name}</span>
-            {selectedSubcategory !== "All" && (
+            {selectedSubcategory !== "All Products" && (
               <>
                 <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-                <span className="text-purple-600 font-bold">{selectedSubcategory}</span>
+                <span className="text-emerald-700 font-bold">{selectedSubcategory}</span>
               </>
             )}
           </div>
-
-          {/* Mobile Filter Toggle Button */}
-          <button
-            onClick={() => setMobileFilterOpen(!mobileFilterOpen)}
-            className="lg:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 bg-white"
-          >
-            <SlidersHorizontal className="w-3.5 h-3.5" />
-            <span>Filters</span>
-          </button>
         </div>
       </div>
 
-      {/* Main PLP 2-Column Layout */}
+      {/* Main Container */}
       <div className="flex-1 max-w-[1700px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex gap-7 items-start">
+        <div className="flex flex-col lg:flex-row gap-6 items-start">
           
-          {/* ================= LEFT SIDEBAR: SUBCATEGORIES & FILTERS ================= */}
-          <aside
-            className={`${
-              mobileFilterOpen ? "block fixed inset-0 z-50 bg-black/40 p-4 lg:p-0" : "hidden"
-            } lg:block lg:static w-full lg:w-[270px] shrink-0 space-y-5`}
-          >
-            <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm max-h-[90vh] overflow-y-auto lg:max-h-none">
+          {/* ================= BLINKIT-STYLE VISUAL SUBCATEGORY SIDEBAR ================= */}
+          <aside className="w-full lg:w-[280px] shrink-0 lg:sticky lg:top-[90px]">
+            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
               
-              {/* Sidebar Header & Clear All */}
-              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-                <div className="flex items-center gap-2 font-bold text-slate-900 text-sm">
-                  <SlidersHorizontal className="w-4 h-4 text-purple-600" />
-                  <span>Filters & Categories</span>
-                </div>
-                {hasActiveFilters && (
-                  <button
-                    onClick={clearAllFilters}
-                    className="text-[11px] font-bold text-purple-600 hover:text-purple-800 flex items-center gap-1 cursor-pointer"
-                  >
-                    <RotateCcw className="w-3 h-3" />
-                    <span>Reset</span>
-                  </button>
-                )}
-                {/* Mobile close button */}
-                <button
-                  onClick={() => setMobileFilterOpen(false)}
-                  className="lg:hidden text-slate-400 hover:text-slate-600"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+              {/* Sidebar Title */}
+              <div className="p-4 border-b border-slate-100 bg-slate-50/50">
+                <h3 className="text-xs font-black uppercase tracking-wider text-slate-500">
+                  Select Category
+                </h3>
               </div>
 
-              {/* SECTION 1: SUBCATEGORIES */}
-              <div className="py-4 border-b border-slate-100">
-                <span className="block text-xs font-extrabold uppercase tracking-wider text-slate-400 mb-3">
-                  Subcategories
-                </span>
-                <div className="space-y-1">
-                  {categoryData.subcategories.map((sub) => {
-                    const isActive = selectedSubcategory === sub;
-                    const count =
-                      sub === "All"
-                        ? categoryData.products.length
-                        : categoryData.products.filter((p) => p.subcategory === sub).length;
+              {/* Vertical Subcategory List with Thumbnails */}
+              <div className="divide-y divide-slate-100 flex lg:flex-col overflow-x-auto lg:overflow-x-visible [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                {categoryData.subcategories.map((sub) => {
+                  const isActive = selectedSubcategory === sub.name;
+                  const count =
+                    sub.name === "All Products"
+                      ? categoryData.products.length
+                      : categoryData.products.filter((p) => p.subcategory === sub.name).length;
 
-                    return (
-                      <button
-                        key={sub}
-                        onClick={() => {
-                          setSelectedSubcategory(sub);
-                          setMobileFilterOpen(false);
-                        }}
-                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                          isActive
-                            ? "bg-purple-50 text-purple-700 font-bold border border-purple-200"
-                            : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                        }`}
-                      >
-                        <span>{sub}</span>
-                        <span
-                          className={`text-[10px] px-2 py-0.5 rounded-full ${
-                            isActive
-                              ? "bg-purple-600 text-white font-bold"
-                              : "bg-slate-100 text-slate-500 font-medium"
-                          }`}
-                        >
-                          {count}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* SECTION 2: PRICE RANGE FILTER */}
-              <div className="py-4 border-b border-slate-100">
-                <span className="block text-xs font-extrabold uppercase tracking-wider text-slate-400 mb-3">
-                  Price Range
-                </span>
-                <div className="space-y-2">
-                  {[
-                    { id: "all", label: "All Prices" },
-                    { id: "under-50", label: "Under ₹50" },
-                    { id: "50-100", label: "₹50 - ₹100" },
-                    { id: "100-500", label: "₹100 - ₹500" },
-                    { id: "above-500", label: "Above ₹500" },
-                  ].map((p) => (
-                    <label
-                      key={p.id}
-                      className="flex items-center gap-2.5 text-xs font-medium text-slate-700 cursor-pointer hover:text-slate-900"
-                    >
-                      <input
-                        type="radio"
-                        name="priceRange"
-                        checked={priceRange === p.id}
-                        onChange={() => setPriceRange(p.id)}
-                        className="w-3.5 h-3.5 text-purple-600 focus:ring-purple-500 cursor-pointer"
-                      />
-                      <span>{p.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* SECTION 3: BRANDS FILTER */}
-              <div className="py-4 border-b border-slate-100">
-                <span className="block text-xs font-extrabold uppercase tracking-wider text-slate-400 mb-3">
-                  Brands
-                </span>
-                <div className="space-y-2 max-h-44 overflow-y-auto pr-1">
-                  {categoryData.brands.map((brand) => {
-                    const isChecked = selectedBrands.includes(brand);
-                    return (
-                      <label
-                        key={brand}
-                        className="flex items-center gap-2.5 text-xs font-medium text-slate-700 cursor-pointer hover:text-slate-900"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => toggleBrand(brand)}
-                          className="w-3.5 h-3.5 rounded text-purple-600 focus:ring-purple-500 cursor-pointer"
-                        />
-                        <span>{brand}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* SECTION 4: MINIMUM CUSTOMER RATING */}
-              <div className="py-4 border-b border-slate-100">
-                <span className="block text-xs font-extrabold uppercase tracking-wider text-slate-400 mb-3">
-                  Customer Rating
-                </span>
-                <div className="space-y-1.5">
-                  {[
-                    { stars: 4.8, label: "4.8★ & above" },
-                    { stars: 4.5, label: "4.5★ & above" },
-                    { stars: 4.0, label: "4.0★ & above" },
-                    { stars: 0, label: "Any Rating" },
-                  ].map((r) => (
+                  return (
                     <button
-                      key={r.stars}
-                      onClick={() => setMinRating(r.stars)}
-                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
-                        minRating === r.stars
-                          ? "bg-amber-50 text-amber-900 font-bold"
-                          : "text-slate-600 hover:bg-slate-50"
+                      key={sub.name}
+                      onClick={() => setSelectedSubcategory(sub.name)}
+                      className={`relative flex items-center gap-3 p-3 text-left transition-all duration-200 shrink-0 lg:shrink cursor-pointer ${
+                        isActive
+                          ? "bg-emerald-50/80 text-emerald-950 font-bold"
+                          : "bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-950 font-medium"
                       }`}
                     >
-                      <span className="flex items-center gap-1">
-                        {r.stars > 0 && <Star className="w-3 h-3 fill-amber-400 text-amber-400" />}
-                        {r.label}
-                      </span>
-                      {minRating === r.stars && <Check className="w-3.5 h-3.5 text-amber-600" />}
-                    </button>
-                  ))}
-                </div>
-              </div>
+                      {/* Left Active Indicator Bar (Blinkit Style) */}
+                      {isActive && (
+                        <span className="hidden lg:block absolute left-0 top-0 bottom-0 w-1 bg-emerald-600 rounded-r" />
+                      )}
 
-              {/* SECTION 5: IN STOCK TOGGLE */}
-              <div className="pt-4 flex items-center justify-between">
-                <span className="text-xs font-medium text-slate-700">In Stock Only</span>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={onlyInStock}
-                    onChange={(e) => setOnlyInStock(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600"></div>
-                </label>
+                      {/* Real Image Thumbnail Box */}
+                      <div
+                        className={`w-12 h-12 rounded-xl shrink-0 p-1 flex items-center justify-center overflow-hidden border transition-all ${
+                          isActive
+                            ? "bg-white border-emerald-300 shadow-xs"
+                            : "bg-slate-50 border-slate-200/80"
+                        }`}
+                      >
+                        <img
+                          src={sub.image}
+                          alt={sub.name}
+                          className="w-full h-full object-contain mix-blend-multiply rounded-lg p-0.5"
+                          loading="lazy"
+                        />
+                      </div>
+
+                      {/* Text & Count */}
+                      <div className="min-w-0 pr-2">
+                        <span className="block text-xs sm:text-[13px] leading-snug truncate">
+                          {sub.name}
+                        </span>
+                        <span className="text-[11px] text-slate-400 block mt-0.5">
+                          {count} items
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
 
             </div>
           </aside>
 
-          {/* ================= RIGHT MAIN AREA: PLP HEADER & PRODUCTS GRID ================= */}
-          <main className="flex-1 min-w-0">
+          {/* ================= RIGHT MAIN AREA: PRODUCTS & QUICK FILTER BAR ================= */}
+          <main className="flex-1 min-w-0 w-full">
             
-            {/* Header & Sorting Bar */}
-            <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 mb-5 shadow-sm">
+            {/* Header with Title, Quick Brand Pills & Sort Dropdown */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 mb-5 shadow-xs">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                    {categoryData.name}
-                    {selectedSubcategory !== "All" && (
-                      <span className="text-purple-600 font-extrabold text-base sm:text-lg ml-2">
-                        &bull; {selectedSubcategory}
-                      </span>
-                    )}
+                    {selectedSubcategory === "All Products" ? categoryData.name : selectedSubcategory}
                   </h1>
                   <p className="text-xs text-slate-500 mt-0.5">
                     Showing <span className="font-bold text-slate-800">{filteredProducts.length}</span>{" "}
-                    items available
+                    items available in {categoryData.name}
                   </p>
                 </div>
 
-                {/* Minimal Sorting Bar */}
+                {/* Sort Dropdown */}
                 <div className="flex items-center gap-2 self-start sm:self-auto">
                   <span className="text-xs font-bold text-slate-500 flex items-center gap-1">
-                    <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" /> Sort By:
+                    <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" /> Sort:
                   </span>
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="text-xs font-semibold text-slate-800 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-purple-500 focus:bg-white cursor-pointer shadow-2xs"
+                    className="text-xs font-semibold text-slate-800 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-emerald-600 focus:bg-white cursor-pointer shadow-2xs"
                   >
-                    <option value="popular">Relevance / Popular</option>
-                    <option value="price-asc">Price: Low to High</option>
-                    <option value="price-desc">Price: High to Low</option>
-                    <option value="rating">Top Customer Rated</option>
+                    <option value="popular">Relevance</option>
+                    <option value="price-asc">Price (Low to High)</option>
+                    <option value="price-desc">Price (High to Low)</option>
+                    <option value="rating">Customer Rating</option>
                   </select>
                 </div>
               </div>
 
-              {/* Active Filter Chips */}
-              {hasActiveFilters && (
-                <div className="flex flex-wrap items-center gap-2 pt-3.5 mt-3.5 border-t border-slate-100">
-                  <span className="text-[11px] font-bold text-slate-400">Active Filters:</span>
-                  
-                  {selectedSubcategory !== "All" && (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 text-[11px] font-semibold border border-purple-200">
-                      Sub: {selectedSubcategory}
-                      <X
-                        className="w-3 h-3 cursor-pointer hover:text-purple-900"
-                        onClick={() => setSelectedSubcategory("All")}
-                      />
-                    </span>
-                  )}
-
-                  {selectedBrands.map((b) => (
-                    <span
+              {/* Quick Brand Filter Pills & In-Stock Toggle */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-3.5 mt-3.5 border-t border-slate-100">
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                  <span className="text-[11px] font-bold text-slate-400 shrink-0">Brand:</span>
+                  {categoryData.brands.map((b) => (
+                    <button
                       key={b}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-[11px] font-semibold"
+                      onClick={() => setSelectedBrand(b)}
+                      className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                        selectedBrand === b
+                          ? "bg-slate-900 text-white shadow-2xs"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+                      }`}
                     >
-                      Brand: {b}
-                      <X
-                        className="w-3 h-3 cursor-pointer hover:text-slate-900"
-                        onClick={() => toggleBrand(b)}
-                      />
-                    </span>
+                      {b}
+                    </button>
                   ))}
-
-                  {priceRange !== "all" && (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-[11px] font-semibold">
-                      Price: {priceRange}
-                      <X
-                        className="w-3 h-3 cursor-pointer hover:text-slate-900"
-                        onClick={() => setPriceRange("all")}
-                      />
-                    </span>
-                  )}
-
-                  {minRating > 0 && (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 text-[11px] font-semibold border border-amber-200">
-                      ★ {minRating}+
-                      <X
-                        className="w-3 h-3 cursor-pointer hover:text-amber-950"
-                        onClick={() => setMinRating(0)}
-                      />
-                    </span>
-                  )}
-
-                  {onlyInStock && (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 text-[11px] font-semibold border border-emerald-200">
-                      In Stock Only
-                      <X
-                        className="w-3 h-3 cursor-pointer hover:text-emerald-950"
-                        onClick={() => setOnlyInStock(false)}
-                      />
-                    </span>
-                  )}
-
-                  <button
-                    onClick={clearAllFilters}
-                    className="text-[11px] font-bold text-red-500 hover:text-red-700 underline ml-1 cursor-pointer"
-                  >
-                    Clear All
-                  </button>
                 </div>
-              )}
+
+                {/* In Stock Toggle */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-xs font-medium text-slate-600">In Stock</span>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={onlyInStock}
+                      onChange={(e) => setOnlyInStock(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-8 h-4.5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-emerald-600"></div>
+                  </label>
+                </div>
+              </div>
+
             </div>
 
-            {/* Products Grid or Empty State */}
+            {/* Products Grid */}
             {filteredProducts.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-sm">
-                <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4 text-slate-400">
-                  <SlidersHorizontal className="w-6 h-6" />
-                </div>
-                <h3 className="text-base font-bold text-slate-800">No products match your filters</h3>
-                <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1 mb-5">
-                  Try changing your subcategory or clearing your selected filters.
+              <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-xs">
+                <h3 className="text-base font-bold text-slate-800">No products found</h3>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1 mb-4">
+                  Try selecting another subcategory from the left menu.
                 </p>
                 <button
-                  onClick={clearAllFilters}
-                  className="px-4 py-2 rounded-xl bg-purple-600 text-white font-bold text-xs hover:bg-purple-700 transition-colors shadow-sm cursor-pointer"
+                  onClick={() => {
+                    setSelectedSubcategory("All Products");
+                    setSelectedBrand("All Brands");
+                    setOnlyInStock(false);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-[#059669] text-white font-bold text-xs hover:bg-[#047857] transition-colors shadow-xs cursor-pointer"
                 >
-                  Reset All Filters
+                  Show All Products
                 </button>
               </div>
             ) : (
@@ -981,14 +932,18 @@ export default function CategoryDetails() {
                       key={prod.id}
                       className="group relative bg-white rounded-2xl border border-slate-200/80 p-3 sm:p-3.5 flex flex-col justify-between hover:shadow-md hover:border-slate-300 transition-all duration-200"
                     >
-                      {/* Top Product Section */}
-                      <div>
+                      {/* Top Product Section (Clickable Link to Product Details Page) */}
+                      <Link
+                        to={`/product/${prod.id}`}
+                        state={{ product: prod, categoryName: categoryData.name }}
+                        className="block cursor-pointer group/link"
+                      >
                         {/* Image Box */}
                         <div className="relative w-full aspect-square rounded-xl bg-slate-50 flex items-center justify-center overflow-hidden mb-3">
                           <img
                             src={prod.image}
                             alt={prod.name}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            className="w-full h-full object-contain group-hover/link:scale-108 transition-transform duration-300 p-2"
                             loading="lazy"
                           />
                           {!prod.inStock && (
@@ -1007,10 +962,10 @@ export default function CategoryDetails() {
                         </div>
 
                         {/* Title */}
-                        <h3 className="text-xs sm:text-[13px] font-semibold text-slate-900 leading-snug line-clamp-2 mb-2 group-hover:text-purple-700 transition-colors">
+                        <h3 className="text-xs sm:text-[13px] font-semibold text-slate-900 leading-snug line-clamp-2 mb-2 group-hover/link:text-emerald-700 transition-colors">
                           {prod.name}
                         </h3>
-                      </div>
+                      </Link>
 
                       {/* Bottom Section: Rating, Price, Add Button */}
                       <div className="pt-2 border-t border-slate-100 mt-2">
@@ -1042,10 +997,10 @@ export default function CategoryDetails() {
                           {qty === 0 ? (
                             <button
                               disabled={!prod.inStock}
-                              onClick={() => handleAdd(prod.id)}
+                              onClick={(e) => handleAdd(prod.id, e)}
                               className={`px-3 py-1.5 rounded-lg font-bold text-xs transition-all duration-150 active:scale-95 flex items-center gap-1 ${
                                 prod.inStock
-                                  ? "bg-purple-50 text-purple-700 hover:bg-purple-600 hover:text-white border border-purple-200 hover:border-purple-600 cursor-pointer"
+                                  ? "bg-emerald-50 text-emerald-700 hover:bg-[#059669] hover:text-white border border-emerald-200 hover:border-emerald-600 cursor-pointer"
                                   : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
                               }`}
                             >
@@ -1053,10 +1008,10 @@ export default function CategoryDetails() {
                               <span>Add</span>
                             </button>
                           ) : (
-                            <div className="inline-flex items-center bg-purple-600 text-white rounded-lg px-1.5 py-1 text-xs font-bold shadow-sm">
+                            <div className="inline-flex items-center bg-[#059669] text-white rounded-lg px-1.5 py-1 text-xs font-bold shadow-xs">
                               <button
-                                onClick={() => handleRemove(prod.id)}
-                                className="p-0.5 hover:bg-purple-700 rounded transition-colors cursor-pointer"
+                                onClick={(e) => handleRemove(prod.id, e)}
+                                className="p-0.5 hover:bg-[#047857] rounded transition-colors cursor-pointer"
                               >
                                 <Minus className="w-3 h-3 stroke-[2.5]" />
                               </button>
@@ -1064,8 +1019,8 @@ export default function CategoryDetails() {
                                 {qty}
                               </span>
                               <button
-                                onClick={() => handleAdd(prod.id)}
-                                className="p-0.5 hover:bg-purple-700 rounded transition-colors cursor-pointer"
+                                onClick={(e) => handleAdd(prod.id, e)}
+                                className="p-0.5 hover:bg-[#047857] rounded transition-colors cursor-pointer"
                               >
                                 <Plus className="w-3 h-3 stroke-[2.5]" />
                               </button>

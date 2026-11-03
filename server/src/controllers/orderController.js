@@ -1,4 +1,4 @@
-const { Order, OrderItem, Product, Vendor, User } = require("../models");
+const { Order, OrderItem, Product, ProductVariant, Vendor, User } = require("../models");
 
 // 1. Get current logged-in user's orders
 const getMyOrders = async (req, res) => {
@@ -20,7 +20,8 @@ const getMyOrders = async (req, res) => {
                     model: OrderItem,
                     as: "items",
                     include: [
-                        { model: Vendor, as: "vendor", attributes: ["id", "storeName", "businessName"] }
+                        { model: Vendor, as: "vendor", attributes: ["id", "storeName", "businessName"] },
+                        { model: ProductVariant, as: "variant", attributes: ["id", "name", "sku", "images", "attributes"] }
                     ]
                 }
             ],
@@ -55,7 +56,8 @@ const getOrderById = async (req, res) => {
                     model: OrderItem,
                     as: "items",
                     include: [
-                        { model: Vendor, as: "vendor", attributes: ["id", "storeName", "businessName"] }
+                        { model: Vendor, as: "vendor", attributes: ["id", "storeName", "businessName"] },
+                        { model: ProductVariant, as: "variant", attributes: ["id", "name", "sku", "images", "attributes"] }
                     ]
                 },
                 {
@@ -116,6 +118,11 @@ const getVendorOrders = async (req, res) => {
                     model: Product,
                     as: "product",
                     attributes: ["id", "name", "sku", "images"]
+                },
+                {
+                    model: ProductVariant,
+                    as: "variant",
+                    attributes: ["id", "name", "sku", "images", "attributes"]
                 }
             ],
             order: [["createdAt", "DESC"]],

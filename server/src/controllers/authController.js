@@ -28,14 +28,12 @@ const register = async (req, res) => {
         const userPhone = (phone || phoneNumber || "").trim();
         const userRole = role === "vendor" ? "vendor" : role === "admin" ? "admin" : "user";
 
-        // Basic validation required for all roles
         if (!userName || !userEmail || !userPhone || !password) {
             return res.status(400).json({
                 message: "Full Name, Email, Phone Number, and Password are required"
             });
         }
 
-        // Additional validation specific to Vendor
         let vendorBusinessName, vendorStoreName, vendorGstNumber, vendorCategory;
         if (userRole === "vendor") {
             vendorBusinessName = (businessName || "").trim();
@@ -50,19 +48,16 @@ const register = async (req, res) => {
             }
         }
 
-        // Check if user already exists by email
         const userExists = await User.findOne({ where: { email: userEmail } });
         if (userExists) {
             return res.status(400).json({ message: "User with this email already exists" });
         }
 
-        // Check if user already exists by phone
         const phoneExists = await User.findOne({ where: { phone: userPhone } });
         if (phoneExists) {
             return res.status(400).json({ message: "User with this phone number already exists" });
         }
 
-        // Check if vendor GST is already registered
         if (userRole === "vendor") {
             const gstExists = await Vendor.findOne({ where: { gstNumber: vendorGstNumber } });
             if (gstExists) {
@@ -70,13 +65,10 @@ const register = async (req, res) => {
             }
         }
 
-        // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Vendors start unverified until admin approves; customers and admins start verified
         const isVerified = userRole === "vendor" ? false : true;
 
-        // Create User account
         const user = await User.create({
             name: userName,
             email: userEmail,
@@ -86,7 +78,6 @@ const register = async (req, res) => {
             isVerified: isVerified
         });
 
-        // If Vendor, create Vendor profile with pending status
         let vendorProfile = null;
         if (userRole === "vendor") {
             vendorProfile = await Vendor.create({
@@ -99,7 +90,6 @@ const register = async (req, res) => {
             });
         }
 
-        // Send welcome email (fail-safe)
         try {
             let emailSubject = "Welcome to MultiVendor App";
             let emailText = `Hello ${userName}, welcome to MultiVendor App!`;
@@ -122,10 +112,8 @@ const register = async (req, res) => {
             console.error("Warning: Failed to send registration email:", mailError.message);
         }
 
-        // Generate JWT token (only for verified users; vendors receive token once approved by admin)
         const token = isVerified ? generateToken({ id: user.id, role: user.role }) : null;
 
-        // Prepare response without password
         const userData = user.toJSON();
         delete userData.password;
         if (vendorProfile) {
@@ -151,7 +139,6 @@ const register = async (req, res) => {
     }
 };
 
-// Universal login for Customer, Vendor, and Admin (supports Email OR Phone)
 const login = async (req, res) => {
     try {
         const { email, phone, emailOrPhone, identifier, password } = req.body;
@@ -163,7 +150,6 @@ const login = async (req, res) => {
             });
         }
 
-        // Find user by either email OR phone
         const user = await User.findOne({
             where: {
                 [Op.or]: [
@@ -182,13 +168,13 @@ const login = async (req, res) => {
             });
         }
 
-      
+
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
             return res.status(401).json({ message: "Invalid Credential" });
         }
 
-       
+
         if (user.isVerified === false) {
             const message = user.role === "vendor"
                 ? "Your vendor account is pending admin approval. You will be able to log in once approved."
@@ -196,7 +182,7 @@ const login = async (req, res) => {
             return res.status(401).json({ message, isVerified: false });
         }
 
-     
+
         const token = generateToken({ id: user.id, role: user.role });
 
         const userData = user.toJSON();
@@ -217,7 +203,6 @@ const login = async (req, res) => {
     }
 };
 
-// Get current authenticated user profile
 const getCurrentUser = async (req, res) => {
     try {
         if (!req.user) {
@@ -233,7 +218,6 @@ const getCurrentUser = async (req, res) => {
     }
 };
 
-// 4. Request Password Reset OTP (Sends 6-digit OTP to user's registered email)
 const forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
@@ -250,16 +234,14 @@ const forgotPassword = async (req, res) => {
             return res.status(404).json({ message: "No account found with this email address" });
         }
 
-        // Generate 6-digit numeric OTP and 10-minute expiry
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+        const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
 
         user.resetPasswordOtp = otp;
         user.resetPasswordOtpExpires = otpExpires;
         user.isResetOtpVerified = false;
         await user.save();
 
-        // Send Email with OTP
         try {
             await transporter.sendMail({
                 from: `"MultiVendor App" <${process.env.EMAIL_USER}>`,
@@ -310,7 +292,6 @@ const forgotPassword = async (req, res) => {
     }
 };
 
-// 5. Verify Password Reset OTP
 const verifyOtp = async (req, res) => {
     try {
         const { email, otp } = req.body;
@@ -333,7 +314,6 @@ const verifyOtp = async (req, res) => {
             });
         }
 
-        // Check if OTP has expired
         const now = new Date();
         if (now > new Date(user.resetPasswordOtpExpires)) {
             user.resetPasswordOtp = null;
@@ -345,18 +325,15 @@ const verifyOtp = async (req, res) => {
             });
         }
 
-        // Validate OTP match
         if (user.resetPasswordOtp !== otp.toString().trim()) {
             return res.status(400).json({
                 message: "Invalid OTP code. Please enter the correct code sent to your email."
             });
         }
 
-        // Mark OTP as verified
         user.isResetOtpVerified = true;
         await user.save();
 
-        // Generate short-lived reset token (15 minutes)
         const resetToken = generateToken({
             id: user.id,
             email: user.email,
@@ -378,7 +355,6 @@ const verifyOtp = async (req, res) => {
     }
 };
 
-// 6. Reset Password with new password
 const resetPassword = async (req, res) => {
     try {
         const { email, resetToken, otp, newPassword, confirmPassword } = req.body;
@@ -397,7 +373,6 @@ const resetPassword = async (req, res) => {
 
         let user = null;
 
-        // Method A: Authenticated with resetToken from step 2
         if (resetToken) {
             let decoded;
             try {
@@ -414,7 +389,7 @@ const resetPassword = async (req, res) => {
 
             user = await User.findByPk(decoded.id);
         }
-        // Method B: Using email and pre-verified OTP or inline OTP
+
         else if (email) {
             user = await User.findOne({
                 where: { email: email.toLowerCase().trim() }
@@ -424,7 +399,6 @@ const resetPassword = async (req, res) => {
                 return res.status(404).json({ message: "User not found" });
             }
 
-            // If OTP is passed inline in the same request
             if (otp) {
                 if (!user.resetPasswordOtp || user.resetPasswordOtp !== otp.toString().trim()) {
                     return res.status(400).json({ message: "Invalid OTP code" });
@@ -433,7 +407,6 @@ const resetPassword = async (req, res) => {
                     return res.status(400).json({ message: "OTP has expired. Please request a new one." });
                 }
             } else {
-                // Must have already completed verifyOtp
                 if (!user.isResetOtpVerified) {
                     return res.status(400).json({
                         message: "Please verify the OTP sent to your email before resetting password."
@@ -455,7 +428,6 @@ const resetPassword = async (req, res) => {
             return res.status(404).json({ message: "User account not found" });
         }
 
-        // Hash new password and clear reset fields
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         user.password = hashedPassword;
         user.resetPasswordOtp = null;
@@ -463,7 +435,6 @@ const resetPassword = async (req, res) => {
         user.isResetOtpVerified = false;
         await user.save();
 
-        // Send confirmation email
         try {
             await transporter.sendMail({
                 from: `"MultiVendor App" <${process.env.EMAIL_USER}>`,
@@ -507,7 +478,6 @@ const resetPassword = async (req, res) => {
     }
 };
 
-// 7. Resend OTP
 const resendOtp = async (req, res) => {
     return forgotPassword(req, res);
 };

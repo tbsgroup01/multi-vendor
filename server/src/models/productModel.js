@@ -50,6 +50,10 @@ const Product = sequelize.define("Product", {
         allowNull: true,
         defaultValue: []
     },
+    hasVariants: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+    },
     status: {
         type: DataTypes.ENUM("active", "inactive", "draft", "out_of_stock"),
         defaultValue: "active"

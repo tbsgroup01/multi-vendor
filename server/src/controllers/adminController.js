@@ -218,7 +218,7 @@ const getAllVendorSubscriptions = async (req, res) => {
     }
 };
 
-// 7. Manually assign/extend subscription to a Vendor (Admin only)
+
 const assignPlanToVendor = async (req, res) => {
     try {
         const { vendorId, planId, paymentMethod } = req.body;
@@ -237,7 +237,7 @@ const assignPlanToVendor = async (req, res) => {
             return res.status(404).json({ message: "Subscription plan not found" });
         }
 
-        // Expire any existing active subscriptions for this vendor
+
         await VendorSubscription.update(
             { status: "expired" },
             { where: { vendorId: vendor.id, status: "active" } }
@@ -275,7 +275,6 @@ const assignPlanToVendor = async (req, res) => {
     }
 };
 
-// 8. Category Management
 const createCategories = async (req, res) => {
     try {
         const { name, description, image } = req.body;
@@ -400,13 +399,10 @@ const deleteCategory = async (req, res) => {
     }
 };
 
-// 9. Testing Utility: Drop all tables and recreate fresh database schema
 const dropDatabase = async (req, res) => {
     try {
-        // Disable foreign key constraints to avoid drop ordering conflicts
         await sequelize.query("SET FOREIGN_KEY_CHECKS = 0;");
 
-        // Retrieve all table names in the current database
         const [tables] = await sequelize.query("SHOW TABLES;");
         const droppedTables = [];
 
@@ -418,10 +414,8 @@ const dropDatabase = async (req, res) => {
             }
         }
 
-        // Re-enable foreign key constraints
         await sequelize.query("SET FOREIGN_KEY_CHECKS = 1;");
 
-        // Re-synchronize models to generate clean, fresh tables
         await sequelize.sync();
 
         res.status(200).json({
