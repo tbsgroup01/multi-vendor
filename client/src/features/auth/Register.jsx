@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { authService } from "../../services";
 import {
   Store,
   User,
@@ -27,10 +28,15 @@ import customerImage from "../../assets/multi.png";
 import vendorImage from "../../assets/multi.png";
 
 export default function Register() {
+  const navigate = useNavigate();
   const [role, setRole] = useState("customer");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
   const [submitted, setSubmitted] = useState(false);
+
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -52,12 +58,60 @@ export default function Register() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => {
-      setSubmitted(false);
-    }, 4000);
+    setError("");
+    setSuccessMsg("");
+
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match. Please verify your password.");
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters long.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      if (role === "customer") {
+        const res = await authService.registerCustomer({
+          name: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          password: formData.password,
+        });
+
+        setSuccessMsg(res?.message || "Account created successfully! Redirecting...");
+        setSubmitted(true);
+        setTimeout(() => {
+          navigate("/");
+        }, 1500);
+      } else {
+        const res = await authService.registerVendor({
+          name: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          password: formData.password,
+          businessName: formData.businessName,
+          storeName: formData.storeName,
+          gstNumber: formData.gstNumber,
+          category: formData.category,
+        });
+
+        setSuccessMsg(res?.message || "Vendor registered successfully and is pending admin approval!");
+        setSubmitted(true);
+        setTimeout(() => {
+          navigate("/login");
+        }, 2500);
+      }
+    } catch (err) {
+      setError(err.message || "Registration failed. Please check your information.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const customerBenefits = [
@@ -127,9 +181,11 @@ export default function Register() {
         <div className="fixed top-6 right-6 z-50 flex items-center gap-3 rounded-2xl bg-[#059669] px-5 py-3.5 text-white shadow-2xl animate-bounce">
           <CheckCircle2 className="h-5 w-5 text-emerald-200 shrink-0" />
           <div>
-            <p className="text-xs sm:text-sm font-bold">Account Created Successfully!</p>
+            <p className="text-xs sm:text-sm font-bold">
+              {role === "customer" ? "Account Created Successfully!" : "Vendor Registered Successfully!"}
+            </p>
             <p className="text-[11px] text-emerald-100">
-              Welcome to ShopMart as a {role === "customer" ? "Customer" : "Vendor"}.
+              {successMsg || `Welcome to ShopMart as a ${role === "customer" ? "Customer" : "Vendor"}.`}
             </p>
           </div>
         </div>
@@ -148,16 +204,16 @@ export default function Register() {
             <h1 className="text-2xl sm:text-3xl xl:text-4xl font-black text-slate-900 tracking-tight leading-snug">
               {role === "customer" ? (
                 <>
-                  Create Your <br />
+                  Join the Future of <br />
                   <span className="bg-gradient-to-r from-[#059669] to-[#10B981] bg-clip-text text-transparent">
-                    Account Today.
+                    Smart Shopping.
                   </span>
                 </>
               ) : (
                 <>
-                  Grow Your <br />
-                  <span className="bg-gradient-to-r from-[#059669] via-[#10B981] to-[#EA580C] bg-clip-text text-transparent">
-                    Business Online.
+                  Grow Your Store <br />
+                  <span className="bg-gradient-to-r from-[#059669] to-[#10B981] bg-clip-text text-transparent">
+                    Reach Millions.
                   </span>
                 </>
               )}
@@ -165,8 +221,8 @@ export default function Register() {
 
             <p className="mt-2 text-xs sm:text-sm text-slate-600 leading-relaxed">
               {role === "customer"
-                ? "Start shopping thousands of daily essentials and top brands at unbeatable prices."
-                : "Join hundreds of thriving sellers and expand your customer reach effortlessly."}
+                ? "Sign up in 30 seconds to unlock exclusive flash sales, express delivery, and rewards."
+                : "Create your merchant profile, list your inventory, and scale your local retail business."}
             </p>
 
             {/* Benefits List */}
@@ -224,7 +280,7 @@ export default function Register() {
             <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl mb-5 border border-slate-200/60">
               <button
                 type="button"
-                onClick={() => setRole("customer")}
+                onClick={() => { setRole("customer"); setError(""); }}
                 className={`flex items-center justify-center gap-2 py-2 sm:py-2.5 px-3 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                   role === "customer"
                     ? "bg-[#059669] text-white shadow-sm"
@@ -236,7 +292,7 @@ export default function Register() {
               </button>
               <button
                 type="button"
-                onClick={() => setRole("vendor")}
+                onClick={() => { setRole("vendor"); setError(""); }}
                 className={`flex items-center justify-center gap-2 py-2 sm:py-2.5 px-3 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                   role === "vendor"
                     ? "bg-[#059669] text-white shadow-sm"
@@ -247,6 +303,16 @@ export default function Register() {
                 <span>Vendor / Seller</span>
               </button>
             </div>
+
+            {/* Error Notification */}
+            {error && (
+              <div
+                role="alert"
+                className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-xs font-semibold text-rose-700"
+              >
+                {error}
+              </div>
+            )}
 
             {/* Registration Form */}
             <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-3.5">
@@ -299,7 +365,7 @@ export default function Register() {
                         <input
                           type="tel"
                           name="phone"
-                          placeholder="+91 9876543210"
+                          placeholder="10-digit mobile"
                           value={formData.phone}
                           onChange={handleChange}
                           required
@@ -309,7 +375,7 @@ export default function Register() {
                     </div>
                   </div>
 
-                  {/* Password & Confirm Password */}
+                  {/* Password & Confirm */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">
@@ -320,7 +386,7 @@ export default function Register() {
                         <input
                           type={showPassword ? "text" : "password"}
                           name="password"
-                          placeholder="Create password"
+                          placeholder="Min 6 characters"
                           value={formData.password}
                           onChange={handleChange}
                           required
@@ -328,9 +394,8 @@ export default function Register() {
                         />
                         <button
                           type="button"
-                          onClick={() => setShowPassword((prev) => !prev)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition cursor-pointer"
-                          aria-label={showPassword ? "Hide password" : "Show password"}
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition cursor-pointer"
                         >
                           {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
@@ -345,7 +410,7 @@ export default function Register() {
                         <input
                           type={showConfirmPassword ? "text" : "password"}
                           name="confirmPassword"
-                          placeholder="Repeat password"
+                          placeholder="Re-type password"
                           value={formData.confirmPassword}
                           onChange={handleChange}
                           required
@@ -353,9 +418,8 @@ export default function Register() {
                         />
                         <button
                           type="button"
-                          onClick={() => setShowConfirmPassword((prev) => !prev)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition cursor-pointer"
-                          aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition cursor-pointer"
                         >
                           {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
@@ -365,25 +429,26 @@ export default function Register() {
                 </>
               ) : (
                 <>
-                  {/* Vendor: Business Name & Store Name */}
+                  {/* Vendor: Business & Store Names */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">
-                        Business Legal Name <span className="text-rose-500">*</span>
+                        Business Name <span className="text-rose-500">*</span>
                       </label>
                       <div className="relative">
                         <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                         <input
                           type="text"
                           name="businessName"
-                          placeholder="e.g. Apex Retail Pvt Ltd"
+                          placeholder="Registered company name"
                           value={formData.businessName}
                           onChange={handleChange}
-                          required
+                          required={role === "vendor"}
                           className="w-full h-11 pl-10 pr-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-[#059669] focus:ring-4 focus:ring-emerald-500/15 outline-none transition"
                         />
                       </div>
                     </div>
+
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">
                         Public Store Name <span className="text-rose-500">*</span>
@@ -393,35 +458,36 @@ export default function Register() {
                         <input
                           type="text"
                           name="storeName"
-                          placeholder="e.g. Apex Fresh Supermart"
+                          placeholder="Store name on website"
                           value={formData.storeName}
                           onChange={handleChange}
-                          required
+                          required={role === "vendor"}
                           className="w-full h-11 pl-10 pr-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-[#059669] focus:ring-4 focus:ring-emerald-500/15 outline-none transition"
                         />
                       </div>
                     </div>
                   </div>
 
-                  {/* Vendor: GST Number & Category */}
+                  {/* GST Number & Category */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">
-                        GSTIN / Business ID <span className="text-rose-500">*</span>
+                        GST Number <span className="text-rose-500">*</span>
                       </label>
                       <div className="relative">
                         <FileText className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                         <input
                           type="text"
                           name="gstNumber"
-                          placeholder="22AAAAA0000A1Z5"
+                          placeholder="15-digit GSTIN"
                           value={formData.gstNumber}
                           onChange={handleChange}
-                          required
-                          className="w-full h-11 pl-10 pr-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs sm:text-sm uppercase text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-[#059669] focus:ring-4 focus:ring-emerald-500/15 outline-none transition"
+                          required={role === "vendor"}
+                          className="w-full h-11 pl-10 pr-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs sm:text-sm text-slate-800 uppercase placeholder:text-slate-400 focus:bg-white focus:border-[#059669] focus:ring-4 focus:ring-emerald-500/15 outline-none transition"
                         />
                       </div>
                     </div>
+
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">
                         Primary Category <span className="text-rose-500">*</span>
@@ -432,23 +498,22 @@ export default function Register() {
                           name="category"
                           value={formData.category}
                           onChange={handleChange}
-                          required
+                          required={role === "vendor"}
                           className="w-full h-11 pl-10 pr-8 rounded-xl border border-slate-200 bg-slate-50/50 text-xs sm:text-sm text-slate-800 focus:bg-white focus:border-[#059669] focus:ring-4 focus:ring-emerald-500/15 outline-none transition appearance-none cursor-pointer"
                         >
                           <option value="">Select Category</option>
-                          <option value="groceries">Dairy, Bread & Eggs</option>
-                          <option value="produce">Fruits & Vegetables</option>
-                          <option value="snacks">Snacks & Munchies</option>
-                          <option value="drinks">Cold Drinks & Juices</option>
-                          <option value="electronics">Electronics & Gadgets</option>
-                          <option value="fashion">Fashion & Lifestyle</option>
+                          <option value="Electronics">Electronics & Tech</option>
+                          <option value="Fashion">Fashion & Apparel</option>
+                          <option value="Groceries">Daily Groceries</option>
+                          <option value="Home & Kitchen">Home & Kitchen</option>
+                          <option value="Beauty">Beauty & Cosmetics</option>
                         </select>
                         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                       </div>
                     </div>
                   </div>
 
-                  {/* Vendor: Owner Name & Email */}
+                  {/* Owner Name & Email */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">
@@ -459,7 +524,7 @@ export default function Register() {
                         <input
                           type="text"
                           name="fullName"
-                          placeholder="Primary contact person"
+                          placeholder="Authorized person name"
                           value={formData.fullName}
                           onChange={handleChange}
                           required
@@ -467,16 +532,17 @@ export default function Register() {
                         />
                       </div>
                     </div>
+
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">
-                        Work Email <span className="text-rose-500">*</span>
+                        Owner Email <span className="text-rose-500">*</span>
                       </label>
                       <div className="relative">
                         <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                         <input
                           type="email"
                           name="email"
-                          placeholder="vendor@business.com"
+                          placeholder="business@example.com"
                           value={formData.email}
                           onChange={handleChange}
                           required
@@ -486,18 +552,18 @@ export default function Register() {
                     </div>
                   </div>
 
-                  {/* Vendor: Phone & Password */}
+                  {/* Phone & Password */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">
-                        Mobile Number <span className="text-rose-500">*</span>
+                        Phone Number <span className="text-rose-500">*</span>
                       </label>
                       <div className="relative">
                         <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                         <input
                           type="tel"
                           name="phone"
-                          placeholder="+91 9800000000"
+                          placeholder="10-digit mobile"
                           value={formData.phone}
                           onChange={handleChange}
                           required
@@ -505,6 +571,7 @@ export default function Register() {
                         />
                       </div>
                     </div>
+
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">
                         Password <span className="text-rose-500">*</span>
@@ -514,7 +581,7 @@ export default function Register() {
                         <input
                           type={showPassword ? "text" : "password"}
                           name="password"
-                          placeholder="Secure password"
+                          placeholder="Min 6 characters"
                           value={formData.password}
                           onChange={handleChange}
                           required
@@ -522,20 +589,45 @@ export default function Register() {
                         />
                         <button
                           type="button"
-                          onClick={() => setShowPassword((prev) => !prev)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition cursor-pointer"
-                          aria-label={showPassword ? "Hide password" : "Show password"}
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition cursor-pointer"
                         >
                           {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                       </div>
                     </div>
                   </div>
+
+                  {/* Confirm Password */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Confirm Password <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                      <input
+                        type={showConfirmPassword ? "text" : "password"}
+                        name="confirmPassword"
+                        placeholder="Re-type password"
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                        required
+                        className="w-full h-11 pl-10 pr-10 rounded-xl border border-slate-200 bg-slate-50/50 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-[#059669] focus:ring-4 focus:ring-emerald-500/15 outline-none transition"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition cursor-pointer"
+                      >
+                        {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
                 </>
               )}
 
-              {/* Terms Checkbox */}
-              <div className="flex items-start gap-2.5 pt-2">
+              {/* Terms and Policies */}
+              <div className="flex items-start gap-2.5 pt-1">
                 <input
                   type="checkbox"
                   id="agreeTerms"
@@ -551,14 +643,14 @@ export default function Register() {
                 >
                   I agree to ShopMart's{" "}
                   <Link
-                    to="/terms-conditions"
+                    to="/terms"
                     className="font-bold text-emerald-700 hover:text-emerald-800 underline underline-offset-2"
                   >
                     Terms of Service
                   </Link>{" "}
                   and{" "}
                   <Link
-                    to="/privacy-policies"
+                    to="/privacy"
                     className="font-bold text-emerald-700 hover:text-emerald-800 underline underline-offset-2"
                   >
                     Privacy Policy
@@ -570,10 +662,17 @@ export default function Register() {
               {/* Submit Button */}
               <button
                 type="submit"
-                className="w-full h-11 sm:h-12 mt-2 rounded-xl bg-gradient-to-r from-[#059669] to-[#10B981] hover:from-[#047857] hover:to-[#059669] text-white font-bold text-sm shadow-md shadow-emerald-600/20 hover:shadow-lg hover:shadow-emerald-600/30 transition flex items-center justify-center gap-2 cursor-pointer"
+                disabled={loading}
+                className="w-full h-11 sm:h-12 mt-2 rounded-xl bg-gradient-to-r from-[#059669] to-[#10B981] hover:from-[#047857] hover:to-[#059669] text-white font-bold text-sm shadow-md shadow-emerald-600/20 hover:shadow-lg hover:shadow-emerald-600/30 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <span>{role === "customer" ? "Create Account" : "Register Store & Start Selling"}</span>
-                <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                <span>
+                  {loading
+                    ? "Creating Account..."
+                    : role === "customer"
+                    ? "Create Account"
+                    : "Register Store & Start Selling"}
+                </span>
+                {!loading && <ArrowRight className="w-4 h-4 stroke-[2.5]" />}
               </button>
             </form>
 

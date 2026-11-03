@@ -2,7 +2,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-// Ensure upload directories exist
+
 const uploadBaseDir = path.join(__dirname, "../../uploads");
 const productsUploadDir = path.join(uploadBaseDir, "products");
 const variantsUploadDir = path.join(uploadBaseDir, "variants");
@@ -13,10 +13,8 @@ const variantsUploadDir = path.join(uploadBaseDir, "variants");
     }
 });
 
-// Storage engine configuration
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        // If fieldname indicates variant, save into variants folder, otherwise products folder
         if (file.fieldname && file.fieldname.toLowerCase().includes("variant")) {
             cb(null, variantsUploadDir);
         } else {
@@ -31,7 +29,6 @@ const storage = multer.diskStorage({
     }
 });
 
-// File filter (Only accept valid image formats)
 const fileFilter = (req, file, cb) => {
     const allowedExtensions = /jpeg|jpg|png|webp|gif/;
     const ext = path.extname(file.originalname).toLowerCase();
@@ -47,7 +44,7 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
     storage,
     limits: {
-        fileSize: 10 * 1024 * 1024 // 10MB max per file
+        fileSize: 10 * 1024 * 1024
     },
     fileFilter
 });

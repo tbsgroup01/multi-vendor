@@ -1,0 +1,22 @@
+import api from "./api";
+
+export const adminService = {
+  createPlan: (data) => api.post("/admin/plans", data),
+  getAllPlans: (params) => api.get("/admin/plans", params),
+  getPlanById: (id) => api.get(`/admin/plans/${id}`),
+  updatePlan: (id, data) => api.put(`/admin/plans/${id}`, data),
+  deletePlan: (id) => api.delete(`/admin/plans/${id}`),
+  getAllVendorSubscriptions: (params) => api.get("/admin/subscriptions", params),
+  assignPlanToVendor: (data) => api.post("/admin/assign-plan", data),
+  createCategory: (data) => api.post("/admin/categories", data),
+  getAllCategories: () => api.get("/admin/categories"),
+  getCategoryById: (id) => api.get(`/admin/categories/${id}`),
+  updateCategory: (id, data) => api.put(`/admin/categories/${id}`, data),
+  deleteCategory: (id) => api.delete(`/admin/categories/${id}`),
+  createSubcategory: (data) => api.post("/admin/subcategories", data),
+  updateSubcategory: (id, data) => api.put(`/admin/subcategories/${id}`, data),
+  deleteSubcategory: (id) => api.delete(`/admin/subcategories/${id}`),
+  dropDatabase: () => api.post("/admin/dropexist"),
+};
+
+export default adminService;

@@ -199,6 +199,8 @@ const getAllVendorSubscriptions = async (req, res) => {
                 },
                 {
                     model: SubscriptionPlan,
+
+
                     as: "plan"
                 }
             ],

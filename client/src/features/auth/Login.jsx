@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { authService } from "../../services";
 import {
   Mail,
   Lock,
@@ -39,9 +40,14 @@ export default function Login() {
     setLoading(true);
 
     try {
-      setError("Login API is not connected yet.");
-    } catch {
-      setError("Unable to sign in. Please try again.");
+      const res = await authService.login(formData);
+      if (res?.user?.role === "vendor") {
+        navigate("/vendor");
+      } else {
+        navigate("/");
+      }
+    } catch (err) {
+      setError(err.message || "Unable to sign in. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -185,7 +191,11 @@ export default function Login() {
                     Password
                   </label>
                   <Link
-                    to="/forgot-password"
+                    to="/login"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      alert("Please contact support to reset your password.");
+                    }}
                     className="text-xs font-bold text-emerald-700 hover:text-emerald-800 transition"
                   >
                     Forgot Password?

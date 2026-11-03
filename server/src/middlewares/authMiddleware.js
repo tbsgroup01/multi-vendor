@@ -16,7 +16,7 @@ const protect = async (req, res, next) => {
             return res.status(401).json({ message: "Not authorized, no token provided" });
         }
 
-        // Verify token
+
         let decoded;
         try {
             decoded = verifyToken(token);
@@ -24,7 +24,6 @@ const protect = async (req, res, next) => {
             return res.status(401).json({ message: "Not authorized, invalid or expired token" });
         }
 
-        // Find user by ID and exclude password, include vendor profile if vendor
         const user = await User.findByPk(decoded.id, {
             attributes: { exclude: ["password"] },
             include: [{ model: Vendor, as: "vendorProfile" }]
@@ -34,7 +33,7 @@ const protect = async (req, res, next) => {
             return res.status(401).json({ message: "User not found, authorization denied" });
         }
 
-        // Attach user to request object
+
         req.user = user;
         next();
 
@@ -44,7 +43,7 @@ const protect = async (req, res, next) => {
     }
 };
 
-// Role-based access control middleware (useful for multi-vendor: 'admin', 'vendor', 'user')
+
 const restrictTo = (...roles) => {
     return (req, res, next) => {
         if (!req.user || !roles.includes(req.user.role)) {
@@ -56,7 +55,7 @@ const restrictTo = (...roles) => {
     };
 };
 
-// Middleware to ensure vendor is approved by admin before accessing vendor resources
+
 const isApprovedVendor = (req, res, next) => {
     if (req.user?.role === "vendor") {
         if (!req.user.vendorProfile || req.user.vendorProfile.status !== "approved") {
