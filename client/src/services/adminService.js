@@ -16,6 +16,9 @@ export const adminService = {
   createSubcategory: (data) => api.post("/admin/subcategories", data),
   updateSubcategory: (id, data) => api.put(`/admin/subcategories/${id}`, data),
   deleteSubcategory: (id) => api.delete(`/admin/subcategories/${id}`),
+  getAllCustomers: (params) => api.get("/admin/customers", params),
+  getCustomerById: (id) => api.get(`/admin/customers/${id}`),
+  deleteCustomer: (id) => api.delete(`/admin/customers/${id}`),
   dropDatabase: () => api.post("/admin/dropexist"),
 };
 

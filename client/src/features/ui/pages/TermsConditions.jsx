@@ -60,8 +60,8 @@ export default function TermsConditions() {
       ],
     },
     {
-      id: "returns",
-      title: "6. Returns, Refunds & Cancellations",
+      id: "support",
+      title: "6. Customer Support & Resolution",
       content: [
         "At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident.",
         "Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus.",

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { authService } from "../../../services";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Home,
@@ -71,14 +72,8 @@ export default function Sidebar({ isOpen, onClose }) {
       path: "/vendor/orders",
     },
     {
-      id: "shipping",
-      label: "Shipping",
-      icon: Truck,
-      path: "/vendor/shipping",
-    },
-    {
       id: "earnings",
-      label: "Earnings & Payouts",
+      label: "Payments",
       icon: CircleDollarSign,
       path: "/vendor/payments",
     },
@@ -97,7 +92,8 @@ export default function Sidebar({ isOpen, onClose }) {
   ];
 
   const handleLogout = () => {
-    navigate("/login");
+    authService.logout();
+    navigate("/login", { replace: true });
   };
 
   const renderSidebarContent = (collapsed = false, isMobile = false) => (

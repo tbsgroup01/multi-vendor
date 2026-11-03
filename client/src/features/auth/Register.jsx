@@ -52,6 +52,11 @@ export default function Register() {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+    if (name === "phone") {
+      const digitsOnly = value.replace(/\D/g, "").slice(0, 10);
+      setFormData((prev) => ({ ...prev, [name]: digitsOnly }));
+      return;
+    }
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
@@ -62,6 +67,11 @@ export default function Register() {
     e.preventDefault();
     setError("");
     setSuccessMsg("");
+
+    if (!/^\d{10}$/.test(formData.phone)) {
+      setError("Please enter a valid 10-digit mobile number.");
+      return;
+    }
 
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match. Please verify your password.");
@@ -88,7 +98,7 @@ export default function Register() {
         setSubmitted(true);
         setTimeout(() => {
           navigate("/");
-        }, 1500);
+        }, 800);
       } else {
         const res = await authService.registerVendor({
           name: formData.fullName,
@@ -101,11 +111,11 @@ export default function Register() {
           category: formData.category,
         });
 
-        setSuccessMsg(res?.message || "Vendor registered successfully and is pending admin approval!");
+        setSuccessMsg(res?.message || "Vendor account created successfully! Redirecting to Vendor Panel...");
         setSubmitted(true);
         setTimeout(() => {
-          navigate("/login");
-        }, 2500);
+          navigate("/vendor");
+        }, 800);
       }
     } catch (err) {
       setError(err.message || "Registration failed. Please check your information.");
@@ -367,6 +377,7 @@ export default function Register() {
                           name="phone"
                           placeholder="10-digit mobile"
                           value={formData.phone}
+                          maxLength={10}
                           onChange={handleChange}
                           required
                           className="w-full h-11 pl-10 pr-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-[#059669] focus:ring-4 focus:ring-emerald-500/15 outline-none transition"
@@ -564,6 +575,7 @@ export default function Register() {
                           type="tel"
                           name="phone"
                           placeholder="10-digit mobile"
+                          maxLength={10}
                           value={formData.phone}
                           onChange={handleChange}
                           required

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { authService } from "../../../services";
 import {
   Search,
   ShoppingCart,
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 import logo from "../../../assets/logo.png";
 export default function Navbar() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const menuRef = useRef(null);
@@ -179,14 +181,17 @@ export default function Navbar() {
 
                 {/* Log Out */}
                 <div className="p-1.5 pt-1 border-t border-slate-100">
-                  <Link
-                    to="/login"
-                    onClick={() => setIsUserMenuOpen(false)}
-                    className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                  <button
+                    onClick={() => {
+                      authService.logout();
+                      setIsUserMenuOpen(false);
+                      navigate("/login", { replace: true });
+                    }}
+                    className="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer text-left"
                   >
                     <LogOut className="w-4 h-4" />
                     <span>Log Out</span>
-                  </Link>
+                  </button>
                 </div>
 
               </div>
