@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import Cards from "../components/Cards";
+import bannerPaymentsImg from "../../../assets/banner-payments-3d.png";
 import {
   Wallet,
   CircleDollarSign,
@@ -32,7 +33,6 @@ const INITIAL_PAYMENTS = [
     id: "#PAY-89241",
     amount: "₹42,500",
     grossAmount: "₹43,814",
-    commission: "₹876",
     tds: "₹438",
     method: "HDFC Bank (A/C **4921)",
     accountType: "Bank Transfer (NEFT)",
@@ -47,7 +47,6 @@ const INITIAL_PAYMENTS = [
     id: "#PAY-89218",
     amount: "₹18,200",
     grossAmount: "₹18,762",
-    commission: "₹375",
     tds: "₹187",
     method: "UPI (vendor@okaxis)",
     accountType: "Instant UPI Payout",
@@ -62,7 +61,6 @@ const INITIAL_PAYMENTS = [
     id: "#PAY-89190",
     amount: "₹35,000",
     grossAmount: "₹36,082",
-    commission: "₹721",
     tds: "₹361",
     method: "ICICI Bank (A/C **8104)",
     accountType: "Weekly Direct Deposit",
@@ -77,7 +75,6 @@ const INITIAL_PAYMENTS = [
     id: "#PAY-89145",
     amount: "₹64,800",
     grossAmount: "₹66,804",
-    commission: "₹1,336",
     tds: "₹668",
     method: "State Bank of India (A/C **3392)",
     accountType: "Bank Transfer (RTGS)",
@@ -92,7 +89,6 @@ const INITIAL_PAYMENTS = [
     id: "#PAY-89110",
     amount: "₹22,450",
     grossAmount: "₹23,144",
-    commission: "₹462",
     tds: "₹232",
     method: "UPI (vendor@paytm)",
     accountType: "Instant UPI Payout",
@@ -107,7 +103,6 @@ const INITIAL_PAYMENTS = [
     id: "#PAY-89088",
     amount: "₹18,500",
     grossAmount: "₹19,072",
-    commission: "₹381",
     tds: "₹191",
     method: "HDFC Bank (A/C **4921)",
     accountType: "Weekly Direct Deposit",
@@ -122,7 +117,6 @@ const INITIAL_PAYMENTS = [
     id: "#PAY-89045",
     amount: "₹12,000",
     grossAmount: "₹12,371",
-    commission: "₹247",
     tds: "₹124",
     method: "Kotak Mahindra Bank (A/C **7719)",
     accountType: "Bank Transfer (NEFT)",
@@ -292,7 +286,6 @@ export default function Payments() {
       id: `#PAY-${Math.floor(10000 + Math.random() * 90000)}`,
       amount: `₹${amountVal.toLocaleString("en-IN")}`,
       grossAmount: `₹${Math.round(amountVal * 1.03).toLocaleString("en-IN")}`,
-      commission: `₹${Math.round(amountVal * 0.02).toLocaleString("en-IN")}`,
       tds: `₹${Math.round(amountVal * 0.01).toLocaleString("en-IN")}`,
       method: requestMethod,
       accountType: requestMethod.includes("UPI") ? "Instant UPI Payout" : "Bank Transfer (NEFT)",
@@ -340,37 +333,91 @@ export default function Payments() {
         <div className="flex-1 flex flex-col h-full min-w-0 overflow-y-auto relative z-10">
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-5 sm:space-y-6   w-full mx-auto">
-          {/* Welcome Banner in Frosted Glassy Emerald Green #049669 */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-[#049669]/95 via-[#059669]/90 to-[#10B981]/85 backdrop-blur-2xl rounded-xl sm:rounded-2xl p-5 sm:p-7 text-white border border-white/20 shadow-[0_12px_40px_rgba(4,150,105,0.25)] relative overflow-hidden">
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-emerald-300/60 to-transparent" />
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/15 via-transparent to-black/15" />
+          {/* Welcome Banner Created with pure Code & SVG (High-Resolution Coded Banner) */}
+          <div className="relative rounded-2xl sm:rounded-3xl p-5 sm:p-7 lg:p-8 min-h-[175px] sm:min-h-[190px] lg:min-h-[200px] flex flex-col justify-between overflow-hidden shadow-[0_16px_40px_rgba(4,150,105,0.22)] border border-emerald-400/30 group">
+            {/* Background SVG Fluid Organic Waves */}
+            <svg
+              className="pointer-events-none absolute inset-0 w-full h-full object-cover"
+              viewBox="0 0 1024 200"
+              preserveAspectRatio="none"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <defs>
+                <linearGradient id="paymentsBannerBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#1B744A" />
+                  <stop offset="40%" stopColor="#228C52" />
+                  <stop offset="100%" stopColor="#2CA85C" />
+                </linearGradient>
+                <linearGradient id="paymentsWaveHighlight" x1="100%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#38C260" stopOpacity="0.5" />
+                  <stop offset="60%" stopColor="#259452" stopOpacity="0.12" />
+                  <stop offset="100%" stopColor="transparent" stopOpacity="0" />
+                </linearGradient>
+                <linearGradient id="paymentsWaveDeep" x1="0%" y1="100%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#114E30" stopOpacity="0.8" />
+                  <stop offset="50%" stopColor="#186740" stopOpacity="0.4" />
+                  <stop offset="100%" stopColor="transparent" stopOpacity="0" />
+                </linearGradient>
+              </defs>
 
-            {/* Glowing inner glass ambient blobs */}
-            <div className="pointer-events-none absolute -right-12 -top-12 w-48 h-48 rounded-full bg-emerald-400/20 blur-2xl" />
-            <div className="pointer-events-none absolute right-1/4 -bottom-10 w-44 h-44 rounded-full bg-teal-400/20 blur-2xl" />
+              <rect width="1024" height="200" fill="url(#paymentsBannerBgGrad)" />
+              <path
+                d="M 0 200 C 240 185 380 130 620 160 C 800 182 920 150 1024 115 L 1024 200 Z"
+                fill="url(#paymentsWaveDeep)"
+              />
+              <path
+                d="M 280 0 C 420 75 600 40 740 100 C 870 155 945 85 1024 40 L 1024 0 Z"
+                fill="url(#paymentsWaveHighlight)"
+              />
+              <path
+                d="M 0 0 C 300 0 420 120 670 80 C 850 50 930 20 1024 0 Z"
+                fill="white"
+                fillOpacity="0.07"
+              />
+            </svg>
 
-            <div className="space-y-1 z-10 relative">
-              <span className="text-xs uppercase font-extrabold text-emerald-100 tracking-wider">
-                Financial Settlements
-              </span>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight drop-shadow-sm">
-                Earnings &amp; Payout Settlements
-              </h1>
-              <p className="text-xs sm:text-sm text-emerald-50 max-w-xl font-medium">
-                Monitor your store earnings, bank settlements, and withdrawal receipts.
-              </p>
+            {/* Specular glass reflection */}
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-emerald-200/60 to-transparent" />
+
+            {/* Right 3D Payments Artwork - Transparent PNG */}
+            <div className="absolute right-2 sm:right-6 lg:right-10 top-1/2 -translate-y-1/2 h-[90%] sm:h-[94%] lg:h-[98%] w-auto max-w-[38%] sm:max-w-[42%] lg:max-w-[45%] pointer-events-none select-none z-10 hidden sm:flex items-center justify-end">
+              <img
+                src={bannerPaymentsImg}
+                alt="Payments 3D artwork"
+                className="h-full w-auto object-contain object-right drop-shadow-[0_12px_24px_rgba(0,0,0,0.22)]"
+              />
             </div>
 
-            <div className="flex items-center gap-2.5 shrink-0 z-10 relative">
-              <button
-                type="button"
-                onClick={() => setIsRequestModalOpen(true)}
-                className="px-4 py-2.5 rounded-lg bg-white/20 hover:bg-white/30 backdrop-blur-xl border border-white/40 text-white font-bold text-xs sm:text-sm shadow-md transition-all flex items-center gap-1.5 cursor-pointer relative overflow-hidden group"
-              >
-                <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-200/70 to-transparent" />
-                <Plus className="w-4 h-4 stroke-[2.5] transition-transform group-hover:rotate-90" />
-                <span>Request Payout</span>
-              </button>
+            {/* Left Content Area */}
+            <div className="relative z-10 flex-1 flex flex-col justify-between max-w-xl">
+              <div className="space-y-1.5 sm:space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-emerald-100">
+                    FINANCIAL SETTLEMENTS
+                  </span>
+                  <span className="w-7 h-[1.5px] bg-emerald-200/80 rounded-full inline-block" />
+                </div>
+
+                <h1 className="text-xl sm:text-2xl lg:text-[30px] font-black tracking-tight text-white leading-tight drop-shadow-sm">
+                  Earnings &amp; Payout Settlements
+                </h1>
+
+                <p className="text-xs sm:text-[13px] text-emerald-50/95 font-medium leading-relaxed max-w-md lg:max-w-lg">
+                  Monitor your store earnings, bank settlements, and withdrawal receipts.
+                </p>
+              </div>
+
+              <div className="pt-3.5 sm:pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsRequestModalOpen(true)}
+                  className="inline-flex items-center gap-2 px-5 sm:px-6 py-2 sm:py-2.5 rounded-full bg-white text-[#049669] hover:text-[#03704f] hover:bg-emerald-50 font-bold text-xs sm:text-sm shadow-md shadow-emerald-950/20 hover:shadow-lg hover:scale-[1.02] active:scale-98 transition-all duration-200 cursor-pointer"
+                >
+                  <Wallet className="w-4 h-4 stroke-[2.5]" />
+                  <span>Request Payout</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -654,7 +701,7 @@ export default function Payments() {
                         </div>
                         <div className="flex justify-between items-center text-slate-500">
                           <span>Platform Fee (2%):</span>
-                          <span className="font-bold text-rose-500">-{pay.commission}</span>
+                          <span className="font-bold text-slate-400">-</span>
                         </div>
                         <div className="flex justify-between items-center text-slate-500 pt-1 border-t border-slate-200/60">
                           <span>UTR Code:</span>

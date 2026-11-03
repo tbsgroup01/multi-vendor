@@ -6,7 +6,7 @@ import App from './App.jsx'
 import ScrollToTop from './features/components/ScrollToTop.jsx'
 
 createRoot(document.getElementById('root')).render(
-  <BrowserRouter>
+  <BrowserRouter basename="/multi-vendor/">
   <ScrollToTop/>
     <StrictMode>
       <App />

@@ -7,7 +7,12 @@ export const authService = {
     if (res?.user) localStorage.setItem("user", JSON.stringify(res.user));
     return res;
   },
-  registerVendor: (data) => api.post("/auth/register/vendor", { ...data, role: "vendor" }),
+  registerVendor: async (data) => {
+    const res = await api.post("/auth/register/vendor", { ...data, role: "vendor" });
+    if (res?.token) localStorage.setItem("token", res.token);
+    if (res?.user) localStorage.setItem("user", JSON.stringify(res.user));
+    return res;
+  },
   registerAdmin: (data) => api.post("/auth/register", { ...data, role: "admin" }),
   login: async (credentials) => {
     const data = await api.post("/auth/login", credentials);

@@ -97,7 +97,7 @@ export default function Footer() {
 
   const customerCare = [
     { label: "Track Your Order", href: "/orders?tab=orders" },
-    { label: "Returns & Refunds", href: "/returns" },
+    { label: "Customer Support", href: "/terms" },
     { label: "Shipping Policy", href: "/shipping" },
     { label: "Privacy Policy", href: "/privacy" },
     { label: "Terms & Conditions", href: "/terms" },
