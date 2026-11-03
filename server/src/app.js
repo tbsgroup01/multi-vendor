@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
-const morgan = require('morgan')
+const morgan = require("morgan");
+const path = require("path");
 
 const app = express();
 
@@ -20,6 +21,9 @@ app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve uploaded static files
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+
 app.get("/", (req, res) => {
     res.json({ message: "Multivendor Ecommerce Backend Server Is Running!!!!" });
 });
@@ -34,6 +38,5 @@ app.use("/api/subcategories", subCategoryRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
-
 
 module.exports = app;

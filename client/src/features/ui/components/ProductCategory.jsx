@@ -1,5 +1,27 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
+
+import paanCornerImg from "../../../assets/category/paan-corner.png";
+import dairyBreadEggsImg from "../../../assets/category/dairy-bread-eggs.png";
+import fruitsVegetablesImg from "../../../assets/category/fruits-vegetables.png";
+import coldDrinksJuicesImg from "../../../assets/category/cold-drinks-juices.png";
+import snacksMunchiesImg from "../../../assets/category/snacks-munchies.png";
+import breakfastInstantFoodImg from "../../../assets/category/breakfast-instant-food.png";
+import sweetToothImg from "../../../assets/category/sweet-tooth.png";
+import bakeryBiscuitsImg from "../../../assets/category/bakery-biscuits.png";
+import teaCoffeeDrinksImg from "../../../assets/category/tea-coffee-drinks.png";
+import attaRiceDalImg from "../../../assets/category/atta-rice-dal.png";
+import masalaOilMoreImg from "../../../assets/category/masala-oil-more.png";
+import saucesSpreadsImg from "../../../assets/category/sauces-spreads.png";
+import chickenMeatFishImg from "../../../assets/category/chicken-meat-fish.png";
+import organicHealthyImg from "../../../assets/category/organic-healthy.png";
+import babyCareImg from "../../../assets/category/baby-care.png";
+import pharmaWellnessImg from "../../../assets/category/pharma-wellness.png";
+import cleaningEssentialsImg from "../../../assets/category/cleaning-essentials.png";
+import homeOfficeImg from "../../../assets/category/home-office.png";
+import personalCareImg from "../../../assets/category/personal-care.png";
+import petCareImg from "../../../assets/category/pet-care.png";
 
 export default function ProductCategory() {
   const categories = [
@@ -7,186 +29,196 @@ export default function ProductCategory() {
       id: 1,
       name: "Paan Corner",
       slug: "paan-corner",
-      image:
-        "https://images.unsplash.com/photo-1628088062854-d1870b4553da?w=240&h=240&fit=crop&q=80",
+      image: paanCornerImg,
+      bgTint: "bg-[#eef8f2]",
     },
     {
       id: 2,
       name: "Dairy, Bread & Eggs",
       slug: "dairy-bread-eggs",
-      image:
-        "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=240&h=240&fit=crop&q=80",
+      image: dairyBreadEggsImg,
+      bgTint: "bg-[#edf5fb]",
     },
     {
       id: 3,
       name: "Fruits & Vegetables",
       slug: "fruits-vegetables",
-      image:
-        "https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=240&h=240&fit=crop&q=80",
+      image: fruitsVegetablesImg,
+      bgTint: "bg-[#f1f8ee]",
     },
     {
       id: 4,
       name: "Cold Drinks & Juices",
       slug: "cold-drinks-juices",
-      image:
-        "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=240&h=240&fit=crop&q=80",
+      image: coldDrinksJuicesImg,
+      bgTint: "bg-[#eaf4fc]",
     },
     {
       id: 5,
       name: "Snacks & Munchies",
       slug: "snacks-munchies",
-      image:
-        "https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=240&h=240&fit=crop&q=80",
+      image: snacksMunchiesImg,
+      bgTint: "bg-[#fff7ed]",
     },
     {
       id: 6,
       name: "Breakfast & Instant Food",
       slug: "breakfast-instant-food",
-      image:
-        "https://images.unsplash.com/photo-1586985564150-11ee04838034?w=240&h=240&fit=crop&q=80",
+      image: breakfastInstantFoodImg,
+      bgTint: "bg-[#fef9ee]",
     },
     {
       id: 7,
       name: "Sweet Tooth",
       slug: "sweet-tooth",
-      image:
-        "https://images.unsplash.com/photo-1549007994-cb92caebd54b?w=240&h=240&fit=crop&q=80",
+      image: sweetToothImg,
+      bgTint: "bg-[#fdf2f4]",
     },
     {
       id: 8,
       name: "Bakery & Biscuits",
       slug: "bakery-biscuits",
-      image:
-        "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=240&h=240&fit=crop&q=80",
+      image: bakeryBiscuitsImg,
+      bgTint: "bg-[#fdf5eb]",
     },
     {
       id: 9,
       name: "Tea, Coffee & Drinks",
       slug: "tea-coffee-drinks",
-      image:
-        "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=240&h=240&fit=crop&q=80",
+      image: teaCoffeeDrinksImg,
+      bgTint: "bg-[#f7f5f0]",
     },
     {
       id: 10,
       name: "Atta, Rice & Dal",
       slug: "atta-rice-dal",
-      image:
-        "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=240&h=240&fit=crop&q=80",
+      image: attaRiceDalImg,
+      bgTint: "bg-[#fbf6ed]",
     },
     {
       id: 11,
       name: "Masala, Oil & More",
       slug: "masala-oil-more",
-      image:
-        "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=240&h=240&fit=crop&q=80",
+      image: masalaOilMoreImg,
+      bgTint: "bg-[#fdf3f0]",
     },
     {
       id: 12,
       name: "Sauces & Spreads",
       slug: "sauces-spreads",
-      image:
-        "https://images.unsplash.com/photo-1472476443507-c7a5948772fc?w=240&h=240&fit=crop&q=80",
+      image: saucesSpreadsImg,
+      bgTint: "bg-[#fef2f2]",
     },
     {
       id: 13,
       name: "Chicken, Meat & Fish",
       slug: "chicken-meat-fish",
-      image:
-        "https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?w=240&h=240&fit=crop&q=80",
+      image: chickenMeatFishImg,
+      bgTint: "bg-[#fef2f5]",
     },
     {
       id: 14,
       name: "Organic & Healthy",
       slug: "organic-healthy",
-      image:
-        "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=240&h=240&fit=crop&q=80",
+      image: organicHealthyImg,
+      bgTint: "bg-[#edf7f2]",
     },
     {
       id: 15,
       name: "Baby Care",
       slug: "baby-care",
-      image:
-        "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=240&h=240&fit=crop&q=80",
+      image: babyCareImg,
+      bgTint: "bg-[#fdf2f8]",
     },
     {
       id: 16,
       name: "Pharma & Wellness",
       slug: "pharma-wellness",
-      image:
-        "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=240&h=240&fit=crop&q=80",
+      image: pharmaWellnessImg,
+      bgTint: "bg-[#eef8f8]",
     },
     {
       id: 17,
       name: "Cleaning Essentials",
       slug: "cleaning-essentials",
-      image:
-        "https://images.unsplash.com/photo-1583947215259-38e31be8751f?w=240&h=240&fit=crop&q=80",
+      image: cleaningEssentialsImg,
+      bgTint: "bg-[#ecf9fb]",
     },
     {
       id: 18,
       name: "Home & Office",
       slug: "home-office",
-      image:
-        "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=240&h=240&fit=crop&q=80",
+      image: homeOfficeImg,
+      bgTint: "bg-[#f0f2fd]",
     },
     {
       id: 19,
       name: "Personal Care",
       slug: "personal-care",
-      image:
-        "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=240&h=240&fit=crop&q=80",
+      image: personalCareImg,
+      bgTint: "bg-[#f5f2fd]",
     },
     {
       id: 20,
       name: "Pet Care",
       slug: "pet-care",
-      image:
-        "https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=240&h=240&fit=crop&q=80",
+      image: petCareImg,
+      bgTint: "bg-[#fbf6ea]",
     },
   ];
 
   return (
-    <section className="w-full py-4">
+    <section className="w-full py-5">
       <div className="max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Minimal White Container Card */}
-        <div className="bg-white rounded-3xl p-5 sm:p-7 border border-slate-100/90 shadow-[0_2px_16px_rgba(0,0,0,0.03)]">
+        {/* Main Glassmorphic Card Panel */}
+        <div className="bg-white/65 backdrop-blur-2xl rounded-3xl p-5 sm:p-7 border border-white/80 shadow-[0_8px_32px_0_rgba(16,185,129,0.06)] relative overflow-hidden transition-all">
+          {/* Glass Top Highlight Sheen */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent" />
+
           {/* Header */}
-          <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
-            <div>
-              <h2 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
+          <div className="flex items-center justify-between pb-4 mb-5 border-b border-emerald-100/60">
+            <div className="flex items-center gap-2.5">
+              <span className="w-2.5 h-6 rounded-full bg-gradient-to-b from-emerald-500 to-teal-600 block shadow-xs" />
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                 Shop by Category
               </h2>
             </div>
+
             <Link
               to="/category/all"
-              className="text-xs sm:text-sm font-semibold text-purple-600 hover:text-purple-700 transition-colors"
+              className="group inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/60 px-3.5 py-1.5 rounded-full backdrop-blur-md transition-all shadow-xs"
             >
-              See All &rarr;
+              <span>See All</span>
+              <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
             </Link>
           </div>
 
-          {/* Minimal 10-column Grid */}
-          <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-x-3 gap-y-4 sm:gap-x-4 sm:gap-y-5">
+          {/* 10-column Responsive Grid */}
+          <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-x-3 gap-y-5 sm:gap-x-4 sm:gap-y-6">
             {categories.map((cat) => (
               <Link
                 key={cat.id}
                 to={`/category/${cat.slug}`}
-                className="group flex flex-col items-center cursor-pointer transition-transform duration-200 hover:-translate-y-0.5"
+                className="group flex flex-col items-center cursor-pointer transition-all duration-200 hover:-translate-y-1"
               >
-                {/* Modern Minimal Card Box */}
-                <div className="w-full aspect-square rounded-xl bg-slate-50  p-2 sm:p-2.5 flex items-center justify-center overflow-hidden transition-all duration-300 group-hover:bg-white group-hover:border-purple-300 group-hover:shadow-md">
+                {/* Clean Frosted Cutout Card */}
+                <div
+                  className="w-full aspect-square rounded-2xl bg-white/70 backdrop-blur-md p-2 flex items-center justify-center overflow-hidden border border-white/85 shadow-xs group-hover:shadow-md group-hover:border-emerald-300 group-hover:bg-white/95 transition-all duration-300"
+                >
                   <img
                     src={cat.image}
                     alt={cat.name}
-                    className="w-full h-full object-cover rounded-xl transition-transform duration-300 group-hover:scale-105"
+                    className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110"
                     loading="lazy"
                   />
                 </div>
 
-                {/* Minimal Label */}
-                <span className="mt-2 text-[12px] sm:text-[13px] font-medium text-slate-700 text-center leading-tight line-clamp-2 px-0.5 group-hover:text-purple-600 group-hover:font-semibold transition-colors">
-                  {cat.name}
-                </span>
+                {/* Pixel-Perfect Aligned Label */}
+                <div className="w-full min-h-[34px] flex items-start justify-center mt-2 px-0.5">
+                  <span className="text-[12px] sm:text-[13px] font-semibold text-slate-700 text-center leading-snug line-clamp-2 group-hover:text-emerald-700 transition-colors">
+                    {cat.name}
+                  </span>
+                </div>
               </Link>
             ))}
           </div>

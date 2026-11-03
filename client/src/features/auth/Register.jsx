@@ -21,9 +21,10 @@ import {
   ChevronDown,
   CheckCircle2,
   Sparkles,
+  ArrowRight,
 } from "lucide-react";
-import customerImage from "../../assets/imag.png";
-import vendorImage from "../../assets/imm.png";
+import customerImage from "../../assets/multi.png";
+import vendorImage from "../../assets/multi.png";
 
 export default function Register() {
   const [role, setRole] = useState("customer");
@@ -61,120 +62,127 @@ export default function Register() {
 
   const customerBenefits = [
     {
-      icon: <Tag className="h-5 w-5 sm:h-6 sm:w-6 stroke-[2]" />,
-      title: "Best Deals",
-      description: "Exclusive offers and discounts",
-      color: "bg-rose-100 text-rose-600",
+      icon: <Tag className="h-4 w-4 sm:h-5 sm:w-5" />,
+      title: "Best Daily Deals",
+      description: "Exclusive member discounts & savings",
+      color: "bg-emerald-100 text-emerald-700",
     },
     {
-      icon: <ShoppingCart className="h-5 w-5 sm:h-6 sm:w-6 stroke-[2]" />,
-      title: "Multiple Categories",
-      description: "Shop from 100+ categories",
-      color: "bg-violet-100 text-violet-600",
+      icon: <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />,
+      title: "100+ Categories",
+      description: "Groceries, tech, fresh foods & fashion",
+      color: "bg-teal-100 text-teal-700",
     },
     {
-      icon: <Star className="h-5 w-5 sm:h-6 sm:w-6 stroke-[2] fill-amber-500" />,
-      title: "Top Rated Sellers",
-      description: "Trusted by millions",
-      color: "bg-amber-100 text-amber-600",
+      icon: <Star className="h-4 w-4 sm:h-5 sm:w-5 fill-amber-500 text-amber-500" />,
+      title: "Verified Sellers",
+      description: "Trusted local merchants & top ratings",
+      color: "bg-amber-100 text-amber-700",
     },
     {
-      icon: <ShieldCheck className="h-5 w-5 sm:h-6 sm:w-6 stroke-[2]" />,
-      title: "Easy Returns",
-      description: "Hassle-free return policy",
-      color: "bg-emerald-100 text-emerald-600",
+      icon: <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5" />,
+      title: "Instant Support & Returns",
+      description: "Hassle-free guarantee on all orders",
+      color: "bg-orange-100 text-orange-600",
     },
   ];
 
   const vendorBenefits = [
     {
-      icon: <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 stroke-[2]" />,
-      title: "Wide Customer Reach",
-      description: "Sell to millions of buyers",
-      color: "bg-emerald-100 text-emerald-600",
+      icon: <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" />,
+      title: "High Customer Reach",
+      description: "Sell to thousands of hyper-local buyers",
+      color: "bg-emerald-100 text-emerald-700",
     },
     {
-      icon: <Store className="h-5 w-5 sm:h-6 sm:w-6 stroke-[2]" />,
-      title: "Easy Store Management",
-      description: "List and manage products easily",
-      color: "bg-violet-100 text-violet-600",
+      icon: <Store className="h-4 w-4 sm:h-5 sm:w-5" />,
+      title: "Simple Store Management",
+      description: "List products & track sales with ease",
+      color: "bg-teal-100 text-teal-700",
     },
     {
-      icon: <Megaphone className="h-5 w-5 sm:h-6 sm:w-6 stroke-[2]" />,
-      title: "Zero Technical Hassle",
-      description: "Focus on your business, we handle the rest",
-      color: "bg-amber-100 text-amber-600",
+      icon: <Megaphone className="h-4 w-4 sm:h-5 sm:w-5" />,
+      title: "Zero Setup Fee",
+      description: "Start selling immediately with 0 upfront cost",
+      color: "bg-amber-100 text-amber-700",
     },
     {
-      icon: <IndianRupee className="h-5 w-5 sm:h-6 sm:w-6 stroke-[2]" />,
-      title: "Secure Payments",
-      description: "Get timely and transparent payments",
-      color: "bg-blue-100 text-blue-600",
+      icon: <IndianRupee className="h-4 w-4 sm:h-5 sm:w-5" />,
+      title: "Fast Payouts",
+      description: "Direct bank settlements within 24-48 hours",
+      color: "bg-orange-100 text-orange-600",
     },
   ];
 
   const benefits = role === "customer" ? customerBenefits : vendorBenefits;
 
   return (
-    <div className="h-full w-full overflow-hidden bg-[#f4f8ff] font-sans text-slate-900 select-none">
+    <div className="min-h-[calc(100vh-72px)] w-full bg-[#F7FAF8] font-['Poppins',sans-serif] text-slate-800 flex items-center justify-center p-3 sm:p-6 lg:p-8 relative overflow-x-hidden">
+      {/* Background Ambient Glows */}
+      <div className="pointer-events-none absolute -left-20 top-10 w-96 h-96 rounded-full bg-emerald-300/15 blur-3xl z-0" />
+      <div className="pointer-events-none absolute -right-20 bottom-10 w-96 h-96 rounded-full bg-orange-300/15 blur-3xl z-0" />
+
+      {/* Floating Success Notification */}
       {submitted && (
-        <div className="fixed top-6 right-6 z-50 flex items-center space-x-3 rounded-2xl bg-emerald-600 px-6 py-4 text-white shadow-2xl animate-bounce">
-          <CheckCircle2 className="h-6 w-6 text-emerald-200" />
+        <div className="fixed top-6 right-6 z-50 flex items-center gap-3 rounded-2xl bg-[#059669] px-5 py-3.5 text-white shadow-2xl animate-bounce">
+          <CheckCircle2 className="h-5 w-5 text-emerald-200 shrink-0" />
           <div>
-            <p className="text-sm font-bold">Account Created Successfully!</p>
-            <p className="text-xs text-emerald-100">
-              Welcome to MarketPlace as a{" "}
-              {role === "customer" ? "Customer" : "Vendor"}.
+            <p className="text-xs sm:text-sm font-bold">Account Created Successfully!</p>
+            <p className="text-[11px] text-emerald-100">
+              Welcome to ShopMart as a {role === "customer" ? "Customer" : "Vendor"}.
             </p>
           </div>
         </div>
       )}
-      <main className="h-full w-full max-w-[1800px] mx-auto grid grid-cols-1 lg:grid-cols-2 overflow-hidden">
-        <section className="relative hidden lg:flex h-full flex-col justify-between overflow-hidden bg-gradient-to-br from-white via-[#eff6ff] to-[#dce9ff] px-8 py-8 lg:px-12 xl:px-18">
-          <div className="pointer-events-none absolute -right-20 top-40 h-80 w-80 rounded-full bg-blue-200/30 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-20 left-0 h-80 w-80 rounded-full bg-violet-200/40 blur-3xl" />
-          <div className="relative z-10 shrink-0">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-1.5 text-sm font-semibold text-blue-600">
-              <Sparkles className="h-4 w-4" />
-              {role === "customer" ? "Join Our Community" : "Sell with MarketPlace"}
+
+      {/* Main Container Card */}
+      <main className="relative z-10 w-full max-w-5xl bg-white/95 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xl overflow-hidden grid grid-cols-1 lg:grid-cols-12">
+        {/* Left Hero Column */}
+        <section className="lg:col-span-5 bg-gradient-to-br from-emerald-50/70 via-teal-50/40 to-emerald-100/30 p-6 sm:p-8 xl:p-10 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-100">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/90 border border-emerald-200/60 shadow-2xs text-xs font-bold text-emerald-800 mb-4">
+              <Sparkles className="w-3.5 h-3.5 text-[#059669]" />
+              <span>{role === "customer" ? "Join ShopMart" : "Sell on ShopMart"}</span>
             </div>
-            <h1 className="max-w-xl text-4xl sm:text-5xl xl:text-[54px] font-extrabold leading-[1.12] tracking-tight text-slate-900">
+
+            <h1 className="text-2xl sm:text-3xl xl:text-4xl font-black text-slate-900 tracking-tight leading-snug">
               {role === "customer" ? (
                 <>
-                  Create Your
-                  <br />
-                  <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                    Account.
+                  Create Your <br />
+                  <span className="bg-gradient-to-r from-[#059669] to-[#10B981] bg-clip-text text-transparent">
+                    Account Today.
                   </span>
                 </>
               ) : (
                 <>
-                  Grow Your
-                  <br />
-                  <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                  Grow Your <br />
+                  <span className="bg-gradient-to-r from-[#059669] via-[#10B981] to-[#EA580C] bg-clip-text text-transparent">
                     Business Online.
                   </span>
                 </>
               )}
             </h1>
-            <p className="mt-3.5 max-w-lg text-base sm:text-lg leading-relaxed text-slate-500">
+
+            <p className="mt-2 text-xs sm:text-sm text-slate-600 leading-relaxed">
               {role === "customer"
-                ? "Start shopping or become a seller — your journey begins here."
-                : "Join thousands of sellers and reach millions of customers across India."}
+                ? "Start shopping thousands of daily essentials and top brands at unbeatable prices."
+                : "Join hundreds of thriving sellers and expand your customer reach effortlessly."}
             </p>
-            <div className="mt-6 space-y-4">
+
+            {/* Benefits List */}
+            <div className="mt-6 space-y-3 hidden sm:block">
               {benefits.map((benefit) => (
-                <div key={benefit.title} className="flex items-center gap-4">
+                <div key={benefit.title} className="flex items-center gap-3">
                   <div
-                    className={`flex h-11 w-11 xl:h-12 xl:w-12 shrink-0 items-center justify-center rounded-2xl ${benefit.color}`}
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${benefit.color}`}
                   >
                     {benefit.icon}
                   </div>
                   <div>
-                    <h3 className="text-sm sm:text-base font-bold text-slate-800 leading-snug">
+                    <h3 className="text-xs font-bold text-slate-800">
                       {benefit.title}
                     </h3>
-                    <p className="text-xs sm:text-sm text-slate-500 mt-0.5 leading-snug">
+                    <p className="text-[11px] text-slate-500">
                       {benefit.description}
                     </p>
                   </div>
@@ -182,89 +190,75 @@ export default function Register() {
               ))}
             </div>
           </div>
-          <div className="relative flex flex-1 items-end justify-center min-h-0 pt-4 overflow-hidden">
-            <div className="absolute bottom-0 h-20 w-4/5 rounded-[50%] bg-blue-300/30 blur-3xl pointer-events-none" />
+
+          {/* Product / Merchant Illustration */}
+          <div className="mt-6 flex items-center justify-center">
             <img
               src={role === "customer" ? customerImage : vendorImage}
-              alt={role === "customer" ? "Customer Registration" : "Vendor Registration"}
-              className="relative z-10 max-h-[250px] xl:max-h-[400px] w-full max-w-[660px] object-contain drop-shadow-2xl transition duration-500 hover:scale-[1.02]"
+              alt="ShopMart Registration"
+              className="max-h-[170px] sm:max-h-[210px] lg:max-h-[230px] w-auto object-contain drop-shadow-lg"
             />
           </div>
         </section>
-        <section className="relative flex h-full items-center justify-center overflow-hidden px-6 py-6 sm:px-10 lg:px-8 xl:px-14">
-          <div className="pointer-events-none absolute -bottom-24 -right-20 h-72 w-72 rounded-full bg-violet-200/30 blur-3xl" />
-          <div
-            className={`relative w-full rounded-[28px] border border-white/80 bg-white/95 p-7 sm:p-9 xl:p-10 shadow-[0_24px_80px_rgba(53,93,180,0.10)] transition-all ${
-              role === "vendor" ? "max-w-[700px]" : "max-w-[640px]"
-            }`}
-          >
-            <div>
-              <div className="mb-2.5 inline-flex items-center gap-2 rounded-full bg-blue-50 px-3.5 py-1 text-xs sm:text-sm font-semibold text-blue-600">
-                <User className="h-4 w-4" />
-                {role === "customer" ? "Customer Registration" : "Vendor Registration"}
-              </div>
 
-              <h2 className="text-2xl sm:text-3xl xl:text-[34px] font-extrabold tracking-tight text-slate-900 leading-tight">
-                Create an Account
+        {/* Right Form Column */}
+        <section className="lg:col-span-7 p-5 sm:p-8 xl:p-10 flex flex-col justify-center">
+          <div className="w-full max-w-lg mx-auto">
+            {/* Header */}
+            <div className="mb-4 sm:mb-5">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/60 text-xs font-bold mb-2">
+                <User className="w-3 h-3 text-[#059669]" />
+                <span>
+                  {role === "customer" ? "Customer Sign Up" : "Vendor Partner Registration"}
+                </span>
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                Get Started Now
               </h2>
-
-              <p className="mt-1 text-xs sm:text-sm text-slate-500 font-medium">
-                Join MarketPlace and start your journey today.
+              <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                Choose your account role and fill in your details.
               </p>
             </div>
-            <div className="mt-4 sm:mt-5 grid grid-cols-2 gap-2 rounded-2xl bg-slate-100/80 p-1.5 border border-slate-200/60">
+
+            {/* Role Switcher Tabs */}
+            <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl mb-5 border border-slate-200/60">
               <button
                 type="button"
                 onClick={() => setRole("customer")}
-                className={`flex items-center justify-center gap-3 rounded-xl py-2.5 sm:py-3 px-4 font-bold text-sm transition-all duration-200 cursor-pointer ${
+                className={`flex items-center justify-center gap-2 py-2 sm:py-2.5 px-3 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                   role === "customer"
-                    ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md shadow-blue-500/25"
+                    ? "bg-[#059669] text-white shadow-sm"
                     : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
                 }`}
               >
-                <User className="h-4 w-4 sm:h-5 sm:w-5 stroke-[2.2]" />
-                <div className="text-left leading-tight">
-                  <span className="block text-xs sm:text-sm font-black">Customer</span>
-                  <span
-                    className={`text-[10px] sm:text-xs font-normal ${
-                      role === "customer" ? "text-blue-100" : "text-slate-400"
-                    }`}
-                  >
-                    Shop products
-                  </span>
-                </div>
+                <User className="w-4 h-4" />
+                <span>Customer</span>
               </button>
               <button
                 type="button"
                 onClick={() => setRole("vendor")}
-                className={`flex items-center justify-center gap-3 rounded-xl py-2.5 sm:py-3 px-4 font-bold text-sm transition-all duration-200 cursor-pointer ${
+                className={`flex items-center justify-center gap-2 py-2 sm:py-2.5 px-3 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                   role === "vendor"
-                    ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md shadow-blue-500/25"
+                    ? "bg-[#059669] text-white shadow-sm"
                     : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
                 }`}
               >
-                <Store className="h-4 w-4 sm:h-5 sm:w-5 stroke-[2.2]" />
-                <div className="text-left leading-tight">
-                  <span className="block text-xs sm:text-sm font-black">Vendor</span>
-                  <span
-                    className={`text-[10px] sm:text-xs font-normal ${
-                      role === "vendor" ? "text-blue-100" : "text-slate-400"
-                    }`}
-                  >
-                    Sell your products
-                  </span>
-                </div>
+                <Store className="w-4 h-4" />
+                <span>Vendor / Seller</span>
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="mt-4 sm:mt-5 space-y-3 sm:space-y-3.5">
-              {role === "customer" && (
+
+            {/* Registration Form */}
+            <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-3.5">
+              {role === "customer" ? (
                 <>
+                  {/* Customer: Full Name */}
                   <div>
-                    <label className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-800">
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
                       Full Name
                     </label>
-                    <div className="group relative">
-                      <User className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400 transition group-focus-within:text-blue-600" />
+                    <div className="relative">
+                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                       <input
                         type="text"
                         name="fullName"
@@ -272,53 +266,57 @@ export default function Register() {
                         value={formData.fullName}
                         onChange={handleChange}
                         required
-                        className="h-[46px] sm:h-[50px] w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-4 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                        className="w-full h-11 pl-10 pr-4 rounded-xl border border-slate-200 bg-slate-50/50 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-[#059669] focus:ring-4 focus:ring-emerald-500/15 outline-none transition"
                       />
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+
+                  {/* Email & Phone */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-800">
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
                         Email Address
                       </label>
-                      <div className="group relative">
-                        <Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400 transition group-focus-within:text-blue-600" />
+                      <div className="relative">
+                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                         <input
                           type="email"
                           name="email"
-                          placeholder="Enter your email"
+                          placeholder="name@example.com"
                           value={formData.email}
                           onChange={handleChange}
                           required
-                          className="h-[46px] sm:h-[50px] w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-4 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                          className="w-full h-11 pl-10 pr-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-[#059669] focus:ring-4 focus:ring-emerald-500/15 outline-none transition"
                         />
                       </div>
                     </div>
                     <div>
-                      <label className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-800">
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
                         Phone Number
                       </label>
-                      <div className="group relative">
-                        <Phone className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400 transition group-focus-within:text-blue-600" />
+                      <div className="relative">
+                        <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                         <input
                           type="tel"
                           name="phone"
-                          placeholder="Enter phone number"
+                          placeholder="+91 9876543210"
                           value={formData.phone}
                           onChange={handleChange}
                           required
-                          className="h-[46px] sm:h-[50px] w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-4 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                          className="w-full h-11 pl-10 pr-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-[#059669] focus:ring-4 focus:ring-emerald-500/15 outline-none transition"
                         />
                       </div>
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+
+                  {/* Password & Confirm Password */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-800">
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
                         Password
                       </label>
-                      <div className="group relative">
-                        <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400 transition group-focus-within:text-blue-600" />
+                      <div className="relative">
+                        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                         <input
                           type={showPassword ? "text" : "password"}
                           name="password"
@@ -326,244 +324,218 @@ export default function Register() {
                           value={formData.password}
                           onChange={handleChange}
                           required
-                          className="h-[46px] sm:h-[50px] w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-11 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                          className="w-full h-11 pl-10 pr-10 rounded-xl border border-slate-200 bg-slate-50/50 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-[#059669] focus:ring-4 focus:ring-emerald-500/15 outline-none transition"
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword((prev) => !prev)}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-blue-600 cursor-pointer"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition cursor-pointer"
+                          aria-label={showPassword ? "Hide password" : "Show password"}
                         >
-                          {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                       </div>
                     </div>
                     <div>
-                      <label className="mb-1.5 block text-xs sm:text-sm font-bold text-slate-800">
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
                         Confirm Password
                       </label>
-                      <div className="group relative">
-                        <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400 transition group-focus-within:text-blue-600" />
+                      <div className="relative">
+                        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                         <input
                           type={showConfirmPassword ? "text" : "password"}
                           name="confirmPassword"
-                          placeholder="Confirm password"
+                          placeholder="Repeat password"
                           value={formData.confirmPassword}
                           onChange={handleChange}
                           required
-                          className="h-[46px] sm:h-[50px] w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-11 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                          className="w-full h-11 pl-10 pr-10 rounded-xl border border-slate-200 bg-slate-50/50 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-[#059669] focus:ring-4 focus:ring-emerald-500/15 outline-none transition"
                         />
                         <button
                           type="button"
                           onClick={() => setShowConfirmPassword((prev) => !prev)}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-blue-600 cursor-pointer"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition cursor-pointer"
+                          aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                         >
-                          {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                          {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                       </div>
                     </div>
                   </div>
                 </>
-              )}
-              {role === "vendor" && (
+              ) : (
                 <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
+                  {/* Vendor: Business Name & Store Name */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="mb-1 block text-xs font-bold text-slate-800">
-                        Business Name <span className="text-red-500">*</span>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Business Legal Name <span className="text-rose-500">*</span>
                       </label>
-                      <div className="group relative">
-                        <Building2 className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 transition group-focus-within:text-blue-600" />
+                      <div className="relative">
+                        <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                         <input
                           type="text"
                           name="businessName"
-                          placeholder="Business name"
+                          placeholder="e.g. Apex Retail Pvt Ltd"
                           value={formData.businessName}
                           onChange={handleChange}
-                          required={role === "vendor"}
-                          className="h-[44px] w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-3 text-xs sm:text-sm text-slate-800 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                          required
+                          className="w-full h-11 pl-10 pr-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-[#059669] focus:ring-4 focus:ring-emerald-500/15 outline-none transition"
                         />
                       </div>
                     </div>
-
                     <div>
-                      <label className="mb-1 block text-xs font-bold text-slate-800">
-                        Store Name <span className="text-red-500">*</span>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Public Store Name <span className="text-rose-500">*</span>
                       </label>
-                      <div className="group relative">
-                        <Store className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 transition group-focus-within:text-blue-600" />
+                      <div className="relative">
+                        <Store className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                         <input
                           type="text"
                           name="storeName"
-                          placeholder="Store name (public)"
+                          placeholder="e.g. Apex Fresh Supermart"
                           value={formData.storeName}
                           onChange={handleChange}
-                          required={role === "vendor"}
-                          className="h-[44px] w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-3 text-xs sm:text-sm text-slate-800 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                          required
+                          className="w-full h-11 pl-10 pr-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-[#059669] focus:ring-4 focus:ring-emerald-500/15 outline-none transition"
                         />
                       </div>
                     </div>
                   </div>
 
-                  {/* GST & Category */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
+                  {/* Vendor: GST Number & Category */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="mb-1 block text-xs font-bold text-slate-800">
-                        GST Number <span className="text-red-500">*</span>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        GSTIN / Business ID <span className="text-rose-500">*</span>
                       </label>
-                      <div className="group relative">
-                        <FileText className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 transition group-focus-within:text-blue-600" />
+                      <div className="relative">
+                        <FileText className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                         <input
                           type="text"
                           name="gstNumber"
-                          placeholder="GST number"
+                          placeholder="22AAAAA0000A1Z5"
                           value={formData.gstNumber}
                           onChange={handleChange}
-                          required={role === "vendor"}
-                          className="h-[44px] w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-3 text-xs sm:text-sm text-slate-800 uppercase outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                          required
+                          className="w-full h-11 pl-10 pr-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs sm:text-sm uppercase text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-[#059669] focus:ring-4 focus:ring-emerald-500/15 outline-none transition"
                         />
                       </div>
                     </div>
-
                     <div>
-                      <label className="mb-1 block text-xs font-bold text-slate-800">
-                        Primary Category <span className="text-red-500">*</span>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Primary Category <span className="text-rose-500">*</span>
                       </label>
-                      <div className="group relative">
-                        <Grid className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 transition group-focus-within:text-blue-600 pointer-events-none" />
+                      <div className="relative">
+                        <Grid className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                         <select
                           name="category"
                           value={formData.category}
                           onChange={handleChange}
-                          required={role === "vendor"}
-                          className="h-[44px] w-full appearance-none rounded-2xl border border-slate-200 bg-white pl-11 pr-9 text-xs sm:text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 cursor-pointer"
+                          required
+                          className="w-full h-11 pl-10 pr-8 rounded-xl border border-slate-200 bg-slate-50/50 text-xs sm:text-sm text-slate-800 focus:bg-white focus:border-[#059669] focus:ring-4 focus:ring-emerald-500/15 outline-none transition appearance-none cursor-pointer"
                         >
-                          <option value="">Select category</option>
+                          <option value="">Select Category</option>
+                          <option value="groceries">Dairy, Bread & Eggs</option>
+                          <option value="produce">Fruits & Vegetables</option>
+                          <option value="snacks">Snacks & Munchies</option>
+                          <option value="drinks">Cold Drinks & Juices</option>
                           <option value="electronics">Electronics & Gadgets</option>
-                          <option value="fashion">Fashion & Apparel</option>
-                          <option value="home">Home & Kitchen</option>
-                          <option value="beauty">Beauty & Personal Care</option>
-                          <option value="grocery">Grocery & Essentials</option>
+                          <option value="fashion">Fashion & Lifestyle</option>
                         </select>
-                        <ChevronDown className="absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                       </div>
                     </div>
                   </div>
 
-                  {/* Owner Name & Email */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
+                  {/* Vendor: Owner Name & Email */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="mb-1 block text-xs font-bold text-slate-800">
-                        Owner Name <span className="text-red-500">*</span>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Owner Name <span className="text-rose-500">*</span>
                       </label>
-                      <div className="group relative">
-                        <User className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 transition group-focus-within:text-blue-600" />
+                      <div className="relative">
+                        <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                         <input
                           type="text"
                           name="fullName"
-                          placeholder="Owner full name"
+                          placeholder="Primary contact person"
                           value={formData.fullName}
                           onChange={handleChange}
                           required
-                          className="h-[44px] w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-3 text-xs sm:text-sm text-slate-800 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                          className="w-full h-11 pl-10 pr-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-[#059669] focus:ring-4 focus:ring-emerald-500/15 outline-none transition"
                         />
                       </div>
                     </div>
-
                     <div>
-                      <label className="mb-1 block text-xs font-bold text-slate-800">
-                        Email Address <span className="text-red-500">*</span>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Work Email <span className="text-rose-500">*</span>
                       </label>
-                      <div className="group relative">
-                        <Mail className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 transition group-focus-within:text-blue-600" />
+                      <div className="relative">
+                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                         <input
                           type="email"
                           name="email"
-                          placeholder="Owner email"
+                          placeholder="vendor@business.com"
                           value={formData.email}
                           onChange={handleChange}
                           required
-                          className="h-[44px] w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-3 text-xs sm:text-sm text-slate-800 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                          className="w-full h-11 pl-10 pr-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-[#059669] focus:ring-4 focus:ring-emerald-500/15 outline-none transition"
                         />
                       </div>
                     </div>
                   </div>
 
-                  {/* Phone & Password */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
+                  {/* Vendor: Phone & Password */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="mb-1 block text-xs font-bold text-slate-800">
-                        Phone <span className="text-red-500">*</span>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Mobile Number <span className="text-rose-500">*</span>
                       </label>
-                      <div className="group relative">
-                        <Phone className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 transition group-focus-within:text-blue-600" />
+                      <div className="relative">
+                        <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                         <input
                           type="tel"
                           name="phone"
-                          placeholder="Phone number"
+                          placeholder="+91 9800000000"
                           value={formData.phone}
                           onChange={handleChange}
                           required
-                          className="h-[44px] w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-3 text-xs sm:text-sm text-slate-800 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                          className="w-full h-11 pl-10 pr-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-[#059669] focus:ring-4 focus:ring-emerald-500/15 outline-none transition"
                         />
                       </div>
                     </div>
-
                     <div>
-                      <label className="mb-1 block text-xs font-bold text-slate-800">
-                        Password <span className="text-red-500">*</span>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Password <span className="text-rose-500">*</span>
                       </label>
-                      <div className="group relative">
-                        <Lock className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 transition group-focus-within:text-blue-600" />
+                      <div className="relative">
+                        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                         <input
                           type={showPassword ? "text" : "password"}
                           name="password"
-                          placeholder="Password"
+                          placeholder="Secure password"
                           value={formData.password}
                           onChange={handleChange}
                           required
-                          className="h-[44px] w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-10 text-xs sm:text-sm text-slate-800 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                          className="w-full h-11 pl-10 pr-10 rounded-xl border border-slate-200 bg-slate-50/50 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-[#059669] focus:ring-4 focus:ring-emerald-500/15 outline-none transition"
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword((prev) => !prev)}
-                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-blue-600 cursor-pointer"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition cursor-pointer"
+                          aria-label={showPassword ? "Hide password" : "Show password"}
                         >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Confirm Password */}
-                  <div>
-                    <label className="mb-1 block text-xs font-bold text-slate-800">
-                      Confirm Password <span className="text-red-500">*</span>
-                    </label>
-                    <div className="group relative">
-                      <Lock className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 transition group-focus-within:text-blue-600" />
-                      <input
-                        type={showConfirmPassword ? "text" : "password"}
-                        name="confirmPassword"
-                        placeholder="Confirm password"
-                        value={formData.confirmPassword}
-                        onChange={handleChange}
-                        required
-                        className="h-[44px] w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-10 text-xs sm:text-sm text-slate-800 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPassword((prev) => !prev)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-blue-600 cursor-pointer"
-                      >
-                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
                     </div>
                   </div>
                 </>
               )}
 
               {/* Terms Checkbox */}
-              <div className="flex items-center gap-2.5 pt-1.5">
+              <div className="flex items-start gap-2.5 pt-2">
                 <input
                   type="checkbox"
                   id="agreeTerms"
@@ -571,51 +543,52 @@ export default function Register() {
                   checked={formData.agreeTerms}
                   onChange={handleChange}
                   required
-                  className="h-4 w-4 rounded-lg border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600"
+                  className="mt-0.5 h-4 w-4 rounded-md border-slate-300 text-[#059669] focus:ring-emerald-500 cursor-pointer accent-[#059669]"
                 />
                 <label
                   htmlFor="agreeTerms"
-                  className="text-xs sm:text-sm font-medium text-slate-600 cursor-pointer select-none"
+                  className="text-xs text-slate-600 leading-snug cursor-pointer select-none"
                 >
-                  I agree to the{" "}
-                  <a
-                    href="#terms"
-                    onClick={(e) => e.preventDefault()}
-                    className="font-semibold text-blue-600 hover:underline"
+                  I agree to ShopMart's{" "}
+                  <Link
+                    to="/terms-conditions"
+                    className="font-bold text-emerald-700 hover:text-emerald-800 underline underline-offset-2"
                   >
                     Terms of Service
-                  </a>{" "}
+                  </Link>{" "}
                   and{" "}
-                  <a
-                    href="#privacy"
-                    onClick={(e) => e.preventDefault()}
-                    className="font-semibold text-blue-600 hover:underline"
+                  <Link
+                    to="/privacy-policies"
+                    className="font-bold text-emerald-700 hover:text-emerald-800 underline underline-offset-2"
                   >
                     Privacy Policy
-                  </a>
+                  </Link>
+                  .
                 </label>
               </div>
 
               {/* Submit Button */}
               <button
                 type="submit"
-                className="flex h-[48px] sm:h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 text-base font-bold text-white shadow-lg shadow-blue-500/20 transition duration-200 hover:-translate-y-0.5 hover:from-blue-700 hover:to-indigo-600 hover:shadow-xl hover:shadow-blue-500/25 focus:outline-none focus:ring-4 focus:ring-blue-500/20 cursor-pointer mt-3"
+                className="w-full h-11 sm:h-12 mt-2 rounded-xl bg-gradient-to-r from-[#059669] to-[#10B981] hover:from-[#047857] hover:to-[#059669] text-white font-bold text-sm shadow-md shadow-emerald-600/20 hover:shadow-lg hover:shadow-emerald-600/30 transition flex items-center justify-center gap-2 cursor-pointer"
               >
-                {role === "customer" ? "Create Account" : "Create Vendor Account"}
-                <span className="text-lg">→</span>
+                <span>{role === "customer" ? "Create Account" : "Register Store & Start Selling"}</span>
+                <ArrowRight className="w-4 h-4 stroke-[2.5]" />
               </button>
             </form>
 
-            {/* Sign In Link */}
-            <p className="text-center text-xs sm:text-sm text-slate-500 mt-4 font-medium">
-              Already have an account?{" "}
-              <Link
-                to="/login"
-                className="font-bold text-blue-600 hover:text-indigo-700 hover:underline"
-              >
-                Sign In
-              </Link>
-            </p>
+            {/* Switch to Login */}
+            <div className="mt-5 pt-4 border-t border-slate-100 text-center">
+              <p className="text-xs text-slate-500">
+                Already registered?{" "}
+                <Link
+                  to="/login"
+                  className="font-bold text-emerald-700 hover:text-emerald-800 transition ml-1"
+                >
+                  Sign In Here &rarr;
+                </Link>
+              </p>
+            </div>
           </div>
         </section>
       </main>

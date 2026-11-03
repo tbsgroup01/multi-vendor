@@ -275,9 +275,12 @@ erDiagram
     USERS ||--o| VENDORS : "has one"
     USERS ||--o{ CART_ITEMS : "has many"
     USERS ||--o{ ORDERS : "places"
+    PRODUCTS ||--o{ PRODUCT_VARIANTS : "has variants"
     PRODUCTS ||--o{ CART_ITEMS : "added to"
+    PRODUCT_VARIANTS ||--o{ CART_ITEMS : "selected as"
     ORDERS ||--o{ ORDER_ITEMS : "contains"
     PRODUCTS ||--o{ ORDER_ITEMS : "purchased as"
+    PRODUCT_VARIANTS ||--o{ ORDER_ITEMS : "variant snapshot"
     VENDORS ||--o{ ORDER_ITEMS : "fulfills"
     VENDORS ||--o{ PRODUCTS : "owns"
     CATEGORIES ||--o{ SUBCATEGORIES : "contains"
@@ -555,30 +558,53 @@ erDiagram
 
 ---
 
-### 📦 5. Products (`/api/products`)
+### 📦 5. Products & Product Variants (`/api/products`)
 
-- **List New Product:** `POST /api/products` *(Vendor only)*
+- **Upload Product & Variant Images (Multipart):** `POST /api/products/upload` or `POST /api/products/upload/variant`
+  - Accepts multipart form data with image files (field: `images` or `variantImages`).
+  - Returns array of saved public URLs e.g. `["/uploads/products/product-173000-123.jpg"]` or `["/uploads/variants/variant-173000-456.jpg"]`.
+
+- **List New Product with Variants & Variant Images:** `POST /api/products` *(Vendor only)*
+  *Supports JSON or Multipart form data with file uploads!*
   ```json
   {
-    "name": "Wireless Noise Cancelling Earbuds",
-    "description": "Active noise cancellation with 30-hour battery life",
-    "price": 2999.00,
-    "discountPrice": 2499.00,
-    "stock": 50,
-    "sku": "EAR-ANC-01",
+    "name": "CloudGlide Running Shoes 2026",
+    "description": "High-performance marathon trainers with responsive foam sole",
     "categoryId": 1,
     "subCategoryId": 2,
-    "images": [
-      "https://example.com/earbuds1.jpg",
-      "https://example.com/earbuds2.jpg"
+    "hasVariants": true,
+    "variants": [
+      {
+        "name": "Crimson Red / Size 9",
+        "sku": "CG-RED-9",
+        "price": 2499.00,
+        "discountPrice": 2199.00,
+        "stock": 20,
+        "attributes": { "color": "Crimson Red", "size": "9 UK" },
+        "images": [
+          "/uploads/variants/cloudglide-red-1.jpg",
+          "/uploads/variants/cloudglide-red-2.jpg"
+        ]
+      },
+      {
+        "name": "Midnight Obsidian / Size 10",
+        "sku": "CG-BLK-10",
+        "price": 2599.00,
+        "discountPrice": 2299.00,
+        "stock": 30,
+        "attributes": { "color": "Midnight Obsidian", "size": "10 UK" },
+        "images": [
+          "/uploads/variants/cloudglide-black-1.jpg"
+        ]
+      }
     ]
   }
   ```
-- **Vendor's My Products + Quota:** `GET /api/products/my-products` *(Vendor only)*
-- **Public Catalog:** `GET /api/products?search=earbuds&categoryId=1&subCategoryId=2&minPrice=1000&maxPrice=5000&sortBy=price_asc`
-- **Product Details:** `GET /api/products/:id`
-- **Update Product:** `PUT /api/products/:id` *(Vendor owner or Admin)*
-- **Delete Product:** `DELETE /api/products/:id` *(Frees up 1 quota slot)*
+- **Vendor's My Products + Quota:** `GET /api/products/my-products` *(Vendor only, includes variants)*
+- **Public Catalog:** `GET /api/products?search=shoes&categoryId=1&subCategoryId=2&minPrice=1000&maxPrice=5000&sortBy=price_asc` *(Includes variants)*
+- **Product Details:** `GET /api/products/:id` *(Includes variants, attributes, and variant images)*
+- **Update Product & Variants:** `PUT /api/products/:id` *(Vendor owner or Admin)*
+- **Delete Product:** `DELETE /api/products/:id` *(Frees up 1 quota slot, cascades to variants)*
 
 ---
 

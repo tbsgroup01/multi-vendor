@@ -93,6 +93,12 @@ const ensureTableColumns = async () => {
         await checkAndAddColumn("Products", "isFeatured", "TINYINT(1) DEFAULT 0");
         await checkAndAddColumn("Products", "discountPrice", "DECIMAL(10, 2) NULL");
         await checkAndAddColumn("Products", "sku", "VARCHAR(255) NULL");
+        await checkAndAddColumn("Products", "hasVariants", "TINYINT(1) DEFAULT 0");
+
+        // CartItems & OrderItems columns for Variants
+        await checkAndAddColumn("CartItems", "variantId", "INT NULL");
+        await checkAndAddColumn("OrderItems", "variantId", "INT NULL");
+        await checkAndAddColumn("OrderItems", "variantName", "VARCHAR(255) NULL");
 
         // Dynamic check across all models to ensure no column is ever missing
         const queryInterface = sequelize.getQueryInterface();
@@ -137,6 +143,7 @@ const connectDB = async () => {
         await cleanDuplicateIndexes("Categories");
         await cleanDuplicateIndexes("SubCategories");
         await cleanDuplicateIndexes("Products");
+        await cleanDuplicateIndexes("ProductVariants");
         await cleanDuplicateIndexes("CartItems");
         await cleanDuplicateIndexes("Orders");
         await cleanDuplicateIndexes("OrderItems");

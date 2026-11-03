@@ -13,11 +13,19 @@ const OrderItem = sequelize.define("OrderItem", {
     },
     productId: {
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: true
+    },
+    variantId: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+    },
+    variantName: {
+        type: DataTypes.STRING,
+        allowNull: true
     },
     vendorId: {
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: true
     },
     productName: {
         type: DataTypes.STRING,
