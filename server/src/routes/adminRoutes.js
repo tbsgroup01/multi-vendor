@@ -14,7 +14,10 @@ const {
     getCategoryById,
     updateCategory,
     deleteCategory,
-    dropDatabase
+    dropDatabase,
+    getAllCustomers,
+    getCustomerById,
+    deleteCustomer
 } = require("../controllers/adminController");
 
 const {
@@ -57,5 +60,10 @@ router.get("/subcategories", getAllSubCategories);
 router.get("/subcategories/:id", getSubCategoryById);
 router.put("/subcategories/:id", updateSubCategory);
 router.delete("/subcategories/:id", deleteSubCategory);
+
+// Customer management oversight
+router.get("/customers", getAllCustomers);
+router.get("/customers/:id", getCustomerById);
+router.delete("/customers/:id", deleteCustomer);
 
 module.exports = router;

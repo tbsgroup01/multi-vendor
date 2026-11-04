@@ -59,12 +59,12 @@ export default function Sidebar({ isOpen, onClose }) {
       icon: Store,
       path: "/vendor/products",
     },
-    {
-      id: "categories",
-      label: "Categories",
-      icon: Shapes,
-      path: "/vendor/categories",
-    },
+    // {
+    //   id: "categories",
+    //   label: "Categories",
+    //   icon: Shapes,
+    //   path: "/vendor/categories",
+    // },
     {
       id: "orders",
       label: "Orders",

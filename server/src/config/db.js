@@ -84,7 +84,6 @@ const ensureTableColumns = async () => {
         // Vendors columns
         await checkAndAddColumn("Vendors", "status", "ENUM('pending', 'approved', 'rejected') DEFAULT 'pending'");
         await checkAndAddColumn("Vendors", "productsLimit", "INT DEFAULT 10");
-        await checkAndAddColumn("Vendors", "commissionRate", "INT DEFAULT 10");
 
         // Products columns
         await checkAndAddColumn("Products", "subCategoryId", "INT NULL");
