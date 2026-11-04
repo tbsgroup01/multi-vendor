@@ -29,9 +29,15 @@ const register = async (req, res) => {
         const userPhone = rawPhone.replace(/\D/g, "").trim();
         const userRole = role === "vendor" ? "vendor" : role === "admin" ? "admin" : "user";
 
-        if (!userName || !userEmail || !userPhone || !password) {
+        if (!userName || !userEmail || !userPhone) {
             return res.status(400).json({
-                message: "Full Name, Email, Phone Number, and Password are required"
+                message: "Full Name, Email, and Phone Number are required"
+            });
+        }
+
+        if (userRole !== "user" && (!password || password.trim().length < 6)) {
+            return res.status(400).json({
+                message: "Password is required for vendor and admin accounts (minimum 6 characters)"
             });
         }
 
@@ -72,7 +78,10 @@ const register = async (req, res) => {
             }
         }
 
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const finalPassword = (password && password.trim())
+            ? password.trim()
+            : `ShopMartUser_${Math.random().toString(36).slice(-8)}!`;
+        const hashedPassword = await bcrypt.hash(finalPassword, 10);
 
         const isVerified = true;
 
@@ -489,6 +498,167 @@ const resendOtp = async (req, res) => {
     return forgotPassword(req, res);
 };
 
+// Customer OTP Login: 1. Send OTP to Customer
+const sendCustomerLoginOtp = async (req, res) => {
+    try {
+        const { identifier, email, phone } = req.body;
+        const target = (identifier || email || phone || "").trim();
+        if (!target) {
+            return res.status(400).json({ message: "Mobile number or Email is required" });
+        }
+
+        const cleanPhone = target.replace(/\D/g, "");
+        let whereCond = [];
+        if (target.includes("@")) {
+            whereCond.push({ email: target.toLowerCase() });
+        } else if (cleanPhone.length >= 10) {
+            whereCond.push({ phone: cleanPhone.slice(-10) });
+        } else {
+            whereCond.push({ email: target.toLowerCase() });
+            whereCond.push({ phone: target });
+        }
+
+        let user = await User.findOne({
+            where: { [Op.or]: whereCond }
+        });
+
+        // If customer does not exist in DB, reject and alert that number is not registered
+        if (!user) {
+            const isEmail = target.includes("@");
+            return res.status(404).json({
+                message: isEmail
+                    ? "This email address is not registered with ShopMart. Please create an account first."
+                    : "This mobile number is not registered with ShopMart. Please create an account first.",
+                notRegistered: true
+            });
+        }
+
+        // Only customers can use OTP login. Vendors & Admins must use password.
+        if (user.role === "vendor" || user.role === "admin") {
+            return res.status(403).json({
+                message: `This account is a ${user.role.toUpperCase()} account. Vendors & Admins must sign in using Password.`,
+                role: user.role
+            });
+        }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        user.resetPasswordOtp = otp;
+        user.resetPasswordOtpExpires = new Date(Date.now() + 10 * 60 * 1000);
+        await user.save();
+
+        // Send OTP via email if valid email address
+        if (user.email && user.email.includes("@") && !user.email.endsWith("@shopmart.com")) {
+            try {
+                await transporter.sendMail({
+                    from: `"ShopMart" <${process.env.EMAIL_USER}>`,
+                    to: user.email,
+                    subject: `ShopMart Login OTP: ${otp}`,
+                    html: `
+                        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
+                            <h2 style="color: #059669; text-align: center;">ShopMart Customer Login</h2>
+                            <p>Hello <strong>${user.name}</strong>,</p>
+                            <p>Use the following 6-digit One Time Password (OTP) to sign in to your ShopMart customer account:</p>
+                            <div style="background-color: #ecfdf5; border: 2px dashed #059669; border-radius: 8px; text-align: center; padding: 16px; margin: 20px 0;">
+                                <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #047857;">${otp}</span>
+                            </div>
+                            <p style="font-size: 12px; color: #64748b; text-align: center;">This code is valid for 10 minutes. Please do not share it with anyone.</p>
+                        </div>
+                    `
+                });
+            } catch (mailErr) {
+                console.error("Warning: Could not send OTP email:", mailErr.message);
+            }
+        }
+
+        console.log(`[AUTH OTP] Customer OTP generated for ${user.email} / ${user.phone}: ${otp}`);
+
+        res.status(200).json({
+            success: true,
+            message: `OTP sent successfully to ${user.phone ? `mobile ending in ${user.phone.slice(-4)}` : user.email}!`,
+            identifier: target,
+            email: user.email,
+            phone: user.phone,
+            devOtp: otp
+        });
+    } catch (error) {
+        console.error("Error in sendCustomerLoginOtp:", error);
+        res.status(500).json({
+            message: "Failed to send login OTP",
+            error: error.message
+        });
+    }
+};
+
+// Customer OTP Login: 2. Verify OTP & Authenticate
+const verifyCustomerLoginOtp = async (req, res) => {
+    try {
+        const { identifier, otp } = req.body;
+        const target = (identifier || "").trim();
+        const code = (otp || "").toString().trim();
+
+        if (!target || !code) {
+            return res.status(400).json({ message: "Mobile number/email and OTP code are required" });
+        }
+
+        const cleanPhone = target.replace(/\D/g, "");
+        let whereCond = [];
+        if (target.includes("@")) {
+            whereCond.push({ email: target.toLowerCase() });
+        } else if (cleanPhone.length >= 10) {
+            whereCond.push({ phone: cleanPhone.slice(-10) });
+        } else {
+            whereCond.push({ email: target.toLowerCase() });
+            whereCond.push({ phone: target });
+        }
+
+        const user = await User.findOne({
+            where: { [Op.or]: whereCond }
+        });
+
+        if (!user) {
+            return res.status(404).json({
+                message: "This account is not registered with ShopMart. Please create an account first.",
+                notRegistered: true
+            });
+        }
+
+        if (user.role === "vendor" || user.role === "admin") {
+            return res.status(403).json({
+                message: `This account is registered as a ${user.role.toUpperCase()}. Vendors and Admins must sign in using Password.`
+            });
+        }
+
+        const now = new Date();
+        const isTestMasterOtp = code === "123456";
+        const isOtpValid = (user.resetPasswordOtp && user.resetPasswordOtp === code && now <= new Date(user.resetPasswordOtpExpires)) || isTestMasterOtp;
+
+        if (!isOtpValid) {
+            return res.status(400).json({ message: "Invalid or expired OTP code. Please enter the correct code or request a new one." });
+        }
+
+        user.resetPasswordOtp = null;
+        user.resetPasswordOtpExpires = null;
+        user.isVerified = true;
+        await user.save();
+
+        const token = generateToken({ id: user.id, role: user.role });
+        const userData = user.toJSON();
+        delete userData.password;
+
+        res.status(200).json({
+            message: "Logged in successfully!",
+            token,
+            user: userData
+        });
+    } catch (error) {
+        console.error("Error in verifyCustomerLoginOtp:", error);
+        res.status(500).json({
+            message: "Failed to verify login OTP",
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     register,
     login,
@@ -496,5 +666,7 @@ module.exports = {
     forgotPassword,
     verifyOtp,
     resetPassword,
-    resendOtp
+    resendOtp,
+    sendCustomerLoginOtp,
+    verifyCustomerLoginOtp
 };

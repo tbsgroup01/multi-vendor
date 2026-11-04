@@ -20,10 +20,15 @@ const createSubCategory = async (req, res) => {
             return res.status(404).json({ message: "Parent category not found with provided categoryId" });
         }
 
+        let imagePath = image || null;
+        if (req.file) {
+            imagePath = `/uploads/categories/${req.file.filename}`;
+        }
+
         const subCategory = await SubCategory.create({
             name: name.trim(),
             categoryId,
-            image: image || null,
+            image: imagePath,
             description: description ? description.trim() : null,
             isActive: isActive !== undefined ? Boolean(isActive) : true
         });
@@ -172,7 +177,11 @@ const updateSubCategory = async (req, res) => {
         }
 
         if (name !== undefined) subCategory.name = name.trim();
-        if (image !== undefined) subCategory.image = image;
+        if (req.file) {
+            subCategory.image = `/uploads/categories/${req.file.filename}`;
+        } else if (image !== undefined) {
+            subCategory.image = image;
+        }
         if (description !== undefined) subCategory.description = description ? description.trim() : null;
         if (isActive !== undefined) subCategory.isActive = Boolean(isActive);
 

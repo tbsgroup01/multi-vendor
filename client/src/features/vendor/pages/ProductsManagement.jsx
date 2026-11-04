@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import Cards from "../components/Cards";
 import bannerProductsImg from "../../../assets/banner-products-3d.png";
+import { categoryService, getUploadUrl } from "../../../services";
 import {
   Package,
   Plus,
@@ -166,6 +167,29 @@ export default function ProductsManagement() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [toastMessage, setToastMessage] = useState("");
   const [selectedIds, setSelectedIds] = useState([]);
+  const [dbCategories, setDbCategories] = useState([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await categoryService.getAllCategories();
+        if (res && Array.isArray(res.categories) && res.categories.length > 0) {
+          const activeOnly = res.categories.filter((c) => c.status !== "Inactive");
+          const list = activeOnly.length > 0 ? activeOnly : res.categories;
+          setDbCategories(list);
+          if (list.length > 0) {
+            setFormData((prev) => ({
+              ...prev,
+              category: prev.category && list.some((c) => c.name === prev.category) ? prev.category : list[0].name,
+            }));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch categories from DB:", err);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   // New / Edit Product Form State
   const [formData, setFormData] = useState({
@@ -180,12 +204,7 @@ export default function ProductsManagement() {
 
   const categories = [
     "All",
-    "Dairy, Bread & Eggs",
-    "Fruits & Vegetables",
-    "Snacks & Munchies",
-    "Cold Drinks & Juices",
-    "Electronics",
-    "Fashion",
+    ...dbCategories.map((c) => c.name),
   ];
 
   // Quick Stats
@@ -219,12 +238,12 @@ export default function ProductsManagement() {
     setEditingProduct(null);
     setFormData({
       name: "",
-      category: "Dairy, Bread & Eggs",
+      category: dbCategories[0]?.name || "Dairy, Bread & Eggs",
       unit: "1 unit",
       price: "",
       mrp: "",
       stock: "",
-      image: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=300&h=300&fit=crop&q=80",
+      image: "",
     });
     setIsModalOpen(true);
   };
@@ -665,7 +684,7 @@ export default function ProductsManagement() {
                               <div className="flex items-center gap-3">
                                 <div className="w-12 h-12 rounded-lg bg-emerald-50/50 border border-emerald-100/60 p-1 flex items-center justify-center shrink-0 shadow-2xs overflow-hidden">
                                   <img
-                                    src={p.image}
+                                    src={getUploadUrl(p.image)}
                                     alt={p.name}
                                     className="w-full h-full object-contain"
                                   />
@@ -794,7 +813,7 @@ export default function ProductsManagement() {
                           aria-label={`Select product ${p.name}`}
                         />
                         <img
-                          src={p.image}
+                          src={getUploadUrl(p.image)}
                           alt={p.name}
                           className="h-full w-full object-contain group-hover:scale-105 transition-transform"
                         />
@@ -923,13 +942,19 @@ export default function ProductsManagement() {
                     }
                     className="w-full h-10 px-3 rounded-lg border border-slate-200 text-xs font-medium text-slate-800 focus:border-[#049669] focus:ring-2 focus:ring-emerald-500/15 outline-none cursor-pointer"
                   >
-                    {categories
-                      .filter((c) => c !== "All")
-                      .map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
+                    {dbCategories.length > 0
+                      ? dbCategories.map((c) => (
+                          <option key={c.id || c.name} value={c.name}>
+                            {c.name}
+                          </option>
+                        ))
+                      : categories
+                          .filter((c) => c !== "All")
+                          .map((c) => (
+                            <option key={c} value={c}>
+                              {c}
+                            </option>
+                          ))}
                   </select>
                 </div>
 
@@ -996,16 +1021,61 @@ export default function ProductsManagement() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Product Image URL
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Product Image *
                 </label>
-                <input
-                  type="url"
-                  placeholder="https://images.unsplash.com/..."
-                  value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  className="w-full h-10 px-3 rounded-lg border border-slate-200 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#049669] focus:ring-4 focus:ring-emerald-500/15 outline-none transition"
-                />
+                <div className="flex items-center gap-4 p-3.5 rounded-xl border border-dashed border-emerald-300 bg-emerald-50/40">
+                  {formData.image ? (
+                    <div className="relative w-20 h-20 rounded-xl overflow-hidden border border-slate-200 bg-white shrink-0 group shadow-xs">
+                      <img
+                        src={getUploadUrl(formData.image)}
+                        alt="Product Preview"
+                        className="w-full h-full object-contain p-1"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, image: "" })}
+                        className="absolute inset-0 bg-slate-900/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                        title="Remove Image"
+                      >
+                        <Trash2 className="w-5 h-5 text-rose-300" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-20 h-20 rounded-xl border border-slate-200 bg-white flex flex-col items-center justify-center text-slate-400 shrink-0">
+                      <Upload className="w-6 h-6 text-emerald-600 stroke-[2]" />
+                      <span className="text-[10px] font-semibold mt-1">No Image</span>
+                    </div>
+                  )}
+
+                  <div className="flex-1">
+                    <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-white border border-slate-200 hover:border-emerald-400 text-xs font-bold text-slate-700 hover:text-emerald-700 shadow-2xs hover:shadow-xs transition cursor-pointer">
+                      <Upload className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>{formData.image ? "Change Image" : "Upload Product Image"}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (uploadEv) => {
+                              setFormData({
+                                ...formData,
+                                image: uploadEv.target?.result,
+                              });
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </label>
+                    <p className="text-[11px] text-slate-500 mt-1.5 leading-tight">
+                      PNG, JPG or WebP up to 5MB. Click to browse from device.
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">

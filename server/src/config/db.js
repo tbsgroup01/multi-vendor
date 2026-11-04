@@ -70,12 +70,19 @@ const ensureTableColumns = async () => {
         await checkAndAddColumn("VendorSubscriptions", "status", "ENUM('active', 'expired', 'cancelled') DEFAULT 'active'");
 
         // SubscriptionPlans columns
+        await checkAndAddColumn("SubscriptionPlans", "tierKey", "VARCHAR(100) NULL");
+        await checkAndAddColumn("SubscriptionPlans", "badge", "VARCHAR(255) NULL");
+        await checkAndAddColumn("SubscriptionPlans", "monthlyPrice", "DECIMAL(10, 2) DEFAULT 0.00");
+        await checkAndAddColumn("SubscriptionPlans", "annualPrice", "DECIMAL(10, 2) DEFAULT 0.00");
+        await checkAndAddColumn("SubscriptionPlans", "popular", "TINYINT(1) DEFAULT 0");
+        await checkAndAddColumn("SubscriptionPlans", "colorTheme", "VARCHAR(50) DEFAULT 'slate'");
         await checkAndAddColumn("SubscriptionPlans", "features", "JSON NULL");
         await checkAndAddColumn("SubscriptionPlans", "isActive", "TINYINT(1) DEFAULT 1");
         await checkAndAddColumn("SubscriptionPlans", "productLimit", "INT NOT NULL DEFAULT 10");
         await checkAndAddColumn("SubscriptionPlans", "durationInDays", "INT NOT NULL DEFAULT 30");
 
         // Users columns
+        await checkAndAddColumn("Users", "avatar", "TEXT NULL");
         await checkAndAddColumn("Users", "isVerified", "TINYINT(1) DEFAULT 0");
         await checkAndAddColumn("Users", "resetPasswordOtp", "VARCHAR(255) NULL");
         await checkAndAddColumn("Users", "resetPasswordOtpExpires", "DATETIME NULL");
@@ -98,6 +105,15 @@ const ensureTableColumns = async () => {
         await checkAndAddColumn("CartItems", "variantId", "INT NULL");
         await checkAndAddColumn("OrderItems", "variantId", "INT NULL");
         await checkAndAddColumn("OrderItems", "variantName", "VARCHAR(255) NULL");
+
+        // Orders columns for Razorpay & Payment
+        await checkAndAddColumn("Orders", "razorpayOrderId", "VARCHAR(255) NULL");
+        await checkAndAddColumn("Orders", "razorpayPaymentId", "VARCHAR(255) NULL");
+        await checkAndAddColumn("Orders", "razorpaySignature", "VARCHAR(255) NULL");
+
+        // Categories columns
+        await checkAndAddColumn("Categories", "slug", "VARCHAR(255) NULL");
+        await checkAndAddColumn("Categories", "status", "VARCHAR(50) DEFAULT 'Active'");
 
         // Dynamic check across all models to ensure no column is ever missing
         const queryInterface = sequelize.getQueryInterface();

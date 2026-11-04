@@ -39,7 +39,7 @@ const Order = sequelize.define("Order", {
         allowNull: false
     },
     paymentMethod: {
-        type: DataTypes.ENUM("cod", "card", "upi", "netbanking", "mock_payment"),
+        type: DataTypes.STRING(50),
         defaultValue: "cod"
     },
     paymentStatus: {
@@ -49,6 +49,18 @@ const Order = sequelize.define("Order", {
     orderStatus: {
         type: DataTypes.ENUM("placed", "processing", "shipped", "delivered", "cancelled"),
         defaultValue: "placed"
+    },
+    razorpayOrderId: {
+        type: DataTypes.STRING(255),
+        allowNull: true
+    },
+    razorpayPaymentId: {
+        type: DataTypes.STRING(255),
+        allowNull: true
+    },
+    razorpaySignature: {
+        type: DataTypes.STRING(255),
+        allowNull: true
     },
     notes: {
         type: DataTypes.TEXT,

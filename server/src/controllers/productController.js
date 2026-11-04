@@ -12,14 +12,12 @@ const normalizeImages = (images) => {
             const parsed = JSON.parse(images);
             if (Array.isArray(parsed)) return parsed.map(img => String(img).trim()).filter(Boolean);
         } catch (e) {
-            // Not a JSON array, treat as single or comma-separated string
+
             return images.split(",").map(img => img.trim()).filter(Boolean);
         }
     }
     return [];
 };
-
-// 0. Dedicated Upload Controller for Product & Variant Images
 const uploadProductImages = async (req, res) => {
     try {
         if (!req.files || req.files.length === 0) {
@@ -55,8 +53,6 @@ const uploadProductImages = async (req, res) => {
         });
     }
 };
-
-// 1. Create a Product (With or Without Variants & Variant Images)
 const createProduct = async (req, res) => {
     try {
         const {
@@ -341,8 +337,6 @@ const createProduct = async (req, res) => {
         });
     }
 };
-
-// 2. Get all products of the logged-in vendor with current listing quota
 const getMyProducts = async (req, res) => {
     try {
         const vendor = await Vendor.findOne({ where: { userId: req.user.id } });
@@ -428,8 +422,6 @@ const getMyProducts = async (req, res) => {
         });
     }
 };
-
-// 3. Get all products (Public marketplace catalog with variant details)
 const getAllProducts = async (req, res) => {
     try {
         const {
@@ -541,8 +533,6 @@ const getAllProducts = async (req, res) => {
         });
     }
 };
-
-// 4. Get single product by ID (Public with variants & variant images)
 const getProductById = async (req, res) => {
     try {
         const { id } = req.params;
@@ -585,8 +575,6 @@ const getProductById = async (req, res) => {
         });
     }
 };
-
-// 5. Update Product & Variants (Vendor owner or Admin)
 const updateProduct = async (req, res) => {
     try {
         const { id } = req.params;

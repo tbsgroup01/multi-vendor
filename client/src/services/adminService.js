@@ -14,11 +14,17 @@ export const adminService = {
   updateCategory: (id, data) => api.put(`/admin/categories/${id}`, data),
   deleteCategory: (id) => api.delete(`/admin/categories/${id}`),
   createSubcategory: (data) => api.post("/admin/subcategories", data),
+  getAllSubcategories: (params) => api.get("/admin/subcategories", params),
+  getSubcategoryById: (id) => api.get(`/admin/subcategories/${id}`),
   updateSubcategory: (id, data) => api.put(`/admin/subcategories/${id}`, data),
   deleteSubcategory: (id) => api.delete(`/admin/subcategories/${id}`),
   getAllCustomers: (params) => api.get("/admin/customers", params),
   getCustomerById: (id) => api.get(`/admin/customers/${id}`),
   deleteCustomer: (id) => api.delete(`/admin/customers/${id}`),
+  getAllPayments: (params) => api.get("/admin/payments", params),
+  deletePayment: (id) => api.delete(`/admin/payments/${id}`),
+  getAdminProfile: () => api.get("/admin/profile"),
+  updateAdminProfile: (data) => api.put("/admin/profile", data),
   dropDatabase: () => api.post("/admin/dropexist"),
 };
 

@@ -18,15 +18,19 @@ import {
   KeyRound,
   Sliders,
   HelpCircle,
+  Loader2,
 } from "lucide-react";
 import bannerSettingsImg from "../../../assets/banner-settings-3d.png";
 import shopMartLogo from "../../../assets/logo.png";
+import { adminService, getUploadUrl } from "../../../services";
 
 export default function Setting() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("profile"); // "profile" | "site" | "razorpay" | "email"
   const [toastMessage, setToastMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [avatarFile, setAvatarFile] = useState(null);
 
   // Scroll Parallax State
   const scrollContainerRef = useRef(null);
@@ -82,6 +86,46 @@ export default function Setting() {
     };
   });
   const [showNewPassword, setShowNewPassword] = useState(false);
+
+  // Fetch live Admin Profile from Database
+  const fetchAdminProfile = async () => {
+    try {
+      setLoadingProfile(true);
+      const res = await adminService.getAdminProfile();
+      if (res && res.user) {
+        const u = res.user;
+        const avatarUrl = u.avatar
+          ? getUploadUrl(u.avatar)
+          : "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop&q=80";
+
+        setProfile((prev) => ({
+          ...prev,
+          fullName: u.fullName || u.name || "Super Admin",
+          email: u.email || "",
+          phone: u.phone || "",
+          role: u.designation || "Super Administrator",
+          avatar: avatarUrl,
+          newPassword: "",
+          confirmPassword: "",
+        }));
+
+        const userToSave = {
+          ...u,
+          role: "admin",
+          designation: u.designation || "Super Administrator"
+        };
+        localStorage.setItem("user", JSON.stringify(userToSave));
+      }
+    } catch (err) {
+      console.error("Failed to load admin profile from DB:", err);
+    } finally {
+      setLoadingProfile(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAdminProfile();
+  }, []);
 
   // 2. Site Setting State
   const [siteSettings, setSiteSettings] = useState(() => {
@@ -163,18 +207,85 @@ export default function Setting() {
   ];
 
   // Save Handlers
-  const handleSaveProfile = (e) => {
+  const handleSaveProfile = async (e) => {
     e.preventDefault();
     if (profile.newPassword && profile.newPassword !== profile.confirmPassword) {
       alert("New password and confirm password do not match!");
       return;
     }
-    setIsSaving(true);
-    setTimeout(() => {
-      localStorage.setItem("admin_profile_settings", JSON.stringify(profile));
+    if (profile.newPassword && profile.newPassword.length < 6) {
+      alert("New password must be at least 6 characters long!");
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      let res;
+      if (avatarFile) {
+        const formData = new FormData();
+        formData.append("fullName", profile.fullName);
+        formData.append("email", profile.email);
+        formData.append("phone", profile.phone);
+        if (profile.newPassword) {
+          formData.append("newPassword", profile.newPassword);
+        }
+        formData.append("avatar", avatarFile);
+        res = await adminService.updateAdminProfile(formData);
+      } else {
+        const payload = {
+          fullName: profile.fullName,
+          email: profile.email,
+          phone: profile.phone,
+          avatar: profile.avatar,
+        };
+        if (profile.newPassword) {
+          payload.newPassword = profile.newPassword;
+        }
+        res = await adminService.updateAdminProfile(payload);
+      }
+
+      if (res && res.user) {
+        const updatedUser = res.user;
+        const avatarUrl = updatedUser.avatar
+          ? getUploadUrl(updatedUser.avatar)
+          : profile.avatar;
+
+        setProfile((prev) => ({
+          ...prev,
+          fullName: updatedUser.fullName || updatedUser.name,
+          email: updatedUser.email,
+          phone: updatedUser.phone,
+          avatar: avatarUrl,
+          newPassword: "",
+          confirmPassword: "",
+        }));
+
+        const savedAdmin = {
+          ...updatedUser,
+          role: "admin",
+          designation: updatedUser.designation || "Super Administrator"
+        };
+        localStorage.setItem("user", JSON.stringify(savedAdmin));
+        localStorage.setItem("admin_profile_settings", JSON.stringify({
+          ...profile,
+          fullName: updatedUser.fullName || updatedUser.name,
+          email: updatedUser.email,
+          phone: updatedUser.phone,
+          avatar: avatarUrl,
+          newPassword: "",
+          confirmPassword: "",
+        }));
+        setAvatarFile(null);
+      }
+
+      showToast("Admin profile details updated successfully in database!");
+      window.dispatchEvent(new Event("admin_profile_updated"));
+    } catch (err) {
+      console.error("Failed to update admin profile in DB:", err);
+      showToast(err.message || "Failed to update admin profile in database.");
+    } finally {
       setIsSaving(false);
-      showToast("Admin profile details updated successfully!");
-    }, 500);
+    }
   };
 
   const handleSaveSiteSettings = (e) => {
@@ -214,13 +325,14 @@ export default function Setting() {
   const handleAvatarUpload = (e) => {
     const file = e.target.files?.[0];
     if (file) {
+      setAvatarFile(file);
       const reader = new FileReader();
       reader.onload = (uploadEvent) => {
         setProfile((prev) => ({
           ...prev,
           avatar: uploadEvent.target?.result,
         }));
-        showToast("Profile avatar updated! Remember to save profile.");
+        showToast("Profile avatar selected! Click 'Save Profile' to persist to database.");
       };
       reader.readAsDataURL(file);
     }
@@ -564,8 +676,12 @@ export default function Setting() {
                       disabled={isSaving}
                       className="px-6 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-md shadow-emerald-600/25 flex items-center gap-2 cursor-pointer active:scale-95 disabled:opacity-50"
                     >
-                      <Save className="w-4 h-4" />
-                      <span>{isSaving ? "Saving..." : "Save Profile"}</span>
+                      {isSaving ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Save className="w-4 h-4" />
+                      )}
+                      <span>{isSaving ? "Saving to DB..." : "Save Profile"}</span>
                     </button>
                   </div>
                 </form>

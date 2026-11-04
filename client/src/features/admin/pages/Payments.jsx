@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import Cards from "../components/Cards";
+import { adminService } from "../../../services";
 import {
   CircleDollarSign,
   TrendingUp,
@@ -26,142 +27,54 @@ import {
   ExternalLink,
   ShieldCheck,
   Trash2,
+  Package,
+  ShoppingBag,
+  RefreshCw,
+  Banknote,
+  User,
+  MapPin,
+  Calendar,
 } from "lucide-react";
 import bannerAdminPaymentsImg from "../../../assets/banner-admin-payments-3d.png";
 
-const INITIAL_SETTLEMENTS = [
-  {
-    id: "PAY-88210",
-    storeName: "Best Deals Superstore",
-    ownerName: "Rajesh Gupta",
-    category: "Groceries & Daily Needs",
-    grossAmount: "₹48,500",
-    grossRaw: 48500,
-    netPayout: "₹44,377.50",
-    netRaw: 44377.5,
-    method: "NEFT / RTGS",
-    bankDetails: "HDFC Bank •••• 4829",
-    utr: "HDFCN26308194820",
-    status: "Completed",
-    date: "Today, 11:30 AM",
-  },
-  {
-    id: "PAY-88209",
-    storeName: "Organic Bliss Farm",
-    ownerName: "Devendra Patel",
-    category: "Fruits & Vegetables",
-    grossAmount: "₹24,800",
-    grossRaw: 24800,
-    netPayout: "₹23,064.00",
-    netRaw: 23064,
-    method: "UPI Auto-Payout",
-    bankDetails: "ICICI Bank •••• 1920",
-    utr: "UPI26308191240",
-    status: "Completed",
-    date: "Today, 09:15 AM",
-  },
-  {
-    id: "PAY-88208",
-    storeName: "Fresh Dairy Direct",
-    ownerName: "Vikram Singh",
-    category: "Dairy, Bread & Eggs",
-    grossAmount: "₹18,400",
-    grossRaw: 18400,
-    netPayout: "₹17,204.00",
-    netRaw: 17204,
-    method: "IMPS Fast Pay",
-    bankDetails: "SBI •••• 7741",
-    utr: "SBIN26307184421",
-    status: "Processing",
-    date: "Today, 08:45 AM",
-  },
-  {
-    id: "PAY-88207",
-    storeName: "Spice & Masala Heritage",
-    ownerName: "Anita Desai",
-    category: "Atta, Rice & Dal",
-    grossAmount: "₹36,200",
-    grossRaw: 36200,
-    netPayout: "₹33,304.00",
-    netRaw: 33304,
-    method: "NEFT / RTGS",
-    bankDetails: "Axis Bank •••• 3310",
-    utr: "Pending UTR",
-    status: "Pending Release",
-    date: "Yesterday, 04:20 PM",
-  },
-  {
-    id: "PAY-88206",
-    storeName: "City Munchies & Snacks",
-    ownerName: "Sahil Khan",
-    category: "Snacks & Munchies",
-    grossAmount: "₹28,600",
-    grossRaw: 28600,
-    netPayout: "₹26,169.00",
-    netRaw: 26169,
-    method: "UPI Auto-Payout",
-    bankDetails: "HDFC Bank •••• 5531",
-    utr: "Pending UTR",
-    status: "Pending Release",
-    date: "Yesterday, 02:10 PM",
-  },
-  {
-    id: "PAY-88205",
-    storeName: "Sweet Treats Patisserie",
-    ownerName: "Pooja Malhotra",
-    category: "Bakery & Biscuits",
-    grossAmount: "₹14,900",
-    grossRaw: 14900,
-    netPayout: "₹13,559.00",
-    netRaw: 13559,
-    method: "NEFT / RTGS",
-    bankDetails: "Kotak Bank •••• 9928",
-    utr: "KKBK26305149811",
-    status: "Completed",
-    date: "Nov 01, 2026",
-  },
-  {
-    id: "PAY-88204",
-    storeName: "Daily Clean Essentials",
-    ownerName: "Rajesh Kulkarni",
-    category: "Cleaning Essentials",
-    grossAmount: "₹8,450",
-    grossRaw: 8450,
-    netPayout: "₹7,731.75",
-    netRaw: 7731.75,
-    method: "IMPS Fast Pay",
-    bankDetails: "PNB •••• 8819",
-    utr: "PNBN26304192019",
-    status: "Completed",
-    date: "Oct 31, 2026",
-  },
-];
-
 export default function Payments() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [settlements, setSettlements] = useState(INITIAL_SETTLEMENTS);
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [methodFilter, setMethodFilter] = useState("all");
   const [selectedIds, setSelectedIds] = useState([]);
 
-  // Modals state
-  const [isInitiateModalOpen, setIsInitiateModalOpen] = useState(false);
-  const [viewingSettlement, setViewingSettlement] = useState(null);
-
-  // New Payout Form
-  const [formData, setFormData] = useState({
-    storeName: "Best Deals Superstore",
-    grossAmount: "",
-    method: "NEFT / RTGS",
-    bankDetails: "HDFC Bank •••• 4829",
-    note: "Weekly marketplace settlement disbursement",
-  });
+  // Viewing transaction detail modal
+  const [viewingTransaction, setViewingTransaction] = useState(null);
 
   // Scroll Animation & Parallax State
   const scrollContainerRef = useRef(null);
   const [scrollY, setScrollY] = useState(0);
   const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // Fetch Live Database Product Purchase Payments
+  const fetchPayments = async () => {
+    try {
+      setLoading(true);
+      const res = await adminService.getAllPayments();
+      if (res && Array.isArray(res.payments)) {
+        setTransactions(res.payments);
+      } else {
+        setTransactions([]);
+      }
+    } catch (err) {
+      console.error("Failed to load payments from DB:", err);
+      setTransactions([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPayments();
+  }, []);
 
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -184,20 +97,28 @@ export default function Payments() {
   };
 
   // Filter Logic
-  const filteredSettlements = settlements.filter((s) => {
-    if (statusFilter !== "all" && s.status.toLowerCase() !== statusFilter.toLowerCase()) {
+  const filteredTransactions = transactions.filter((t) => {
+    if (statusFilter !== "all" && t.paymentStatus.toLowerCase() !== statusFilter.toLowerCase()) {
       return false;
     }
-    if (methodFilter !== "all" && s.method !== methodFilter) {
-      return false;
+    if (methodFilter !== "all") {
+      if (methodFilter === "razorpay" && !t.method.toLowerCase().includes("razorpay")) return false;
+      if (methodFilter === "cod" && !t.method.toLowerCase().includes("cash")) return false;
     }
     if (searchQuery.trim() !== "") {
       const q = searchQuery.toLowerCase();
+      const productMatches = (t.products || []).some(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          (p.vendorName && p.vendorName.toLowerCase().includes(q))
+      );
       return (
-        s.id.toLowerCase().includes(q) ||
-        s.storeName.toLowerCase().includes(q) ||
-        s.ownerName.toLowerCase().includes(q) ||
-        s.utr.toLowerCase().includes(q)
+        t.id.toLowerCase().includes(q) ||
+        (t.customerName && t.customerName.toLowerCase().includes(q)) ||
+        (t.customerEmail && t.customerEmail.toLowerCase().includes(q)) ||
+        (t.transactionId && t.transactionId.toLowerCase().includes(q)) ||
+        (t.razorpayPaymentId && t.razorpayPaymentId.toLowerCase().includes(q)) ||
+        productMatches
       );
     }
     return true;
@@ -206,7 +127,7 @@ export default function Payments() {
   // Selection handlers
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      setSelectedIds(filteredSettlements.map((s) => s.id));
+      setSelectedIds(filteredTransactions.map((t) => t.id));
     } else {
       setSelectedIds([]);
     }
@@ -218,99 +139,53 @@ export default function Payments() {
     );
   };
 
-  // Approve / Release single payout
-  const handleReleasePayout = (id) => {
-    setSettlements((prev) =>
-      prev.map((s) =>
-        s.id === id
-          ? {
-              ...s,
-              status: "Completed",
-              utr: `UTR${Date.now().toString().slice(-10)}`,
-            }
-          : s
-      )
-    );
-  };
-
-  // Bulk Release
-  const handleBulkRelease = () => {
-    setSettlements((prev) =>
-      prev.map((s) =>
-        selectedIds.includes(s.id)
-          ? {
-              ...s,
-              status: "Completed",
-              utr: s.utr === "Pending UTR" ? `UTR${Date.now().toString().slice(-10)}` : s.utr,
-            }
-          : s
-      )
-    );
-    setSelectedIds([]);
+  // Delete Transaction Record
+  const handleDeleteTransaction = async (id, orderNumber) => {
+    if (window.confirm(`Are you sure you want to delete purchase record "${orderNumber || id}"?`)) {
+      try {
+        await adminService.deletePayment(id);
+      } catch (err) {
+        // Fallback for UI state
+      }
+      setTransactions((prev) => prev.filter((t) => t.id !== id));
+      setSelectedIds((prev) => prev.filter((item) => item !== id));
+    }
   };
 
   // Bulk Delete
-  const handleBulkDelete = () => {
-    if (
-      window.confirm(
-        `Are you sure you want to delete ${selectedIds.length} selected settlement record(s)?`
-      )
-    ) {
-      setSettlements((prev) => prev.filter((s) => !selectedIds.includes(s.id)));
+  const handleBulkDelete = async () => {
+    if (window.confirm(`Are you sure you want to delete ${selectedIds.length} purchase record(s)?`)) {
+      for (const id of selectedIds) {
+        try {
+          await adminService.deletePayment(id);
+        } catch (e) {}
+      }
+      setTransactions((prev) => prev.filter((t) => !selectedIds.includes(t.id)));
       setSelectedIds([]);
     }
   };
 
-  // Submit Initiate Payout
-  const handleInitiateSubmit = (e) => {
-    e.preventDefault();
-    const gross = parseFloat(formData.grossAmount) || 0;
-    if (gross <= 0) return;
+  // Metrics Calculations
+  const totalRevenue = transactions.reduce((acc, t) => acc + (t.grossRaw || 0), 0);
+  const completedCount = transactions.filter((t) => t.paymentStatus === "completed").length;
+  
+  const razorpayTransactions = transactions.filter((t) =>
+    t.method.toLowerCase().includes("razorpay")
+  );
+  const razorpayTotal = razorpayTransactions.reduce((acc, t) => acc + (t.grossRaw || 0), 0);
 
-    const net = gross;
-
-    const newPayout = {
-      id: `PAY-${Math.floor(10000 + Math.random() * 90000)}`,
-      storeName: formData.storeName,
-      ownerName: "Store Merchant",
-      category: "Marketplace Store",
-      grossAmount: `₹${gross.toLocaleString("en-IN")}`,
-      grossRaw: gross,
-      netPayout: `₹${net.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-      netRaw: net,
-      method: formData.method,
-      bankDetails: formData.bankDetails,
-      utr: "Pending UTR",
-      status: "Processing",
-      date: "Just now",
-    };
-
-    setSettlements([newPayout, ...settlements]);
-    setIsInitiateModalOpen(false);
-    setFormData({
-      storeName: "Best Deals Superstore",
-      grossAmount: "",
-      method: "NEFT / RTGS",
-      bankDetails: "HDFC Bank •••• 4829",
-      note: "Weekly marketplace settlement disbursement",
-    });
-  };
-
-  // Metrics
-  const totalGross = settlements.reduce((acc, s) => acc + (s.grossRaw || 0), 0);
-  const completedCount = settlements.filter((s) => s.status === "Completed").length;
-  const totalDisbursed = settlements
-    .filter((s) => s.status === "Completed")
-    .reduce((acc, s) => acc + (s.netRaw || 0), 0);
-  const totalPending = settlements
-    .filter((s) => s.status !== "Completed")
-    .reduce((acc, s) => acc + (s.netRaw || 0), 0);
+  const codTransactions = transactions.filter((t) =>
+    t.method.toLowerCase().includes("cash")
+  );
+  const codTotal = codTransactions.reduce((acc, t) => acc + (t.grossRaw || 0), 0);
 
   const paymentStats = [
     {
       id: "platform-gmv",
-      title: "Settlement Turnover",
-      value: `₹${(totalGross / 100000).toFixed(2)}L`,
+      title: "Total Purchases (GMV)",
+      value: `₹${totalRevenue.toLocaleString("en-IN")}`,
+      change: `${transactions.length} Orders Placed`,
+      isPositive: true,
       icon: CircleDollarSign,
       iconColor: "text-white bg-gradient-to-tr from-[#049669] to-[#10B981] border-emerald-400/40 shadow-md shadow-emerald-600/25",
       bgGradient: "from-emerald-50/90 via-white/85 to-white/60",
@@ -319,10 +194,12 @@ export default function Payments() {
       valueColor: "text-[#049669]",
     },
     {
-      id: "completed-payouts",
-      title: "Completed Payouts",
-      value: String(completedCount),
-      icon: CheckCircle2,
+      id: "razorpay-online",
+      title: "Razorpay Online Paid",
+      value: `₹${razorpayTotal.toLocaleString("en-IN")}`,
+      change: `${razorpayTransactions.length} Verified Online`,
+      isPositive: true,
+      icon: CreditCard,
       iconColor: "text-white bg-gradient-to-tr from-[#059669] to-teal-500 border-teal-400/40 shadow-md shadow-teal-600/25",
       bgGradient: "from-teal-50/90 via-white/85 to-white/60",
       accentBorder: "border-teal-200/80 hover:border-teal-400 hover:shadow-[0_16px_36px_rgba(13,148,136,0.15)]",
@@ -330,30 +207,46 @@ export default function Payments() {
       valueColor: "text-[#1E1B4B]",
     },
     {
-      id: "disbursed",
-      title: "Disbursed to Stores",
-      value: `₹${(totalDisbursed / 100000).toFixed(2)}L`,
-      icon: Wallet,
-      iconColor: "text-white bg-gradient-to-tr from-[#049669] via-emerald-600 to-teal-600 border-emerald-400/40 shadow-md shadow-emerald-600/25",
-      bgGradient: "from-emerald-50/70 via-white/85 to-white/60",
-      accentBorder: "border-emerald-200/80 hover:border-emerald-400 hover:shadow-[0_16px_36px_rgba(4,150,105,0.15)]",
-      glowColor: "bg-emerald-400/20",
-      valueColor: "text-[#1E1B4B]",
-    },
-    {
-      id: "pending-payouts",
-      title: "Pending Release",
-      value: `₹${(totalPending / 1000).toFixed(1)}k`,
-      icon: Clock,
+      id: "cod-payments",
+      title: "Cash on Delivery",
+      value: `₹${codTotal.toLocaleString("en-IN")}`,
+      change: `${codTransactions.length} COD Orders`,
+      isPositive: true,
+      icon: Banknote,
       iconColor: "text-white bg-gradient-to-tr from-amber-500 to-amber-400 border-amber-300 shadow-md shadow-amber-500/25",
       bgGradient: "from-amber-50/90 via-white/85 to-white/60",
       accentBorder: "border-amber-200/80 hover:border-amber-400 hover:shadow-[0_16px_36px_rgba(245,158,11,0.15)]",
       glowColor: "bg-amber-400/25",
       valueColor: "text-amber-600",
     },
+    {
+      id: "completed-orders",
+      title: "Completed Orders",
+      value: String(completedCount),
+      change: `${transactions.length - completedCount} Pending`,
+      isPositive: true,
+      icon: CheckCircle2,
+      iconColor: "text-white bg-gradient-to-tr from-[#049669] via-emerald-600 to-teal-600 border-emerald-400/40 shadow-md shadow-emerald-600/25",
+      bgGradient: "from-emerald-50/70 via-white/85 to-white/60",
+      accentBorder: "border-emerald-200/80 hover:border-emerald-400 hover:shadow-[0_16px_36px_rgba(4,150,105,0.15)]",
+      glowColor: "bg-emerald-400/20",
+      valueColor: "text-[#1E1B4B]",
+    },
   ];
 
-  const methodsList = ["NEFT / RTGS", "UPI Auto-Payout", "IMPS Fast Pay"];
+  const statusTabs = [
+    { id: "all", label: "All Transactions", count: transactions.length },
+    {
+      id: "completed",
+      label: "Completed",
+      count: transactions.filter((t) => t.paymentStatus === "completed").length,
+    },
+    {
+      id: "pending",
+      label: "Pending",
+      count: transactions.filter((t) => t.paymentStatus === "pending").length,
+    },
+  ];
 
   return (
     <div className="h-screen w-full bg-white flex flex-col font-['Poppins',sans-serif] text-slate-800 relative overflow-hidden">
@@ -376,19 +269,16 @@ export default function Payments() {
 
       {/* Body Area below Navbar: Sidebar on left, Content on right */}
       <div className="flex-1 flex min-h-0 relative z-10 overflow-hidden">
-        <Sidebar
-          isOpen={isSidebarOpen}
-          onClose={() => setIsSidebarOpen(false)}
-        />
+        <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
+        {/* Right Main Content */}
         <div
           ref={scrollContainerRef}
-          className="flex-1 flex flex-col h-full min-w-0 overflow-y-auto relative z-10 scroll-smooth [scrollbar-gutter:stable]"
+          className="flex-1 flex flex-col h-full min-w-0 overflow-y-auto relative z-10"
         >
-          <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-5 sm:space-y-6 w-full mx-auto pb-12">
-            {/* Coded Welcome Banner */}
+          <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-5 sm:space-y-6 w-full mx-auto">
+            {/* Header Banner */}
             <div className="relative rounded-2xl sm:rounded-3xl p-5 sm:p-7 lg:p-8 min-h-[175px] sm:min-h-[190px] lg:min-h-[200px] flex flex-col justify-between overflow-hidden shadow-[0_16px_40px_rgba(4,150,105,0.22)] border border-emerald-400/30 group">
-              {/* Background SVG Fluid Organic Waves */}
               <svg
                 className="pointer-events-none absolute inset-0 w-full h-full object-cover"
                 viewBox="0 0 1024 200"
@@ -402,97 +292,65 @@ export default function Payments() {
                     <stop offset="40%" stopColor="#228C52" />
                     <stop offset="100%" stopColor="#2CA85C" />
                   </linearGradient>
-                  <linearGradient id="payWaveHighlight" x1="100%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#38C260" stopOpacity="0.5" />
-                    <stop offset="60%" stopColor="#259452" stopOpacity="0.12" />
-                    <stop offset="100%" stopColor="transparent" stopOpacity="0" />
-                  </linearGradient>
-                  <linearGradient id="payWaveDeep" x1="0%" y1="100%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#114E30" stopOpacity="0.8" />
-                    <stop offset="50%" stopColor="#186740" stopOpacity="0.4" />
-                    <stop offset="100%" stopColor="transparent" stopOpacity="0" />
-                  </linearGradient>
                 </defs>
-
                 <rect width="1024" height="200" fill="url(#payBannerBgGrad)" />
-                <path
-                  d="M 0 200 C 240 185 380 130 620 160 C 800 182 920 150 1024 115 L 1024 200 Z"
-                  fill="url(#payWaveDeep)"
-                />
-                <path
-                  d="M 280 0 C 420 75 600 40 740 100 C 870 155 945 85 1024 40 L 1024 0 Z"
-                  fill="url(#payWaveHighlight)"
-                />
-                <path
-                  d="M 0 0 C 300 0 420 120 670 80 C 850 50 930 20 1024 0 Z"
-                  fill="white"
-                  fillOpacity="0.07"
-                />
               </svg>
 
-              {/* Specular glass reflection */}
-              <div className="pointer-events-none absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-emerald-200/60 to-transparent" />
-
-              {/* Right 3D Payments Artwork - Transparent PNG */}
               <div className="absolute right-3 sm:right-6 lg:right-10 top-1/2 -translate-y-1/2 h-[90%] sm:h-[94%] lg:h-[98%] w-auto max-w-[38%] sm:max-w-[42%] lg:max-w-[45%] pointer-events-none select-none z-10 hidden sm:flex items-center justify-end">
                 <img
                   src={bannerAdminPaymentsImg}
-                  alt="Payments Management 3D artwork"
+                  alt="Product Purchase Payments 3D artwork"
                   className="h-full w-auto object-contain object-right drop-shadow-[0_12px_24px_rgba(0,0,0,0.22)]"
                 />
               </div>
 
-              {/* Left Content Area */}
               <div className="relative z-10 flex-1 flex flex-col justify-between max-w-xl">
                 <div className="space-y-1.5 sm:space-y-2">
                   <div className="flex items-center gap-2">
                     <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-emerald-100">
-                      FINANCIAL SETTLEMENTS &amp; DISBURSEMENTS
+                      FINANCIAL REVENUES &amp; TRANSACTIONS
                     </span>
                     <span className="w-7 h-[1.5px] bg-emerald-200/80 rounded-full inline-block" />
                   </div>
 
                   <h1 className="text-xl sm:text-2xl lg:text-[30px] font-black tracking-tight text-white leading-tight drop-shadow-sm">
-                    Financial Settlements
+                    Product Purchase Transactions
                   </h1>
 
                   <p className="text-xs sm:text-[13px] text-emerald-50/95 font-medium leading-relaxed max-w-md lg:max-w-lg">
-                    Monitor gross multi-vendor sales turnover, review merchant transactions, and manage bank settlement disbursements.
+                    Live database records. Monitor customer product checkouts, Razorpay online
+                    payments, Cash on Delivery receipts, and order breakdowns.
                   </p>
                 </div>
 
                 <div className="pt-3.5 sm:pt-4 flex flex-wrap items-center gap-3">
                   <button
-                    onClick={() => setIsInitiateModalOpen(true)}
+                    onClick={fetchPayments}
+                    title="Reload from Database"
                     className="inline-flex items-center gap-2 px-5 sm:px-6 py-2 sm:py-2.5 rounded-full bg-white text-[#049669] hover:text-[#03704f] hover:bg-emerald-50 font-bold text-xs sm:text-sm shadow-md shadow-emerald-950/20 hover:shadow-lg hover:scale-[1.02] active:scale-98 transition-all duration-200 cursor-pointer"
                   >
-                    <Plus className="w-4 h-4 stroke-[2.5]" />
-                    <span>Initiate Vendor Payout</span>
+                    <RefreshCw className={`w-4 h-4 stroke-[2.5] ${loading ? "animate-spin" : ""}`} />
+                    <span>Refresh DB Records</span>
                   </button>
 
                   <div className="hidden sm:inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-900/40 backdrop-blur-md border border-emerald-300/30 text-emerald-100 text-xs font-semibold">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-300" />
-                    <span>Auto-Settlement Gateway Active</span>
+                    <span>Razorpay API 2.0 &amp; COD Active</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Dashboard Cards Component */}
+            {/* Dashboard Cards */}
             <Cards stats={paymentStats} />
 
-            {/* Settlements Directory Card */}
+            {/* Transactions Card */}
             <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-7 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] space-y-5">
               {/* Filter Controls Row */}
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 {/* Status Tabs */}
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 [scrollbar-width:none]">
-                  {[
-                    { id: "all", label: "All Settlements", count: settlements.length },
-                    { id: "completed", label: "Completed", count: settlements.filter((s) => s.status === "Completed").length },
-                    { id: "processing", label: "Processing", count: settlements.filter((s) => s.status === "Processing").length },
-                    { id: "pending release", label: "Pending Release", count: settlements.filter((s) => s.status === "Pending Release").length },
-                  ].map((tab) => {
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+                  {statusTabs.map((tab) => {
                     const isActive = statusFilter === tab.id;
                     return (
                       <button
@@ -519,28 +377,25 @@ export default function Payments() {
                   })}
                 </div>
 
-                {/* Right: Search and Method Filter */}
+                {/* Right: Method Filter and Search */}
                 <div className="flex flex-wrap items-center gap-2.5">
                   <select
                     value={methodFilter}
                     onChange={(e) => setMethodFilter(e.target.value)}
                     className="px-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-slate-50 text-slate-700 focus:bg-white focus:outline-none focus:border-[#049669] transition cursor-pointer"
                   >
-                    <option value="all">All Channels</option>
-                    {methodsList.map((m) => (
-                      <option key={m} value={m}>
-                        {m}
-                      </option>
-                    ))}
+                    <option value="all">All Payment Methods</option>
+                    <option value="razorpay">Razorpay (Online)</option>
+                    <option value="cod">Cash on Delivery</option>
                   </select>
 
-                  <div className="relative min-w-[200px] sm:min-w-[240px]">
+                  <div className="relative min-w-[220px] sm:min-w-[280px]">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search store, ID, UTR..."
+                      placeholder="Search order, customer, product, txn..."
                       className="w-full pl-9 pr-3.5 py-1.5 text-xs rounded-full border border-slate-200 bg-slate-50/70 focus:bg-white focus:outline-none focus:border-[#049669] focus:ring-1 focus:ring-[#049669] transition-all"
                     />
                     {searchQuery && (
@@ -559,7 +414,7 @@ export default function Payments() {
               {selectedIds.length > 0 && (
                 <div className="p-3 bg-red-50/70 border border-red-200/80 rounded-xl flex items-center justify-between gap-3 text-xs animate-in fade-in">
                   <span className="font-bold text-red-700">
-                    {selectedIds.length} settlement{selectedIds.length > 1 ? "s" : ""} selected
+                    {selectedIds.length} transaction{selectedIds.length > 1 ? "s" : ""} selected
                   </span>
                   <div className="flex items-center gap-2">
                     <button
@@ -579,7 +434,7 @@ export default function Payments() {
                 </div>
               )}
 
-              {/* Settlements Table */}
+              {/* Transactions Table */}
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
@@ -588,39 +443,48 @@ export default function Payments() {
                         <input
                           type="checkbox"
                           checked={
-                            filteredSettlements.length > 0 &&
-                            selectedIds.length === filteredSettlements.length
+                            filteredTransactions.length > 0 &&
+                            selectedIds.length === filteredTransactions.length
                           }
                           onChange={handleSelectAll}
                           className="rounded text-[#049669] focus:ring-[#049669] cursor-pointer"
                         />
                       </th>
-                      <th className="py-3 px-3">Payout ID</th>
-                      <th className="py-3 px-3">Merchant Store</th>
-                      <th className="py-3 px-3">Gross Sales</th>
-                                            <th className="py-3 px-3">Net Disbursed</th>
-                      <th className="py-3 px-3">Payout Channel</th>
-                      <th className="py-3 px-3">Status</th>
+                      <th className="py-3 px-3">Order &amp; Txn ID</th>
+                      <th className="py-3 px-3">Customer</th>
+                      <th className="py-3 px-3 min-w-[260px]">Products Purchased</th>
+                      <th className="py-3 px-3">Payment Mode</th>
+                      <th className="py-3 px-3">Gross Amount</th>
+                      <th className="py-3 px-3">Payment Status</th>
                       <th className="py-3 px-3 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
-                    {filteredSettlements.length === 0 ? (
+                    {loading ? (
                       <tr>
-                        <td colSpan="9" className="py-12 text-center text-slate-400">
+                        <td colSpan="8" className="py-14 text-center text-slate-400">
+                          <RefreshCw className="w-7 h-7 mx-auto text-[#049669] animate-spin mb-2" />
+                          <p className="font-bold text-slate-700 text-xs">Loading Database Transactions...</p>
+                          <p className="text-[11px] text-slate-400">Fetching live purchase records</p>
+                        </td>
+                      </tr>
+                    ) : filteredTransactions.length === 0 ? (
+                      <tr>
+                        <td colSpan="8" className="py-14 text-center text-slate-400">
                           <CircleDollarSign className="w-8 h-8 mx-auto text-slate-300 mb-2" />
-                          <p className="font-semibold text-slate-600">No settlement records found</p>
-                          <p className="text-[11px]">Try adjusting your search query or channel filter.</p>
+                          <p className="font-semibold text-slate-600 text-xs">No product purchase transactions in database</p>
+                          <p className="text-[11px] text-slate-400">When customers place orders with Razorpay or COD, real transactions will appear here.</p>
                         </td>
                       </tr>
                     ) : (
-                      filteredSettlements.map((settlement) => {
-                        const isSelected = selectedIds.includes(settlement.id);
-                        const isPending = settlement.status === "Pending Release";
+                      filteredTransactions.map((tx) => {
+                        const isSelected = selectedIds.includes(tx.id);
+                        const isRazorpay = tx.method.toLowerCase().includes("razorpay");
+                        const isCompleted = tx.paymentStatus === "completed";
 
                         return (
                           <tr
-                            key={settlement.id}
+                            key={tx.id}
                             className={`hover:bg-slate-50/70 transition-colors ${
                               isSelected ? "bg-emerald-50/20" : ""
                             }`}
@@ -629,106 +493,128 @@ export default function Payments() {
                               <input
                                 type="checkbox"
                                 checked={isSelected}
-                                onChange={() => handleSelectRow(settlement.id)}
+                                onChange={() => handleSelectRow(tx.id)}
                                 className="rounded text-[#049669] focus:ring-[#049669] cursor-pointer"
                               />
                             </td>
 
-                            {/* Payout ID */}
+                            {/* Order & Txn ID */}
                             <td className="py-3.5 px-3">
-                              <span className="font-mono font-bold text-slate-800">
-                                {settlement.id}
-                              </span>
-                              <div className="text-[10px] text-slate-400">
-                                {settlement.date}
+                              <div className="font-mono font-bold text-slate-800 text-xs">
+                                {tx.orderNumber || tx.id}
+                              </div>
+                              <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                {tx.razorpayPaymentId ? (
+                                  <span className="text-emerald-700 font-semibold">
+                                    {tx.razorpayPaymentId}
+                                  </span>
+                                ) : (
+                                  tx.transactionId
+                                )}
+                              </div>
+                              <div className="text-[10px] text-slate-400 mt-0.5">
+                                {tx.date}
                               </div>
                             </td>
 
-                            {/* Store Name & Initial Avatar */}
+                            {/* Customer Profile */}
                             <td className="py-3.5 px-3">
-                              <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-[#049669] font-black flex items-center justify-center shrink-0 border border-emerald-200/50">
-                                  {settlement.storeName.charAt(0)}
+                              <div className="flex items-center gap-2">
+                                <div className="w-7 h-7 rounded-lg bg-emerald-50 text-[#049669] font-black flex items-center justify-center shrink-0 border border-emerald-200/50 uppercase text-xs">
+                                  {tx.customerName?.charAt(0) || "C"}
                                 </div>
                                 <div className="min-w-0">
-                                  <div className="font-bold text-slate-800 text-xs truncate">
-                                    {settlement.storeName}
+                                  <div className="font-bold text-slate-800 text-xs truncate max-w-[150px]">
+                                    {tx.customerName}
                                   </div>
-                                  <span className="text-[10px] text-slate-400">
-                                    {settlement.ownerName}
-                                  </span>
+                                  <div className="text-[10px] text-slate-400 truncate max-w-[150px]">
+                                    {tx.customerEmail}
+                                  </div>
                                 </div>
                               </div>
                             </td>
 
-                            {/* Gross Sales */}
-                            <td className="py-3.5 px-3 font-semibold text-slate-700">
-                              {settlement.grossAmount}
-                            </td>
-
-
-
-                            {/* Net Disbursed */}
+                            {/* Products Purchased & Vendor Store */}
                             <td className="py-3.5 px-3">
-                              <span className="font-black text-xs sm:text-[13px] text-slate-900">
-                                {settlement.netPayout}
-                              </span>
+                              <div className="space-y-1 max-w-[280px]">
+                                {tx.products && tx.products.length > 0 ? (
+                                  tx.products.map((p, idx) => (
+                                    <div
+                                      key={idx}
+                                      className="flex items-center justify-between gap-1 text-[11px] bg-slate-50/80 rounded-md px-2 py-0.5 border border-slate-100"
+                                    >
+                                      <span className="font-semibold text-slate-700 truncate max-w-[160px]">
+                                        {p.name} <span className="text-slate-400">×{p.qty}</span>
+                                      </span>
+                                      <span className="text-[10px] text-emerald-700 font-medium shrink-0">
+                                        {p.vendorName}
+                                      </span>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <span className="text-slate-400 text-[11px]">
+                                    Product Order Items
+                                  </span>
+                                )}
+                              </div>
                             </td>
 
-                            {/* Method */}
+                            {/* Payment Mode */}
                             <td className="py-3.5 px-3">
-                              <div className="font-medium text-slate-700 flex items-center gap-1">
-                                <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                                <span>{settlement.method}</span>
-                              </div>
-                              <div className="text-[10px] text-slate-400 font-mono">
-                                {settlement.bankDetails}
+                              <div className="flex items-center gap-1.5">
+                                {isRazorpay ? (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-[#049669] border border-emerald-200/80">
+                                    <CreditCard className="w-3 h-3" />
+                                    <span>Razorpay (Online)</span>
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200/80">
+                                    <Banknote className="w-3 h-3" />
+                                    <span>Cash on Delivery</span>
+                                  </span>
+                                )}
                               </div>
                             </td>
 
-                            {/* Status */}
+                            {/* Gross Amount */}
+                            <td className="py-3.5 px-3 font-black text-slate-800 text-xs sm:text-[13px]">
+                              {tx.grossAmount}
+                            </td>
+
+                            {/* Payment Status */}
                             <td className="py-3.5 px-3">
                               <span
                                 className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                                  settlement.status === "Completed"
+                                  isCompleted
                                     ? "bg-emerald-50 text-[#049669] border-emerald-200/80"
-                                    : settlement.status === "Processing"
-                                    ? "bg-teal-50 text-teal-700 border-teal-200/80"
                                     : "bg-amber-50 text-amber-700 border-amber-200/80"
                                 }`}
                               >
                                 <span
                                   className={`w-1.5 h-1.5 rounded-full ${
-                                    settlement.status === "Completed"
-                                      ? "bg-[#049669]"
-                                      : settlement.status === "Processing"
-                                      ? "bg-teal-500"
-                                      : "bg-amber-500 animate-pulse"
+                                    isCompleted ? "bg-[#049669]" : "bg-amber-500 animate-pulse"
                                   }`}
                                 />
-                                <span>{settlement.status}</span>
+                                <span className="capitalize">{tx.paymentStatus}</span>
                               </span>
                             </td>
 
-                            {/* Row Actions */}
+                            {/* Actions */}
                             <td className="py-3.5 px-3 text-right">
                               <div className="flex items-center justify-end gap-1">
-                                {isPending && (
-                                  <button
-                                    onClick={() => handleReleasePayout(settlement.id)}
-                                    title="Release Payout Now"
-                                    className="px-2 py-1 rounded-md text-[11px] font-bold bg-[#049669] hover:bg-[#03704f] text-white flex items-center gap-1 transition shadow-xs cursor-pointer"
-                                  >
-                                    <Check className="w-3 h-3 stroke-[3]" />
-                                    <span>Release</span>
-                                  </button>
-                                )}
                                 <button
-                                  onClick={() => setViewingSettlement(settlement)}
-                                  title="View Statement Details"
+                                  onClick={() => setViewingTransaction(tx)}
+                                  title="View Order Details"
                                   className="w-7 h-7 rounded-lg text-slate-400 hover:text-[#049669] hover:bg-emerald-50 flex items-center justify-center transition cursor-pointer"
                                 >
                                   <Eye className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteTransaction(tx.id, tx.orderNumber)}
+                                  title="Delete Transaction Record"
+                                  className="w-7 h-7 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition cursor-pointer"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
                                 </button>
                               </div>
                             </td>
@@ -743,10 +629,10 @@ export default function Payments() {
               {/* Table Footer */}
               <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
                 <span>
-                  Showing {filteredSettlements.length} of {settlements.length} disbursement records
+                  Showing {filteredTransactions.length} of {transactions.length} product purchase records
                 </span>
-                <span className="text-[11px]">
-                  Automated Gateway Protocol: RBI RTGS / IMPS API 2.0
+                <span className="text-[11px] font-medium text-emerald-700">
+                  ShopMart MultiVendor Gateway Protocol v2.0
                 </span>
               </div>
             </div>
@@ -754,198 +640,150 @@ export default function Payments() {
         </div>
       </div>
 
-      {/* MODAL 1: Initiate Vendor Payout Modal */}
-      {isInitiateModalOpen && (
+      {/* VIEW ORDER DETAILS MODAL */}
+      {viewingTransaction && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-lg bg-white rounded-3xl p-6 sm:p-7 shadow-2xl border border-slate-100 space-y-5 animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-[#049669] flex items-center justify-center">
-                  <Wallet className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-black text-slate-800">Initiate Vendor Settlement</h3>
-                  <p className="text-xs text-slate-400">Disburse verified store revenues to merchant bank</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsInitiateModalOpen(false)}
-                className="w-8 h-8 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleInitiateSubmit} className="space-y-4 text-xs">
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Select Merchant Store *</label>
-                <select
-                  value={formData.storeName}
-                  onChange={(e) => setFormData({ ...formData, storeName: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:border-[#049669]"
-                >
-                  <option value="Best Deals Superstore">Best Deals Superstore (HDFC •••• 4829)</option>
-                  <option value="Organic Bliss Farm">Organic Bliss Farm (ICICI •••• 1920)</option>
-                  <option value="Fresh Dairy Direct">Fresh Dairy Direct (SBI •••• 7741)</option>
-                  <option value="Spice & Masala Heritage">Spice & Masala Heritage (Axis •••• 3310)</option>
-                  <option value="City Munchies & Snacks">City Munchies & Snacks (HDFC •••• 5531)</option>
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Gross Sales Amount (₹) *</label>
-                  <input
-                    type="number"
-                    required
-                    min="100"
-                    value={formData.grossAmount}
-                    onChange={(e) => setFormData({ ...formData, grossAmount: e.target.value })}
-                    placeholder="e.g. 25000"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-[#049669]"
-                  />
-                </div>
-
-              </div>
-
-              {formData.grossAmount && (
-                <div className="p-3 bg-slate-50 rounded-xl space-y-1 text-slate-600 text-[11px]">
-                  <div className="flex justify-between font-black text-xs text-slate-800 pt-1">
-                    <span>Disbursed Payout Amount:</span>
-                    <span className="text-[#049669]">
-                      ₹{(parseFloat(formData.grossAmount) || 0).toLocaleString("en-IN")}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Disbursement Channel</label>
-                  <select
-                    value={formData.method}
-                    onChange={(e) => setFormData({ ...formData, method: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:border-[#049669]"
-                  >
-                    {methodsList.map((m) => (
-                      <option key={m} value={m}>
-                        {m}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Destination Account</label>
-                  <input
-                    type="text"
-                    value={formData.bankDetails}
-                    onChange={(e) => setFormData({ ...formData, bankDetails: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-[#049669]"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Settlement Memo / Notes</label>
-                <input
-                  type="text"
-                  value={formData.note}
-                  onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-[#049669]"
-                />
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsInitiateModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#049669] hover:bg-[#03704f] text-white font-bold shadow-md shadow-emerald-700/20 transition cursor-pointer"
-                >
-                  Disburse Payout
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 2: View Settlement Details Modal */}
-      {viewingSettlement && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-md bg-white rounded-3xl p-6 sm:p-7 shadow-2xl border border-slate-100 space-y-5 animate-in zoom-in-95 duration-200">
+          <div className="w-full max-w-lg bg-white rounded-3xl p-6 sm:p-7 shadow-2xl border border-slate-100 space-y-4 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-[#049669] to-[#10B981] text-white font-black text-lg flex items-center justify-center shadow-md shadow-emerald-600/25">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#049669] to-[#10B981] text-white flex items-center justify-center shadow-md shadow-emerald-600/25">
                   <CreditCard className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-slate-800">Settlement Details</h3>
-                  <span className="text-[11px] text-slate-400 font-mono">Reference: {viewingSettlement.id}</span>
+                  <h3 className="text-base font-black text-slate-800">
+                    Purchase Transaction Details
+                  </h3>
+                  <span className="text-[11px] text-slate-400 font-mono">
+                    Order Ref: {viewingTransaction.orderNumber || viewingTransaction.id}
+                  </span>
                 </div>
               </div>
               <button
-                onClick={() => setViewingSettlement(null)}
-                className="w-8 h-8 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center"
+                onClick={() => setViewingTransaction(null)}
+                className="w-8 h-8 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="p-3 bg-slate-50 rounded-xl space-y-1">
-                <span className="text-slate-400 block text-[10px] uppercase font-bold">Net Transferred to Store</span>
-                <span className="text-xl font-black text-[#049669]">{viewingSettlement.netPayout}</span>
+              {/* Grand Total Box */}
+              <div className="p-3.5 bg-emerald-50/70 border border-emerald-100 rounded-2xl flex items-center justify-between">
+                <div>
+                  <span className="text-slate-500 block text-[10px] uppercase font-bold">
+                    Gross Order Amount
+                  </span>
+                  <span className="text-xl font-black text-[#049669]">
+                    {viewingTransaction.grossAmount}
+                  </span>
+                </div>
+                <span
+                  className={`font-bold px-3 py-1 rounded-full text-xs uppercase ${
+                    viewingTransaction.paymentStatus === "completed"
+                      ? "bg-[#049669] text-white"
+                      : "bg-amber-500 text-white"
+                  }`}
+                >
+                  {viewingTransaction.paymentStatus}
+                </span>
               </div>
 
-              <div className="space-y-2 pt-1">
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-400">Merchant Store</span>
-                  <span className="font-bold text-slate-700">{viewingSettlement.storeName}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-400">Store Owner</span>
-                  <span className="font-semibold text-slate-700">{viewingSettlement.ownerName}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-400">Gross Sales Value</span>
-                  <span className="font-bold text-slate-700">{viewingSettlement.grossAmount}</span>
-                </div>
-
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-400">Disbursement Channel</span>
-                  <span className="font-medium text-slate-700">{viewingSettlement.method}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-400">Destination Account</span>
-                  <span className="font-mono text-slate-700">{viewingSettlement.bankDetails}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-400">Banking UTR Reference</span>
-                  <span className="font-mono text-slate-700 font-bold">{viewingSettlement.utr}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-400">Settlement Date</span>
-                  <span className="font-medium text-slate-700">{viewingSettlement.date}</span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span className="text-slate-400">Settlement Status</span>
-                  <span
-                    className={`font-bold px-2 py-0.5 rounded-full text-[10px] ${
-                      viewingSettlement.status === "Completed"
-                        ? "bg-emerald-50 text-[#049669]"
-                        : viewingSettlement.status === "Processing"
-                        ? "bg-teal-50 text-teal-700"
-                        : "bg-amber-50 text-amber-700"
-                    }`}
-                  >
-                    {viewingSettlement.status}
+              {/* Customer Info */}
+              <div className="bg-slate-50/80 p-3 rounded-2xl space-y-1.5 border border-slate-100">
+                <span className="block font-bold text-slate-700 text-[11px] uppercase">
+                  Customer &amp; Shipping
+                </span>
+                <div className="flex justify-between py-0.5">
+                  <span className="text-slate-400">Customer Name:</span>
+                  <span className="font-bold text-slate-800">
+                    {viewingTransaction.customerName}
                   </span>
+                </div>
+                <div className="flex justify-between py-0.5">
+                  <span className="text-slate-400">Email:</span>
+                  <span className="font-semibold text-slate-700">
+                    {viewingTransaction.customerEmail}
+                  </span>
+                </div>
+                <div className="flex justify-between py-0.5">
+                  <span className="text-slate-400">Phone:</span>
+                  <span className="font-mono text-slate-700">
+                    {viewingTransaction.customerPhone}
+                  </span>
+                </div>
+                {(() => {
+                  let addr = viewingTransaction.shippingAddress;
+                  if (typeof addr === "string") {
+                    try { addr = JSON.parse(addr); } catch(e) { return null; }
+                  }
+                  if (!addr) return null;
+                  return (
+                    <div className="flex justify-between py-0.5 border-t border-slate-200/60 pt-1 text-slate-500">
+                      <span className="text-slate-400 shrink-0">Address:</span>
+                      <span className="text-right font-medium text-slate-700 max-w-[240px]">
+                        {[addr.addressLine1, addr.city, addr.state, addr.postalCode].filter(Boolean).join(", ")}
+                      </span>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Payment Details */}
+              <div className="bg-slate-50/80 p-3 rounded-2xl space-y-1.5 border border-slate-100">
+                <span className="block font-bold text-slate-700 text-[11px] uppercase">
+                  Payment Gateway Info
+                </span>
+                <div className="flex justify-between py-0.5">
+                  <span className="text-slate-400">Payment Channel:</span>
+                  <span className="font-bold text-emerald-800">
+                    {viewingTransaction.method}
+                  </span>
+                </div>
+                {viewingTransaction.razorpayPaymentId && (
+                  <div className="flex justify-between py-0.5">
+                    <span className="text-slate-400">Razorpay Payment ID:</span>
+                    <span className="font-mono font-bold text-slate-800">
+                      {viewingTransaction.razorpayPaymentId}
+                    </span>
+                  </div>
+                )}
+                {viewingTransaction.razorpayOrderId && (
+                  <div className="flex justify-between py-0.5">
+                    <span className="text-slate-400">Razorpay Order ID:</span>
+                    <span className="font-mono text-slate-700">
+                      {viewingTransaction.razorpayOrderId}
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between py-0.5">
+                  <span className="text-slate-400">Transaction Date:</span>
+                  <span className="font-medium text-slate-700">{viewingTransaction.date}</span>
+                </div>
+              </div>
+
+              {/* Purchased Products List */}
+              <div className="bg-slate-50/80 p-3 rounded-2xl space-y-2 border border-slate-100">
+                <span className="block font-bold text-slate-700 text-[11px] uppercase">
+                  Items Purchased ({viewingTransaction.products?.length || 0})
+                </span>
+                <div className="divide-y divide-slate-200/60 max-h-40 overflow-y-auto">
+                  {viewingTransaction.products && viewingTransaction.products.length > 0 ? (
+                    viewingTransaction.products.map((item, idx) => (
+                      <div key={idx} className="py-1.5 flex items-center justify-between text-xs">
+                        <div className="min-w-0 flex-1 pr-2">
+                          <div className="font-bold text-slate-800 truncate">{item.name}</div>
+                          <div className="text-[10px] text-slate-400">
+                            Qty: {item.qty} × {item.price} • Vendor: {item.vendorName}
+                          </div>
+                        </div>
+                        <span className="font-bold text-slate-800 shrink-0">
+                          {item.total || item.price}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-slate-400 py-1">No items details recorded</div>
+                  )}
                 </div>
               </div>
             </div>
@@ -953,8 +791,8 @@ export default function Payments() {
             <div className="pt-3 border-t border-slate-100 flex items-center justify-end">
               <button
                 type="button"
-                onClick={() => setViewingSettlement(null)}
-                className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs shadow-md transition"
+                onClick={() => setViewingTransaction(null)}
+                className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs shadow-md transition cursor-pointer"
               >
                 Close
               </button>
