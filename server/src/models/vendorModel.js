@@ -44,10 +44,6 @@ const Vendor = sequelize.define("Vendor", {
     productsLimit: {
         type: DataTypes.INTEGER,
         defaultValue: 10
-    },
-    commissionRate: {
-        type: DataTypes.INTEGER,
-        defaultValue: 10
     }
 });
 

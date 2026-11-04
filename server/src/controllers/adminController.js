@@ -1,5 +1,5 @@
 const { sequelize } = require("../config/db");
-const { SubscriptionPlan, VendorSubscription, Vendor, User, Category, SubCategory } = require("../models");
+const { SubscriptionPlan, VendorSubscription, Vendor, User, Category, SubCategory, Order, OrderItem, Product } = require("../models");
 
 // 1. Create a new Subscription Plan (Admin only)
 const createPlan = async (req, res) => {
@@ -435,6 +435,148 @@ const dropDatabase = async (req, res) => {
     }
 };
 
+
+// Customer Oversight: Get All Customers with their orders & purchased items
+const getAllCustomers = async (req, res) => {
+    try {
+        const customers = await User.findAll({
+            where: { role: "user" },
+            attributes: ["id", "name", "email", "phone", "role", "isVerified", "createdAt"],
+            include: [
+                {
+                    model: Order,
+                    as: "orders",
+                    required: false,
+                    attributes: ["id", "orderNumber", "totalAmount", "orderStatus", "createdAt", "shippingAddress"],
+                    include: [
+                        {
+                            model: OrderItem,
+                            as: "items",
+                            required: false,
+                            attributes: ["id", "productName", "productPrice", "quantity", "totalPrice", "vendorId", "productId"],
+                            include: [
+                                {
+                                    model: Product,
+                                    as: "product",
+                                    required: false,
+                                    attributes: ["id", "name"]
+                                },
+                                {
+                                    model: Vendor,
+                                    as: "vendor",
+                                    required: false,
+                                    attributes: ["id", "storeName", "businessName"]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            order: [["createdAt", "DESC"]]
+        });
+
+        const formatted = customers.map((c) => {
+            const userOrders = c.orders || [];
+            const ordersCount = userOrders.length;
+            const spentRaw = userOrders.reduce((sum, o) => sum + (parseFloat(o.totalAmount) || 0), 0);
+
+            const purchases = [];
+            userOrders.forEach((o) => {
+                (o.items || []).forEach((it) => {
+                    const prodName = it.product?.name || it.productName || "Product Item";
+                    const vendorName = it.vendor?.storeName || it.vendor?.businessName || "Registered Store";
+                    purchases.push({
+                        product: prodName,
+                        vendor: vendorName,
+                        qty: it.quantity || 1,
+                        price: `₹${parseFloat(it.productPrice || it.totalPrice || 0).toLocaleString("en-IN")}`
+                    });
+                });
+            });
+
+            let addressStr = "Marketplace Registered Buyer";
+            if (userOrders.length > 0 && userOrders[0].shippingAddress) {
+                const addr = userOrders[0].shippingAddress;
+                if (typeof addr === "object") {
+                    addressStr = [addr.address, addr.area, addr.city, addr.pincode].filter(Boolean).join(", ");
+                } else if (typeof addr === "string") {
+                    addressStr = addr;
+                }
+            }
+
+            return {
+                id: c.id,
+                name: c.name,
+                email: c.email,
+                phone: c.phone || "N/A",
+                ordersCount,
+                spentRaw,
+                totalSpent: `₹${spentRaw.toLocaleString("en-IN")}`,
+                address: addressStr,
+                purchases,
+                createdAt: c.createdAt,
+                joinedDate: new Date(c.createdAt).toLocaleDateString("en-IN", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric"
+                })
+            };
+        });
+
+        res.status(200).json({
+            count: formatted.length,
+            customers: formatted
+        });
+    } catch (error) {
+        console.error("Error fetching customers:", error);
+        res.status(500).json({
+            message: "Failed to fetch customers",
+            error: error.message
+        });
+    }
+};
+
+const getCustomerById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const customer = await User.findOne({
+            where: { id, role: "user" },
+            attributes: ["id", "name", "email", "phone", "role", "isVerified", "createdAt"]
+        });
+
+        if (!customer) {
+            return res.status(404).json({ message: "Customer not found" });
+        }
+
+        res.status(200).json({ customer });
+    } catch (error) {
+        console.error("Error fetching customer:", error);
+        res.status(500).json({
+            message: "Failed to fetch customer",
+            error: error.message
+        });
+    }
+};
+
+const deleteCustomer = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const customer = await User.findOne({ where: { id, role: "user" } });
+        if (!customer) {
+            return res.status(404).json({ message: "Customer not found" });
+        }
+
+        await customer.destroy();
+        res.status(200).json({ message: "Customer deleted successfully" });
+    } catch (error) {
+        console.error("Error deleting customer:", error);
+        res.status(500).json({
+            message: "Failed to delete customer",
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     createPlan,
     getAllPlans,
@@ -448,5 +590,8 @@ module.exports = {
     getCategoryById,
     updateCategory,
     deleteCategory,
-    dropDatabase
+    dropDatabase,
+    getAllCustomers,
+    getCustomerById,
+    deleteCustomer
 };

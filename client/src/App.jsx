@@ -25,7 +25,7 @@ import AdminPayments from "./features/admin/pages/Payments";
 import AdminSubscription from "./features/admin/pages/Subscription";
 import AdminSetting from "./features/admin/pages/Setting";
 import { PublicRoute } from "./features/auth/RoleMiddleware";
-import CategoriesManagement from "./features/vendor/pages/CategoriesManagement";
+// import CategoriesManagement from "./features/vendor/pages/CategoriesManagement";
 
 export default function App() {
   const location = useLocation();
@@ -65,7 +65,7 @@ export default function App() {
           <Route path="/admin/setting" element={<AdminSetting />} />
           <Route path="/admin/settings" element={<AdminSetting />} />
           <Route path="/admin/*" element={<AdminDashboard />} />
-          <Route path="/admin/categories" element={<CategoriesManagement />} />
+          {/* <Route path="/admin/categories" element={<CategoriesManagement />} /> */}
 
           <Route path="/vendor" element={<Dashboard />} />
           <Route path="/vendor/dashboard" element={<Dashboard />} />

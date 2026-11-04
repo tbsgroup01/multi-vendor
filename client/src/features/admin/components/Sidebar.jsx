@@ -67,6 +67,12 @@ export default function Sidebar({ isOpen, onClose }) {
       icon: SettingsIcon,
       path: "/admin/setting",
     },
+     {
+      id: "categories",
+      label: "categories",
+      icon: Bell,
+      path: "/admin/categories",
+    },
   ];
 
   const handleLogout = () => {

@@ -25,12 +25,19 @@ const register = async (req, res) => {
 
         const userName = (name || fullName || "").trim();
         const userEmail = (email || "").toLowerCase().trim();
-        const userPhone = (phone || phoneNumber || "").trim();
+        const rawPhone = (phone || phoneNumber || "").toString();
+        const userPhone = rawPhone.replace(/\D/g, "").trim();
         const userRole = role === "vendor" ? "vendor" : role === "admin" ? "admin" : "user";
 
         if (!userName || !userEmail || !userPhone || !password) {
             return res.status(400).json({
                 message: "Full Name, Email, Phone Number, and Password are required"
+            });
+        }
+
+        if (!/^\d{10}$/.test(userPhone)) {
+            return res.status(400).json({
+                message: "Phone number must be exactly 10 digits"
             });
         }
 
@@ -67,7 +74,7 @@ const register = async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        const isVerified = userRole === "vendor" ? false : true;
+        const isVerified = true;
 
         const user = await User.create({
             name: userName,
@@ -86,7 +93,7 @@ const register = async (req, res) => {
                 storeName: vendorStoreName,
                 gstNumber: vendorGstNumber,
                 category: vendorCategory,
-                status: "pending"
+                status: "approved"
             });
         }
 
@@ -112,7 +119,7 @@ const register = async (req, res) => {
             console.error("Warning: Failed to send registration email:", mailError.message);
         }
 
-        const token = isVerified ? generateToken({ id: user.id, role: user.role }) : null;
+        const token = generateToken({ id: user.id, role: user.role });
 
         const userData = user.toJSON();
         delete userData.password;
@@ -121,7 +128,7 @@ const register = async (req, res) => {
         }
 
         const successMessage = userRole === "vendor"
-            ? "Vendor registered successfully and is pending admin approval"
+            ? "Vendor registered successfully"
             : `${userRole.charAt(0).toUpperCase() + userRole.slice(1)} registered successfully`;
 
         res.status(201).json({
