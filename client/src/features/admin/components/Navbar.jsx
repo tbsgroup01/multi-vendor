@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { getUploadUrl } from "../../../services";
 import {
   Menu,
   Bell,
@@ -13,19 +14,52 @@ import logo from "../../../assets/logo.png";
 export default function Navbar({ onToggleSidebar }) {
   const location = useLocation();
 
+  const [adminUser, setAdminUser] = useState(() => {
+    const saved = localStorage.getItem("user");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    const handleProfileUpdate = () => {
+      const saved = localStorage.getItem("user");
+      if (saved) {
+        try {
+          setAdminUser(JSON.parse(saved));
+        } catch (e) {}
+      }
+    };
+
+    window.addEventListener("admin_profile_updated", handleProfileUpdate);
+    return () => window.removeEventListener("admin_profile_updated", handleProfileUpdate);
+  }, []);
+
   const isVendors = location.pathname.includes("/vendors");
   const isCustomers = location.pathname.includes("/customers");
+  const isSubCategories = location.pathname.includes("/sub-categories") || location.pathname.includes("/subcategories");
+  const isCategories = !isSubCategories && location.pathname.includes("/categories");
   const isPayments = location.pathname.includes("/payments");
-  const isSettings = location.pathname.includes("/settings") || location.pathname.includes("/setting");
+  const isSettings = location.pathname.includes("/settings");
+  const isSubscriptions = location.pathname.includes("/subscriptions");
 
   const pageTitle = isVendors
     ? "Vendors Management"
     : isCustomers
     ? "Customers Directory"
+    : isSubCategories
+    ? "Sub-Categories Management"
+    : isCategories
+    ? "Categories Management"
     : isPayments
     ? "Financial Settlements"
     : isSettings
     ? "Platform Settings"
+    : isSubscriptions
+    ? "Subscription & Plans"
     : "Super Admin Dashboard";
 
   return (
@@ -89,15 +123,25 @@ export default function Navbar({ onToggleSidebar }) {
         </button>
 
         <div className="flex items-center gap-2.5 sm:gap-3 pl-2.5 sm:pl-3 border-l border-slate-200/80">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#049669] via-[#059669] to-[#10B981] text-white font-black text-sm sm:text-base flex items-center justify-center shadow-md shadow-emerald-600/25 shrink-0 border border-white/30">
-            A
-          </div>
+          {adminUser?.avatar ? (
+            <img
+              src={getUploadUrl(adminUser.avatar)}
+              alt="Admin Avatar"
+              className="w-10 h-10 rounded-xl object-cover border border-emerald-400 shadow-md shadow-emerald-600/25 shrink-0"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#049669] via-[#059669] to-[#10B981] text-white font-black text-sm sm:text-base flex items-center justify-center shadow-md shadow-emerald-600/25 shrink-0 border border-white/30">
+              {adminUser?.name ? adminUser.name.charAt(0).toUpperCase() : "A"}
+            </div>
+          )}
           <div className="hidden xl:block text-left leading-tight">
             <h5 className="text-xs sm:text-sm font-bold text-[#1E1B4B] flex items-center gap-1">
-              <span>Super Admin</span>
+              <span>{adminUser?.fullName || adminUser?.name || "Super Admin"}</span>
               <Shield className="w-3 h-3 text-[#049669] fill-emerald-100" />
             </h5>
-            <span className="text-[11px] text-slate-400 font-medium">admin@shopmart.com</span>
+            <span className="text-[11px] text-slate-400 font-medium">
+              {adminUser?.email || "admin@shopmart.com"}
+            </span>
           </div>
         </div>
       </div>

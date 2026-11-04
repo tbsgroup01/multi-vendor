@@ -8,7 +8,11 @@ const {
     purchasePlan,
     getMySubscription,
     getSubscriptionHistory,
-    getInvoiceDetails
+    getInvoiceDetails,
+    getAdminOverview,
+    updateAdminPlan,
+    createAdminPlan,
+    deleteAdminPlan
 } = require("../controllers/subscriptionController");
 
 const { protect, restrictTo } = require("../middlewares/authMiddleware");
@@ -16,6 +20,12 @@ const { protect, restrictTo } = require("../middlewares/authMiddleware");
 // Public routes: Browse plans
 router.get("/plans", getPublicPlans);
 router.get("/plans/:id", getPlanDetails);
+
+// Admin-only overview and plan management
+router.get("/admin/overview", protect, restrictTo("admin"), getAdminOverview);
+router.post("/admin/plans", protect, restrictTo("admin"), createAdminPlan);
+router.put("/admin/plans/:id", protect, restrictTo("admin"), updateAdminPlan);
+router.delete("/admin/plans/:id", protect, restrictTo("admin"), deleteAdminPlan);
 
 // Vendor-only routes: Checkout, Purchase, and Subscription Management
 router.post("/preview", protect, restrictTo("vendor"), previewPurchase);

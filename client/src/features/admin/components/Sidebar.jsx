@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { authService } from "../../../services";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
@@ -13,6 +13,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
+  Shapes,
+  FolderTree,
 } from "lucide-react";
 
 export default function Sidebar({ isOpen, onClose }) {
@@ -50,28 +52,34 @@ export default function Sidebar({ isOpen, onClose }) {
       path: "/admin/customers",
     },
     {
+      id: "categories",
+      label: "Categories",
+      icon: Shapes,
+      path: "/admin/categories",
+    },
+    {
+      id: "sub-categories",
+      label: "Sub-Categories",
+      icon: FolderTree,
+      path: "/admin/sub-categories",
+    },
+    {
       id: "payments",
       label: "Payments",
       icon: CircleDollarSign,
       path: "/admin/payments",
     },
     {
-      id: "subscription",
-      label: "Subscription",
+      id: "subscriptions",
+      label: "Subscriptions",
       icon: CreditCard,
-      path: "/admin/subscription",
+      path: "/admin/subscriptions",
     },
     {
-      id: "setting",
-      label: "Setting",
+      id: "settings",
+      label: "Settings",
       icon: SettingsIcon,
-      path: "/admin/setting",
-    },
-     {
-      id: "categories",
-      label: "categories",
-      icon: Bell,
-      path: "/admin/categories",
+      path: "/admin/settings",
     },
   ];
 

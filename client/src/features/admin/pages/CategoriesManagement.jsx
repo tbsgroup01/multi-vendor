@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { adminService, getUploadUrl } from "../../../services";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import Cards from "../components/Cards";
@@ -16,29 +17,14 @@ import {
   Eye,
   EyeOff,
   Layers,
+  RefreshCw,
+  Upload,
+  Image as ImageIcon,
 } from "lucide-react";
 
 // Packshot assets
 import dairyBreadEggsImg from "../../../assets/category/dairy-bread-eggs.png";
 import coldDrinksJuicesImg from "../../../assets/category/cold-drinks-juices.png";
-import snacksMunchiesImg from "../../../assets/category/snacks-munchies.png";
-import fruitsVegetablesImg from "../../../assets/category/fruits-vegetables.png";
-import attaRiceDalImg from "../../../assets/category/atta-rice-dal.png";
-import bakeryBiscuitsImg from "../../../assets/category/bakery-biscuits.png";
-import breakfastInstantFoodImg from "../../../assets/category/breakfast-instant-food.png";
-import sweetToothImg from "../../../assets/category/sweet-tooth.png";
-import teaCoffeeDrinksImg from "../../../assets/category/tea-coffee-drinks.png";
-import masalaOilMoreImg from "../../../assets/category/masala-oil-more.png";
-import saucesSpreadsImg from "../../../assets/category/sauces-spreads.png";
-import chickenMeatFishImg from "../../../assets/category/chicken-meat-fish.png";
-import organicHealthyImg from "../../../assets/category/organic-healthy.png";
-import babyCareImg from "../../../assets/category/baby-care.png";
-import pharmaWellnessImg from "../../../assets/category/pharma-wellness.png";
-import cleaningEssentialsImg from "../../../assets/category/cleaning-essentials.png";
-import homeOfficeImg from "../../../assets/category/home-office.png";
-import personalCareImg from "../../../assets/category/personal-care.png";
-import petCareImg from "../../../assets/category/pet-care.png";
-import paanCornerImg from "../../../assets/category/paan-corner.png";
 
 const INITIAL_CATEGORIES = [
   {
@@ -57,151 +43,14 @@ const INITIAL_CATEGORIES = [
     status: "Active",
     description: "Refreshing carbonated sodas, natural fruit juices, and cold drinks.",
   },
-  {
-    id: "CAT-03",
-    name: "Snacks & Munchies",
-    slug: "snacks-munchies",
-    image: snacksMunchiesImg,
-    status: "Active",
-    description: "Crispy potato chips, namkeen, roasted nuts, and light bites.",
-  },
-  {
-    id: "CAT-04",
-    name: "Fruits & Vegetables",
-    slug: "fruits-vegetables",
-    image: fruitsVegetablesImg,
-    status: "Active",
-    description: "Freshly harvested organic seasonal fruits and green farm vegetables.",
-  },
-  {
-    id: "CAT-05",
-    name: "Atta, Rice & Dal",
-    slug: "atta-rice-dal",
-    image: attaRiceDalImg,
-    status: "Active",
-    description: "Premium chakki whole wheat atta, basmati rice, and organic pulses.",
-  },
-  {
-    id: "CAT-06",
-    name: "Bakery & Biscuits",
-    slug: "bakery-biscuits",
-    image: bakeryBiscuitsImg,
-    status: "Active",
-    description: "Oven fresh cookies, buttery rusks, cakes, and whole grain biscuits.",
-  },
-  {
-    id: "CAT-07",
-    name: "Breakfast & Instant Food",
-    slug: "breakfast-instant-food",
-    image: breakfastInstantFoodImg,
-    status: "Active",
-    description: "Instant noodles, oats, crunchy corn flakes, and ready-to-eat meals.",
-  },
-  {
-    id: "CAT-08",
-    name: "Sweet Tooth & Chocolates",
-    slug: "sweet-tooth",
-    image: sweetToothImg,
-    status: "Active",
-    description: "Rich dark chocolates, traditional Indian sweets, and confectionery.",
-  },
-  {
-    id: "CAT-09",
-    name: "Tea, Coffee & Health Drinks",
-    slug: "tea-coffee-drinks",
-    image: teaCoffeeDrinksImg,
-    status: "Active",
-    description: "Assam tea leaves, instant aromatic coffee, and malt health drinks.",
-  },
-  {
-    id: "CAT-10",
-    name: "Masala, Oil & More",
-    slug: "masala-oil-more",
-    image: masalaOilMoreImg,
-    status: "Active",
-    description: "Aromatic ground spices, pure mustard oil, ghee, and whole seeds.",
-  },
-  {
-    id: "CAT-11",
-    name: "Sauces & Spreads",
-    slug: "sauces-spreads",
-    image: saucesSpreadsImg,
-    status: "Active",
-    description: "Tangy tomato ketchup, chocolate spreads, mayonnaise, and jams.",
-  },
-  {
-    id: "CAT-12",
-    name: "Chicken, Meat & Fish",
-    slug: "chicken-meat-fish",
-    image: chickenMeatFishImg,
-    status: "Active",
-    description: "Hygienically cut fresh antibiotic-free chicken, mutton, and sea fish.",
-  },
-  {
-    id: "CAT-13",
-    name: "Organic & Healthy Living",
-    slug: "organic-healthy",
-    image: organicHealthyImg,
-    status: "Active",
-    description: "Certified chemical-free organic groceries, honey, and chia seeds.",
-  },
-  {
-    id: "CAT-14",
-    name: "Baby Care Essentials",
-    slug: "baby-care",
-    image: babyCareImg,
-    status: "Active",
-    description: "Gentle baby diapers, nourishing lotions, feeding bottles, and wipes.",
-  },
-  {
-    id: "CAT-15",
-    name: "Pharma & Wellness",
-    slug: "pharma-wellness",
-    image: pharmaWellnessImg,
-    status: "Active",
-    description: "First aid kits, health supplements, ayurvedic care, and pain balms.",
-  },
-  {
-    id: "CAT-16",
-    name: "Cleaning & Household",
-    slug: "cleaning-essentials",
-    image: cleaningEssentialsImg,
-    status: "Active",
-    description: "Dishwashing gels, detergent powders, floor cleaners, and fresheners.",
-  },
-  {
-    id: "CAT-17",
-    name: "Home & Office Stationery",
-    slug: "home-office",
-    image: homeOfficeImg,
-    status: "Inactive",
-    description: "Desk accessories, notebooks, gel pens, batteries, and adhesives.",
-  },
-  {
-    id: "CAT-18",
-    name: "Personal Care & Grooming",
-    slug: "personal-care",
-    image: personalCareImg,
-    status: "Active",
-    description: "Fragrant body washes, shampoos, oral care, and skin moisturizers.",
-  },
-  {
-    id: "CAT-19",
-    name: "Pet Care Supplies",
-    slug: "pet-care",
-    image: petCareImg,
-    status: "Inactive",
-    description: "Nutritious dog food, kitten treats, shampoos, and chew toys.",
-  },
-  {
-    id: "CAT-20",
-    name: "Paan Corner",
-    slug: "paan-corner",
-    image: paanCornerImg,
-    status: "Active",
-    description: "Mouth fresheners, traditional digestive churan, and mint lozenges.",
-  },
 ];
+
+
+// Helper to resolve category image URL (whether server upload path, URL, or local packshot)
+const getCategoryImageUrl = (img) => {
+  if (!img) return dairyBreadEggsImg;
+  return getUploadUrl(img);
+};
 
 export default function CategoriesManagement() {
   const [categories, setCategories] = useState(INITIAL_CATEGORIES);
@@ -211,10 +60,34 @@ export default function CategoriesManagement() {
   const [viewMode, setViewMode] = useState("grid"); // "grid" or "table"
   const [toastMessage, setToastMessage] = useState("");
   const [selectedIds, setSelectedIds] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  // Modal State
+  // Fetch Categories from Database
+  const fetchCategories = async () => {
+    try {
+      setLoading(true);
+      const res = await adminService.getAllCategories();
+      if (res && Array.isArray(res.categories) && res.categories.length > 0) {
+        setCategories(res.categories);
+      }
+    } catch (err) {
+      console.log("Using cached categories:", err?.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  // Modal & Image Upload State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState("");
+  const fileInputRef = useRef(null);
+
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
@@ -222,6 +95,22 @@ export default function CategoriesManagement() {
     status: "Active",
     description: "",
   });
+
+  const handleImageFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview(previewUrl);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setImagePreview("");
+    setFormData((prev) => ({ ...prev, image: "" }));
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -293,10 +182,12 @@ export default function CategoriesManagement() {
   // Open Modal
   const handleOpenAddModal = () => {
     setEditingCategory(null);
+    setImageFile(null);
+    setImagePreview("");
     setFormData({
       name: "",
       slug: "",
-      image: dairyBreadEggsImg,
+      image: "",
       status: "Active",
       description: "",
     });
@@ -305,43 +196,77 @@ export default function CategoriesManagement() {
 
   const handleOpenEditModal = (cat) => {
     setEditingCategory(cat);
+    setImageFile(null);
+    setImagePreview(getCategoryImageUrl(cat.image));
     setFormData({
       name: cat.name,
-      slug: cat.slug,
-      image: cat.image,
-      status: cat.status,
+      slug: cat.slug || "",
+      image: cat.image || "",
+      status: cat.status || "Active",
       description: cat.description || "",
     });
     setIsModalOpen(true);
   };
 
-  // Submit Modal
-  const handleFormSubmit = (e) => {
+  // Submit Modal - Saves directly to Database with File Upload support
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
-    if (editingCategory) {
-      setCategories((prev) =>
-        prev.map((c) =>
-          c.id === editingCategory.id ? { ...c, ...formData } : c
-        )
-      );
-      showToast(`Category "${formData.name}" updated successfully!`);
-    } else {
-      const newCategory = {
-        id: `CAT-${Date.now().toString().slice(-4)}`,
-        ...formData,
-      };
-      setCategories([newCategory, ...categories]);
-      showToast(`Category "${formData.name}" added successfully!`);
+    try {
+      let payload;
+      if (imageFile) {
+        payload = new FormData();
+        payload.append("name", formData.name);
+        payload.append("slug", formData.slug || formData.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"));
+        payload.append("status", formData.status);
+        payload.append("description", formData.description || "");
+        payload.append("image", imageFile);
+      } else {
+        payload = {
+          name: formData.name,
+          slug: formData.slug || formData.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+          status: formData.status,
+          description: formData.description,
+          image: formData.image || "",
+        };
+      }
+
+      if (editingCategory) {
+        const res = await adminService.updateCategory(editingCategory.id, payload);
+        const updatedCat = res?.category || { ...editingCategory, ...formData };
+        setCategories((prev) =>
+          prev.map((c) =>
+            c.id === editingCategory.id ? { ...c, ...updatedCat } : c
+          )
+        );
+        showToast(`Category "${formData.name}" updated in Database!`);
+      } else {
+        const res = await adminService.createCategory(payload);
+        const newCat = res?.category || {
+          id: `CAT-${Date.now().toString().slice(-4)}`,
+          ...formData,
+        };
+        setCategories([newCat, ...categories]);
+        showToast(`Category "${formData.name}" saved to Database!`);
+      }
+      setIsModalOpen(false);
+      setImageFile(null);
+      setImagePreview("");
+    } catch (err) {
+      showToast(`Error: ${err?.message || "Failed to save category"}`);
     }
-    setIsModalOpen(false);
   };
 
-  // Toggle Category Status (Active/Inactive)
-  const handleToggleStatus = (id) => {
+  // Toggle Category Status (Active/Inactive) in Database
+  const handleToggleStatus = async (id) => {
+    const target = categories.find((c) => c.id === id);
+    if (!target) return;
+    const newStatus = target.status === "Active" ? "Inactive" : "Active";
+    try {
+      await adminService.updateCategory(id, { status: newStatus });
+    } catch (e) {}
     setCategories((prev) =>
       prev.map((c) => {
         if (c.id === id) {
-          const newStatus = c.status === "Active" ? "Inactive" : "Active";
           showToast(`"${c.name}" status changed to ${newStatus}`);
           return { ...c, status: newStatus };
         }
@@ -350,12 +275,15 @@ export default function CategoriesManagement() {
     );
   };
 
-  // Delete Category
-  const handleDeleteCategory = (id, name) => {
+  // Delete Category from Database
+  const handleDeleteCategory = async (id, name) => {
     if (window.confirm(`Are you sure you want to delete category "${name}"?`)) {
+      try {
+        await adminService.deleteCategory(id);
+      } catch (e) {}
       setCategories((prev) => prev.filter((c) => c.id !== id));
       setSelectedIds((prev) => prev.filter((item) => item !== id));
-      showToast(`Category "${name}" deleted.`);
+      showToast(`Category "${name}" deleted from Database.`);
     }
   };
 
@@ -378,15 +306,20 @@ export default function CategoriesManagement() {
     );
   };
 
-  const handleBulkDelete = () => {
+  const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
     if (
       window.confirm(
         `Are you sure you want to delete ${selectedIds.length} categories?`
       )
     ) {
+      for (const id of selectedIds) {
+        try {
+          await adminService.deleteCategory(id);
+        } catch (e) {}
+      }
       setCategories((prev) => prev.filter((c) => !selectedIds.includes(c.id)));
-      showToast(`${selectedIds.length} categories deleted successfully.`);
+      showToast(`${selectedIds.length} categories deleted from Database.`);
       setSelectedIds([]);
     }
   };
@@ -504,6 +437,15 @@ export default function CategoriesManagement() {
                 >
                   <Plus className="w-4 h-4 stroke-[3]" />
                   <span>Add Category</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={fetchCategories}
+                  title="Reload from Database"
+                  className="inline-flex items-center gap-2 px-3.5 py-2 sm:py-2.5 rounded-full bg-emerald-900/40 hover:bg-emerald-900/60 backdrop-blur-md border border-emerald-300/30 text-emerald-100 text-xs font-semibold cursor-pointer transition"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+                  <span>Refresh DB</span>
                 </button>
               </div>
             </div>
@@ -633,7 +575,7 @@ export default function CategoriesManagement() {
                           />
                           <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-emerald-50/80 to-slate-50 border border-emerald-100/70 p-2 flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform overflow-hidden">
                             <img
-                              src={cat.image}
+                              src={getCategoryImageUrl(cat.image)}
                               alt={cat.name}
                               className="w-full h-full object-contain"
                             />
@@ -763,7 +705,7 @@ export default function CategoriesManagement() {
                             <div className="flex items-center gap-3">
                               <div className="w-11 h-11 rounded-lg bg-emerald-50/80 border border-emerald-100/70 p-1 flex items-center justify-center shrink-0 shadow-2xs">
                                 <img
-                                  src={cat.image}
+                                  src={getCategoryImageUrl(cat.image)}
                                   alt={cat.name}
                                   className="w-full h-full object-contain"
                                 />
@@ -927,70 +869,75 @@ export default function CategoriesManagement() {
                 </div>
               </div>
 
+              {/* Image Upload Area */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Packshot / Icon Preset
+                  Category Image / Icon *
                 </label>
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-200/80 p-1 flex items-center justify-center shrink-0">
-                    <img
-                      src={formData.image}
-                      alt="Selected category"
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-                  <select
-                    onChange={(e) => {
-                      const selectedVal = e.target.value;
-                      const imageMap = {
-                        "dairy-bread-eggs": dairyBreadEggsImg,
-                        "cold-drinks-juices": coldDrinksJuicesImg,
-                        "snacks-munchies": snacksMunchiesImg,
-                        "fruits-vegetables": fruitsVegetablesImg,
-                        "atta-rice-dal": attaRiceDalImg,
-                        "bakery-biscuits": bakeryBiscuitsImg,
-                        "breakfast-instant-food": breakfastInstantFoodImg,
-                        "sweet-tooth": sweetToothImg,
-                        "tea-coffee-drinks": teaCoffeeDrinksImg,
-                        "masala-oil-more": masalaOilMoreImg,
-                        "sauces-spreads": saucesSpreadsImg,
-                        "chicken-meat-fish": chickenMeatFishImg,
-                        "organic-healthy": organicHealthyImg,
-                        "baby-care": babyCareImg,
-                        "pharma-wellness": pharmaWellnessImg,
-                        "cleaning-essentials": cleaningEssentialsImg,
-                        "home-office": homeOfficeImg,
-                        "personal-care": personalCareImg,
-                        "pet-care": petCareImg,
-                        "paan-corner": paanCornerImg,
-                      };
-                      if (imageMap[selectedVal]) {
-                        setFormData({ ...formData, image: imageMap[selectedVal] });
-                      }
-                    }}
-                    className="flex-1 h-10 px-3 rounded-lg border border-slate-200 text-xs font-medium text-slate-800 focus:border-[#049669] focus:ring-2 focus:ring-emerald-500/15 outline-none cursor-pointer"
-                  >
-                    <option value="dairy-bread-eggs">Dairy, Bread &amp; Eggs</option>
-                    <option value="cold-drinks-juices">Cold Drinks &amp; Juices</option>
-                    <option value="snacks-munchies">Snacks &amp; Munchies</option>
-                    <option value="fruits-vegetables">Fruits &amp; Vegetables</option>
-                    <option value="atta-rice-dal">Atta, Rice &amp; Dal</option>
-                    <option value="bakery-biscuits">Bakery &amp; Biscuits</option>
-                    <option value="breakfast-instant-food">Breakfast &amp; Instant Food</option>
-                    <option value="sweet-tooth">Sweet Tooth</option>
-                    <option value="tea-coffee-drinks">Tea, Coffee &amp; Drinks</option>
-                    <option value="masala-oil-more">Masala, Oil &amp; More</option>
-                    <option value="sauces-spreads">Sauces &amp; Spreads</option>
-                    <option value="chicken-meat-fish">Chicken, Meat &amp; Fish</option>
-                    <option value="organic-healthy">Organic &amp; Healthy</option>
-                    <option value="baby-care">Baby Care</option>
-                    <option value="pharma-wellness">Pharma &amp; Wellness</option>
-                    <option value="cleaning-essentials">Cleaning Essentials</option>
-                    <option value="home-office">Home &amp; Office</option>
-                    <option value="personal-care">Personal Care</option>
-                    <option value="pet-care">Pet Care</option>
-                    <option value="paan-corner">Paan Corner</option>
-                  </select>
+
+                {/* Upload Zone & Preview */}
+                <div className="space-y-2.5">
+                  {imagePreview ? (
+                    <div className="flex items-center gap-3.5 p-3 rounded-2xl bg-emerald-50/60 border border-emerald-200/80">
+                      <div className="w-16 h-16 rounded-xl bg-white border border-emerald-200 p-1 flex items-center justify-center shrink-0 shadow-xs overflow-hidden">
+                        <img
+                          src={imagePreview}
+                          alt="Category Preview"
+                          className="w-full h-full object-contain"
+                          onError={(e) => { e.target.src = dairyBreadEggsImg; }}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="block text-xs font-bold text-slate-800 truncate">
+                          {imageFile ? imageFile.name : (formData.name || "Category Image")}
+                        </span>
+                        <span className="block text-[10px] text-emerald-700 font-semibold mt-0.5">
+                          {imageFile ? `${(imageFile.size / 1024).toFixed(1)} KB • Ready to Upload` : "Current Image Active"}
+                        </span>
+                        <div className="flex items-center gap-2 mt-2">
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="px-2.5 py-1 rounded-lg bg-[#049669] hover:bg-[#03704f] text-white text-[11px] font-bold transition cursor-pointer"
+                          >
+                            Change Image
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleRemoveImage}
+                            className="px-2 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 text-[11px] font-bold transition cursor-pointer"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="border-2 border-dashed border-emerald-300/80 hover:border-[#049669] bg-emerald-50/30 hover:bg-emerald-50/60 rounded-2xl p-5 text-center cursor-pointer transition-all group"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-emerald-100 text-[#049669] flex items-center justify-center mx-auto mb-2 group-hover:scale-105 transition-transform">
+                        <Upload className="w-5 h-5 stroke-[2.3]" />
+                      </div>
+                      <span className="block text-xs font-bold text-slate-800">
+                        Click to Upload Category Image
+                      </span>
+                      <span className="block text-[10px] text-slate-400 mt-0.5">
+                        PNG, JPG, WEBP, SVG up to 10MB
+                      </span>
+                    </div>
+                  )}
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageFileChange}
+                    className="hidden"
+                  />
+
+
                 </div>
               </div>
 

@@ -73,14 +73,16 @@ export default function Register() {
       return;
     }
 
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match. Please verify your password.");
-      return;
-    }
+    if (role === "vendor") {
+      if (formData.password !== formData.confirmPassword) {
+        setError("Passwords do not match. Please verify your password.");
+        return;
+      }
 
-    if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters long.");
-      return;
+      if (formData.password.length < 6) {
+        setError("Password must be at least 6 characters long.");
+        return;
+      }
     }
 
     setLoading(true);
@@ -91,10 +93,9 @@ export default function Register() {
           name: formData.fullName,
           email: formData.email,
           phone: formData.phone,
-          password: formData.password,
         });
 
-        setSuccessMsg(res?.message || "Account created successfully! Redirecting...");
+        setSuccessMsg(res?.message || "Customer account created successfully! Redirecting...");
         setSubmitted(true);
         setTimeout(() => {
           navigate("/");
@@ -181,7 +182,7 @@ export default function Register() {
   const benefits = role === "customer" ? customerBenefits : vendorBenefits;
 
   return (
-    <div className="min-h-[calc(100vh-72px)] w-full bg-[#F7FAF8] font-['Poppins',sans-serif] text-slate-800 flex items-center justify-center p-3 sm:p-6 lg:p-8 relative overflow-x-hidden">
+    <div className="min-h-screen w-full bg-[#F7FAF8] font-['Poppins',sans-serif] text-slate-800 flex items-center justify-center p-3 sm:p-6 lg:p-8 relative overflow-x-hidden">
       {/* Background Ambient Glows */}
       <div className="pointer-events-none absolute -left-20 top-10 w-96 h-96 rounded-full bg-emerald-300/15 blur-3xl z-0" />
       <div className="pointer-events-none absolute -right-20 bottom-10 w-96 h-96 rounded-full bg-orange-300/15 blur-3xl z-0" />
@@ -382,58 +383,6 @@ export default function Register() {
                           required
                           className="w-full h-11 pl-10 pr-3 rounded-xl border border-slate-200 bg-slate-50/50 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-[#059669] focus:ring-4 focus:ring-emerald-500/15 outline-none transition"
                         />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Password & Confirm */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
-                        Password
-                      </label>
-                      <div className="relative">
-                        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                        <input
-                          type={showPassword ? "text" : "password"}
-                          name="password"
-                          placeholder="Min 6 characters"
-                          value={formData.password}
-                          onChange={handleChange}
-                          required
-                          className="w-full h-11 pl-10 pr-10 rounded-xl border border-slate-200 bg-slate-50/50 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-[#059669] focus:ring-4 focus:ring-emerald-500/15 outline-none transition"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition cursor-pointer"
-                        >
-                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
-                        Confirm Password
-                      </label>
-                      <div className="relative">
-                        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                        <input
-                          type={showConfirmPassword ? "text" : "password"}
-                          name="confirmPassword"
-                          placeholder="Re-type password"
-                          value={formData.confirmPassword}
-                          onChange={handleChange}
-                          required
-                          className="w-full h-11 pl-10 pr-10 rounded-xl border border-slate-200 bg-slate-50/50 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-[#059669] focus:ring-4 focus:ring-emerald-500/15 outline-none transition"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition cursor-pointer"
-                        >
-                          {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
                       </div>
                     </div>
                   </div>

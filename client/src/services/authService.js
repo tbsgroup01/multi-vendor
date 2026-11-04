@@ -20,6 +20,13 @@ export const authService = {
     if (data?.user) localStorage.setItem("user", JSON.stringify(data.user));
     return data;
   },
+  sendCustomerLoginOtp: (payload) => api.post("/auth/send-login-otp", payload),
+  verifyCustomerLoginOtp: async (payload) => {
+    const data = await api.post("/auth/verify-login-otp", payload);
+    if (data?.token) localStorage.setItem("token", data.token);
+    if (data?.user) localStorage.setItem("user", JSON.stringify(data.user));
+    return data;
+  },
   getCurrentUser: () => api.get("/auth/me"),
   forgotPassword: (email) => api.post("/auth/forgot-password", { email }),
   verifyOtp: (payload) => api.post("/auth/verify-otp", payload),
