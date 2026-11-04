@@ -1,171 +1,57 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
+import { categoryService, getUploadUrl } from "../../../services";
 
-import paanCornerImg from "../../../assets/category/paan-corner.png";
 import dairyBreadEggsImg from "../../../assets/category/dairy-bread-eggs.png";
-import fruitsVegetablesImg from "../../../assets/category/fruits-vegetables.png";
 import coldDrinksJuicesImg from "../../../assets/category/cold-drinks-juices.png";
-import snacksMunchiesImg from "../../../assets/category/snacks-munchies.png";
-import breakfastInstantFoodImg from "../../../assets/category/breakfast-instant-food.png";
-import sweetToothImg from "../../../assets/category/sweet-tooth.png";
-import bakeryBiscuitsImg from "../../../assets/category/bakery-biscuits.png";
-import teaCoffeeDrinksImg from "../../../assets/category/tea-coffee-drinks.png";
-import attaRiceDalImg from "../../../assets/category/atta-rice-dal.png";
-import masalaOilMoreImg from "../../../assets/category/masala-oil-more.png";
-import saucesSpreadsImg from "../../../assets/category/sauces-spreads.png";
-import chickenMeatFishImg from "../../../assets/category/chicken-meat-fish.png";
-import organicHealthyImg from "../../../assets/category/organic-healthy.png";
-import babyCareImg from "../../../assets/category/baby-care.png";
-import pharmaWellnessImg from "../../../assets/category/pharma-wellness.png";
-import cleaningEssentialsImg from "../../../assets/category/cleaning-essentials.png";
-import homeOfficeImg from "../../../assets/category/home-office.png";
-import personalCareImg from "../../../assets/category/personal-care.png";
-import petCareImg from "../../../assets/category/pet-care.png";
+
+// Preset packshots map as fallback
+const PRESET_MAP = {
+  "dairy-bread-eggs": dairyBreadEggsImg,
+  "cold-drinks-juices": coldDrinksJuicesImg,
+};
+
+// Resolver for DB category image URLs
+const resolveCategoryImage = (cat) => {
+  if (!cat) return dairyBreadEggsImg;
+  const img = cat.image;
+  if (img && typeof img === "string") {
+    return getUploadUrl(img);
+  }
+  if (cat.slug && PRESET_MAP[cat.slug]) {
+    return PRESET_MAP[cat.slug];
+  }
+  return dairyBreadEggsImg;
+};
 
 export default function ProductCategory() {
-  const categories = [
-    {
-      id: 1,
-      name: "Paan Corner",
-      slug: "paan-corner",
-      image: paanCornerImg,
-      bgTint: "bg-[#eef8f2]",
-    },
-    {
-      id: 2,
-      name: "Dairy, Bread & Eggs",
-      slug: "dairy-bread-eggs",
-      image: dairyBreadEggsImg,
-      bgTint: "bg-[#edf5fb]",
-    },
-    {
-      id: 3,
-      name: "Fruits & Vegetables",
-      slug: "fruits-vegetables",
-      image: fruitsVegetablesImg,
-      bgTint: "bg-[#f1f8ee]",
-    },
-    {
-      id: 4,
-      name: "Cold Drinks & Juices",
-      slug: "cold-drinks-juices",
-      image: coldDrinksJuicesImg,
-      bgTint: "bg-[#eaf4fc]",
-    },
-    {
-      id: 5,
-      name: "Snacks & Munchies",
-      slug: "snacks-munchies",
-      image: snacksMunchiesImg,
-      bgTint: "bg-[#fff7ed]",
-    },
-    {
-      id: 6,
-      name: "Breakfast & Instant Food",
-      slug: "breakfast-instant-food",
-      image: breakfastInstantFoodImg,
-      bgTint: "bg-[#fef9ee]",
-    },
-    {
-      id: 7,
-      name: "Sweet Tooth",
-      slug: "sweet-tooth",
-      image: sweetToothImg,
-      bgTint: "bg-[#fdf2f4]",
-    },
-    {
-      id: 8,
-      name: "Bakery & Biscuits",
-      slug: "bakery-biscuits",
-      image: bakeryBiscuitsImg,
-      bgTint: "bg-[#fdf5eb]",
-    },
-    {
-      id: 9,
-      name: "Tea, Coffee & Drinks",
-      slug: "tea-coffee-drinks",
-      image: teaCoffeeDrinksImg,
-      bgTint: "bg-[#f7f5f0]",
-    },
-    {
-      id: 10,
-      name: "Atta, Rice & Dal",
-      slug: "atta-rice-dal",
-      image: attaRiceDalImg,
-      bgTint: "bg-[#fbf6ed]",
-    },
-    {
-      id: 11,
-      name: "Masala, Oil & More",
-      slug: "masala-oil-more",
-      image: masalaOilMoreImg,
-      bgTint: "bg-[#fdf3f0]",
-    },
-    {
-      id: 12,
-      name: "Sauces & Spreads",
-      slug: "sauces-spreads",
-      image: saucesSpreadsImg,
-      bgTint: "bg-[#fef2f2]",
-    },
-    {
-      id: 13,
-      name: "Chicken, Meat & Fish",
-      slug: "chicken-meat-fish",
-      image: chickenMeatFishImg,
-      bgTint: "bg-[#fef2f5]",
-    },
-    {
-      id: 14,
-      name: "Organic & Healthy",
-      slug: "organic-healthy",
-      image: organicHealthyImg,
-      bgTint: "bg-[#edf7f2]",
-    },
-    {
-      id: 15,
-      name: "Baby Care",
-      slug: "baby-care",
-      image: babyCareImg,
-      bgTint: "bg-[#fdf2f8]",
-    },
-    {
-      id: 16,
-      name: "Pharma & Wellness",
-      slug: "pharma-wellness",
-      image: pharmaWellnessImg,
-      bgTint: "bg-[#eef8f8]",
-    },
-    {
-      id: 17,
-      name: "Cleaning Essentials",
-      slug: "cleaning-essentials",
-      image: cleaningEssentialsImg,
-      bgTint: "bg-[#ecf9fb]",
-    },
-    {
-      id: 18,
-      name: "Home & Office",
-      slug: "home-office",
-      image: homeOfficeImg,
-      bgTint: "bg-[#f0f2fd]",
-    },
-    {
-      id: 19,
-      name: "Personal Care",
-      slug: "personal-care",
-      image: personalCareImg,
-      bgTint: "bg-[#f5f2fd]",
-    },
-    {
-      id: 20,
-      name: "Pet Care",
-      slug: "pet-care",
-      image: petCareImg,
-      bgTint: "bg-[#fbf6ea]",
-    },
-  ];
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchCategoriesFromDb = async () => {
+      try {
+        setLoading(true);
+        const res = await categoryService.getAllCategories();
+        if (isMounted && res && Array.isArray(res.categories) && res.categories.length > 0) {
+          // Filter to show active categories
+          const activeList = res.categories.filter((c) => c.status !== "Inactive");
+          setCategories(activeList.length > 0 ? activeList : res.categories);
+        }
+      } catch (err) {
+        console.error("Failed to load categories from DB:", err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    fetchCategoriesFromDb();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <section className="w-full py-5">
@@ -193,35 +79,51 @@ export default function ProductCategory() {
             </Link>
           </div>
 
-          {/* 10-column Responsive Grid */}
-          <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-x-3 gap-y-5 sm:gap-x-4 sm:gap-y-6">
-            {categories.map((cat) => (
-              <Link
-                key={cat.id}
-                to={`/category/${cat.slug}`}
-                className="group flex flex-col items-center cursor-pointer transition-all duration-200 hover:-translate-y-1"
-              >
-                {/* Clean Frosted Cutout Card */}
-                <div
-                  className="w-full aspect-square rounded-2xl bg-white/70 backdrop-blur-md p-2 flex items-center justify-center overflow-hidden border border-white/85 shadow-xs group-hover:shadow-md group-hover:border-emerald-300 group-hover:bg-white/95 transition-all duration-300"
-                >
-                  <img
-                    src={cat.image}
-                    alt={cat.name}
-                    className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110"
-                    loading="lazy"
-                  />
-                </div>
+          {/* Dynamic Categories Grid from Database */}
+          {loading && categories.length === 0 ? (
+            <div className="py-12 flex flex-col items-center justify-center gap-2.5 text-slate-400">
+              <Loader2 className="w-7 h-7 text-emerald-600 animate-spin" />
+              <p className="text-xs font-semibold">Loading categories from database...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-x-3 gap-y-5 sm:gap-x-4 sm:gap-y-6">
+              {categories.map((cat) => {
+                const imgUrl = resolveCategoryImage(cat);
+                const targetSlug = cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 
-                {/* Pixel-Perfect Aligned Label */}
-                <div className="w-full min-h-[34px] flex items-start justify-center mt-2 px-0.5">
-                  <span className="text-[12px] sm:text-[13px] font-semibold text-slate-700 text-center leading-snug line-clamp-2 group-hover:text-emerald-700 transition-colors">
-                    {cat.name}
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
+                return (
+                  <Link
+                    key={cat.id}
+                    to={`/category/${targetSlug}`}
+                    className="group flex flex-col items-center cursor-pointer transition-all duration-200 hover:-translate-y-1"
+                  >
+                    {/* Clean Frosted Cutout Card */}
+                    <div className="w-full aspect-square rounded-2xl bg-white/70 backdrop-blur-md p-2 flex items-center justify-center overflow-hidden border border-white/85 shadow-xs group-hover:shadow-md group-hover:border-emerald-300 group-hover:bg-white/95 transition-all duration-300">
+                      <img
+                        src={imgUrl}
+                        alt={cat.name}
+                        onError={(e) => {
+                          const fallback = (cat.slug && PRESET_MAP[cat.slug]) || dairyBreadEggsImg;
+                          if (e.currentTarget.src !== fallback) {
+                            e.currentTarget.src = fallback;
+                          }
+                        }}
+                        className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110"
+                        loading="lazy"
+                      />
+                    </div>
+
+                    {/* Pixel-Perfect Aligned Label */}
+                    <div className="w-full min-h-[34px] flex items-start justify-center mt-2 px-0.5">
+                      <span className="text-[12px] sm:text-[13px] font-semibold text-slate-700 text-center leading-snug line-clamp-2 group-hover:text-emerald-700 transition-colors">
+                        {cat.name}
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </section>

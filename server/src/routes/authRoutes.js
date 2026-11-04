@@ -8,7 +8,9 @@ const {
     forgotPassword,
     verifyOtp,
     resetPassword,
-    resendOtp
+    resendOtp,
+    sendCustomerLoginOtp,
+    verifyCustomerLoginOtp
 } = require("../controllers/authController");
 const { protect } = require("../middlewares/authMiddleware");
 
@@ -19,6 +21,8 @@ router.post("/register/vendor", (req, res, next) => {
     register(req, res, next);
 });
 router.post("/login", login);
+router.post("/send-login-otp", sendCustomerLoginOtp);
+router.post("/verify-login-otp", verifyCustomerLoginOtp);
 router.get("/me", protect, getCurrentUser);
 
 // Password Reset OTP flow

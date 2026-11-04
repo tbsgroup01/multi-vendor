@@ -16,81 +16,31 @@ import {
   Edit3,
   ChevronUp,
   Layers,
+  Loader2,
+  RefreshCw,
+  Calendar,
+  DollarSign,
+  UserCheck,
+  AlertCircle,
 } from "lucide-react";
 import bannerAdminSubscriptionImg from "../../../assets/banner-admin-subscription-3d.png";
-
-// 3 Core Subscription Plans
-const INITIAL_PLANS = [
-  {
-    id: "plan-starter",
-    tierKey: "starter",
-    name: "Starter Merchant",
-    badge: "Basic Tier",
-    badgeColor: "bg-slate-100 text-slate-700 border-slate-200",
-    description: "Ideal for new local shops, home businesses and boutique startups.",
-    monthlyPrice: 999,
-    annualPrice: 9590, // ~₹799/mo
-    popular: false,
-    colorTheme: "slate",
-    accentBorder: "border-slate-200 hover:border-emerald-300",
-    icon: Store,
-    features: [
-      "Up to 50 active product listings",
-      "Standard merchant storefront profile",
-      "Weekly scheduled bank payouts",
-      "Basic order & sales analytics",
-      "Standard email support (24-48h)",
-    ],
-    activeVendorsCount: 38,
-  },
-  {
-    id: "plan-growth",
-    tierKey: "growth",
-    name: "Growth Pro",
-    badge: "Most Popular • Best Value",
-    badgeColor: "bg-emerald-500 text-white border-emerald-400 shadow-sm shadow-emerald-500/30",
-    description: "Designed for established sellers scaling catalog, orders & revenue.",
-    monthlyPrice: 2499,
-    annualPrice: 23990,
-    popular: true,
-    colorTheme: "emerald",
-    accentBorder: "border-emerald-500 ring-2 ring-emerald-500/20 shadow-xl shadow-emerald-600/10",
-    icon: Zap,
-    features: [
-      "Up to 500 active product listings",
-      "'Verified Merchant' trust badge",
-      "24-Hour express settlement payouts",
-      "Priority 24/7 in-app chat & ticket support",
-    ],
-    activeVendorsCount: 88,
-  },
-  {
-    id: "plan-enterprise",
-    tierKey: "enterprise",
-    name: "Enterprise Platinum",
-    badge: "Unlimited • VIP Partner",
-    badgeColor: "bg-gradient-to-r from-amber-500 to-amber-600 text-white border-amber-400 shadow-sm shadow-amber-500/30",
-    description: "Built for top brands, large distributors & high-volume mega merchants.",
-    monthlyPrice: 5999,
-    annualPrice: 57590, 
-    popular: false,
-    colorTheme: "amber",
-    accentBorder: "border-amber-300 hover:border-amber-500 hover:shadow-xl hover:shadow-amber-500/10",
-    icon: Crown,
-    features: [
-      "Unlimited product listings & variants",
-      "'Brand Partner' exclusive golden badge",
-      "Instant same-day (24h) bank transfers",
- "Priority 24/7 in-app chat & ticket support", 
-    ],
-    activeVendorsCount: 16,
-  },
-];
+import { adminService, subscriptionService } from "../../../services";
 
 export default function Subscription() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [plans, setPlans] = useState(INITIAL_PLANS);
+  const [plans, setPlans] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [billingCycle, setBillingCycle] = useState("monthly"); // "monthly" | "annual"
+
+  // Subscriptions & Stats from DB
+  const [stats, setStats] = useState({
+    totalSubscribers: 0,
+    mrrValue: 0,
+    growthPlanShare: 0,
+    retentionRate: "96.4%",
+  });
+  const [subscribers, setSubscribers] = useState([]);
 
   // Modals & Notifications
   const [editingPlan, setEditingPlan] = useState(null);
@@ -102,6 +52,7 @@ export default function Subscription() {
     monthlyPrice: 0,
     annualPrice: 0,
     description: "",
+    productLimit: 50,
   });
 
   // Scroll Parallax
@@ -133,52 +84,125 @@ export default function Subscription() {
     setToastMessage(msg);
     setTimeout(() => {
       setToastMessage("");
-    }, 3200);
+    }, 3500);
   };
+
+  // Fetch all subscription plans and metrics from Database
+  const fetchSubscriptionData = async () => {
+    try {
+      setLoading(true);
+      // Try subscriptionService overview first, fallback to adminService
+      let data = null;
+      try {
+        const res = await subscriptionService.getAdminOverview();
+        if (res && res.plans) data = res;
+      } catch (subErr) {
+        // Fallback to adminService
+        const res = await adminService.getAllPlans();
+        if (res && res.plans) data = res;
+      }
+
+      if (data && data.plans) {
+        setPlans(data.plans);
+        if (data.stats) setStats(data.stats);
+        if (data.subscribers) setSubscribers(data.subscribers);
+      }
+    } catch (err) {
+      console.error("Failed to load plans from DB:", err);
+      showToast("Error loading subscription data from database.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSubscriptionData();
+  }, []);
 
   // Handle Edit Plan
   const openEditPlan = (plan) => {
     setEditingPlan(plan);
     setEditFormData({
-      name: plan.name,
-      monthlyPrice: plan.monthlyPrice,
-      annualPrice: plan.annualPrice,
-      description: plan.description,
+      name: plan.name || "",
+      monthlyPrice: Number(plan.monthlyPrice || plan.price || 0),
+      annualPrice: Number(plan.annualPrice || Math.round((plan.monthlyPrice || plan.price || 0) * 10)),
+      description: plan.description || "",
+      productLimit: Number(plan.productLimit || 50),
     });
   };
 
-  const handleSavePlan = (e) => {
+  // Save changes to MySQL DB
+  const handleSavePlan = async (e) => {
     e.preventDefault();
     if (!editingPlan) return;
 
-    setPlans((prev) =>
-      prev.map((p) => {
-        if (p.id === editingPlan.id) {
-          return {
-            ...p,
-            name: editFormData.name,
-            monthlyPrice: Number(editFormData.monthlyPrice),
-            annualPrice: Number(editFormData.annualPrice),
-            description: editFormData.description,
-          };
-        }
-        return p;
-      })
-    );
+    try {
+      setSaving(true);
+      const payload = {
+        name: editFormData.name.trim(),
+        monthlyPrice: Number(editFormData.monthlyPrice),
+        annualPrice: Number(editFormData.annualPrice),
+        description: editFormData.description ? editFormData.description.trim() : "",
+        productLimit: Number(editFormData.productLimit),
+      };
 
-    setEditingPlan(null);
-    showToast(`"${editFormData.name}" updated successfully.`);
+      try {
+        await subscriptionService.updatePlan(editingPlan.id, payload);
+      } catch (e1) {
+        await adminService.updatePlan(editingPlan.id, payload);
+      }
+
+      showToast(`Plan "${editFormData.name}" updated successfully in database!`);
+      setEditingPlan(null);
+      // Re-fetch fresh data from DB
+      await fetchSubscriptionData();
+    } catch (err) {
+      console.error("Error saving plan to DB:", err);
+      showToast(err.message || "Failed to update plan in database.");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  // Top Metrics Calculation
-  const totalSubscribers = plans.reduce((acc, p) => acc + p.activeVendorsCount, 0);
-  const mrrValue =
-    plans.reduce((acc, p) => acc + p.activeVendorsCount * p.monthlyPrice, 0) / 100000;
-  const growthPlanShare = Math.round(
-    ((plans.find((p) => p.tierKey === "growth")?.activeVendorsCount || 0) /
-      (totalSubscribers || 1)) *
-      100
-  );
+  // Icon selector based on tierKey
+  const getPlanIcon = (tierKey, colorTheme) => {
+    if (tierKey === "enterprise" || colorTheme === "amber") return Crown;
+    if (tierKey === "growth" || colorTheme === "emerald") return Zap;
+    return Store;
+  };
+
+  // Card theme helper
+  const getPlanTheme = (plan) => {
+    if (plan.tierKey === "enterprise" || plan.colorTheme === "amber") {
+      return {
+        badge: plan.badge || "Unlimited • VIP Partner",
+        badgeColor: "bg-gradient-to-r from-amber-500 to-amber-600 text-white border-amber-400 shadow-sm shadow-amber-500/30",
+        accentBorder: "border-amber-300 hover:border-amber-500 hover:shadow-xl hover:shadow-amber-500/10",
+        iconColor: "bg-amber-100 text-amber-700",
+      };
+    }
+    if (plan.tierKey === "growth" || plan.colorTheme === "emerald" || plan.popular) {
+      return {
+        badge: plan.badge || "Most Popular • Best Value",
+        badgeColor: "bg-emerald-500 text-white border-emerald-400 shadow-sm shadow-emerald-500/30",
+        accentBorder: "border-emerald-500 ring-2 ring-emerald-500/20 shadow-xl shadow-emerald-600/10",
+        iconColor: "bg-emerald-100 text-emerald-700",
+      };
+    }
+    return {
+      badge: plan.badge || "Basic Tier",
+      badgeColor: "bg-slate-100 text-slate-700 border-slate-200",
+      accentBorder: "border-slate-200 hover:border-emerald-300",
+      iconColor: "bg-slate-100 text-slate-700",
+    };
+  };
+
+  // Compute stats dynamically if not provided directly
+  const totalSubscribers = stats.totalSubscribers ?? plans.reduce((acc, p) => acc + (p.activeVendorsCount || 0), 0);
+  const mrrValue = stats.mrrValue ?? (plans.reduce((acc, p) => acc + (p.activeVendorsCount || 0) * (p.monthlyPrice || p.price || 0), 0) / 100000);
+  const growthPlanShare = stats.growthPlanShare ?? (totalSubscribers > 0
+    ? Math.round(((plans.find((p) => p.tierKey === "growth")?.activeVendorsCount || 0) / totalSubscribers) * 100)
+    : 0);
 
   const subscriptionStats = [
     {
@@ -195,7 +219,7 @@ export default function Subscription() {
     {
       id: "monthly-arr",
       title: "Monthly Sub Revenue (MRR)",
-      value: `₹${mrrValue.toFixed(2)} Lakh`,
+      value: `₹${Number(mrrValue).toFixed(2)} Lakh`,
       icon: TrendingUp,
       iconColor: "text-white bg-gradient-to-tr from-teal-600 to-emerald-500 border-teal-400/40 shadow-md shadow-teal-600/25",
       bgGradient: "from-teal-50/90 via-white/85 to-white/60",
@@ -217,7 +241,7 @@ export default function Subscription() {
     {
       id: "retention-rate",
       title: "Renewal Retention Rate",
-      value: "96.4%",
+      value: stats.retentionRate || "96.4%",
       icon: Crown,
       iconColor: "text-white bg-gradient-to-tr from-amber-500 to-amber-400 border-amber-300 shadow-md shadow-amber-500/25",
       bgGradient: "from-amber-50/90 via-white/85 to-white/60",
@@ -335,7 +359,7 @@ export default function Subscription() {
                   Vendor Subscription Plans
                 </h1>
                 <p className="text-white/90 text-xs sm:text-sm font-medium mt-1.5 max-w-md leading-relaxed drop-shadow-xs">
-                  Manage marketplace membership tiers, pricing models, and active store subscriptions.
+                  Manage marketplace membership tiers, pricing models, and active store subscriptions in real-time.
                 </p>
               </div>
 
@@ -343,12 +367,21 @@ export default function Subscription() {
               <div className="relative z-10 pt-3 flex flex-wrap items-center gap-2 sm:gap-3">
                 <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs font-semibold shadow-xs">
                   <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse" />
-                  <span>3 Active Core Plans</span>
+                  <span>{plans.length} Database Core Plans</span>
                 </div>
                 <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-black/15 backdrop-blur-md border border-white/20 text-white/95 text-xs font-medium">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-300" />
-                  <span>Automated Tier Access & Renewal</span>
+                  <span>Live MySQL Database Sync</span>
                 </div>
+                <button
+                  onClick={fetchSubscriptionData}
+                  disabled={loading}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition cursor-pointer"
+                  title="Refresh from DB"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+                  <span>Refresh</span>
+                </button>
               </div>
             </div>
 
@@ -369,7 +402,7 @@ export default function Subscription() {
                     </h2>
                   </div>
                   <p className="text-xs sm:text-sm text-slate-500 font-normal mt-0.5">
-                    Click "Configure Plan" on any tier to customize plan details and subscription pricing.
+                    Click "Configure Plan" on any tier to modify pricing and details directly in MySQL database.
                   </p>
                 </div>
 
@@ -401,137 +434,251 @@ export default function Subscription() {
                 </div>
               </div>
 
-              {/* 3 Plans Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-stretch">
-                {plans.map((plan) => {
-                  const Icon = plan.icon;
-                  const currentPrice =
-                    billingCycle === "annual"
-                      ? Math.round(plan.annualPrice / 12)
-                      : plan.monthlyPrice;
-                  const totalCyclePrice =
-                    billingCycle === "annual" ? plan.annualPrice : plan.monthlyPrice;
+              {/* Loading State */}
+              {loading && plans.length === 0 ? (
+                <div className="py-20 flex flex-col items-center justify-center text-slate-500 gap-3">
+                  <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
+                  <p className="text-sm font-semibold">Loading subscription plans from database...</p>
+                </div>
+              ) : (
+                /* 3 Plans Grid */
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-stretch">
+                  {plans.map((plan) => {
+                    const theme = getPlanTheme(plan);
+                    const Icon = getPlanIcon(plan.tierKey, plan.colorTheme);
 
-                  return (
-                    <div
-                      key={plan.id}
-                      className={`relative rounded-3xl border bg-white p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 ${plan.accentBorder}`}
-                    >
-                      {/* Popular ribbon */}
-                      {plan.popular && (
-                        <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-black uppercase tracking-wider shadow-md shadow-emerald-600/30 flex items-center gap-1.5">
-                          <Sparkles className="w-3.5 h-3.5" />
-                          <span>MOST POPULAR</span>
-                        </div>
-                      )}
+                    const monthlyP = Number(plan.monthlyPrice || plan.price || 0);
+                    const annualP = Number(plan.annualPrice || Math.round(monthlyP * 10));
 
-                      <div>
-                        {/* Plan Header */}
-                        <div className="flex items-start justify-between gap-3 mb-4">
-                          <div>
-                            <span
-                              className={`inline-block px-2.5 py-1 rounded-lg text-xs font-extrabold border mb-2 ${plan.badgeColor}`}
-                            >
-                              {plan.badge}
-                            </span>
-                            <h3 className="text-xl font-black text-slate-900 tracking-tight">
-                              {plan.name}
-                            </h3>
+                    const currentPrice =
+                      billingCycle === "annual"
+                        ? Math.round(annualP / 12)
+                        : monthlyP;
+                    const totalCyclePrice =
+                      billingCycle === "annual" ? annualP : monthlyP;
+
+                    let featureList = [];
+                    if (Array.isArray(plan.features)) {
+                      featureList = plan.features;
+                    } else if (typeof plan.features === "string") {
+                      try {
+                        const parsed = JSON.parse(plan.features || "[]");
+                        featureList = Array.isArray(parsed) ? parsed : [plan.features];
+                      } catch (e) {
+                        featureList = plan.features.split(",").map((s) => s.trim()).filter(Boolean);
+                      }
+                    }
+
+                    return (
+                      <div
+                        key={plan.id}
+                        className={`relative rounded-3xl border bg-white p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 ${theme.accentBorder}`}
+                      >
+                        {/* Popular ribbon */}
+                        {plan.popular && (
+                          <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-black uppercase tracking-wider shadow-md shadow-emerald-600/30 flex items-center gap-1.5">
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>MOST POPULAR</span>
                           </div>
-                          <div
-                            className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${
-                              plan.colorTheme === "emerald"
-                                ? "bg-emerald-100 text-emerald-700"
-                                : plan.colorTheme === "amber"
-                                ? "bg-amber-100 text-amber-700"
-                                : "bg-slate-100 text-slate-700"
+                        )}
+
+                        <div>
+                          {/* Plan Header */}
+                          <div className="flex items-start justify-between gap-3 mb-4">
+                            <div>
+                              <span
+                                className={`inline-block px-2.5 py-1 rounded-lg text-xs font-extrabold border mb-2 ${theme.badgeColor}`}
+                              >
+                                {theme.badge}
+                              </span>
+                              <h3 className="text-xl font-black text-slate-900 tracking-tight">
+                                {plan.name}
+                              </h3>
+                            </div>
+                            <div
+                              className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${theme.iconColor}`}
+                            >
+                              <Icon className="w-5 h-5 stroke-[2.2]" />
+                            </div>
+                          </div>
+
+                          <p className="text-xs text-slate-500 leading-relaxed mb-5 min-h-[36px]">
+                            {plan.description || "Vendor marketplace membership tier."}
+                          </p>
+
+                          {/* Price Tag */}
+                          <div className="pb-5 mb-5 border-b border-slate-100">
+                            <div className="flex items-baseline gap-1">
+                              <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+                                ₹{currentPrice.toLocaleString("en-IN")}
+                              </span>
+                              <span className="text-xs font-semibold text-slate-400">
+                                / month
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 mt-1 font-medium">
+                              {billingCycle === "annual" ? (
+                                <span>
+                                  Billed annually at{" "}
+                                  <strong className="text-slate-700">
+                                    ₹{totalCyclePrice.toLocaleString("en-IN")}
+                                  </strong>
+                                  /yr (2 months free)
+                                </span>
+                              ) : (
+                                <span>Billed monthly with cancel anytime flex</span>
+                              )}
+                            </p>
+                          </div>
+
+                          {/* Features Checklist */}
+                          <div className="space-y-3 mb-6">
+                            <span className="text-xs font-bold text-slate-900 uppercase tracking-wider block">
+                              Included Capabilities
+                            </span>
+                            <ul className="space-y-2.5">
+                              {featureList.length > 0 ? (
+                                featureList.map((featText, idx) => (
+                                  <li
+                                    key={idx}
+                                    className="text-xs flex items-start gap-2.5 text-slate-700 font-medium"
+                                  >
+                                    <div className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                                      <Check className="w-2.5 h-2.5 stroke-[3]" />
+                                    </div>
+                                    <span>{featText}</span>
+                                  </li>
+                                ))
+                              ) : (
+                                <li className="text-xs text-slate-400">
+                                  Standard marketplace privileges included.
+                                </li>
+                              )}
+                            </ul>
+                          </div>
+                        </div>
+
+                        {/* Card Bottom: Active Subscribers Count & Admin Edit Button */}
+                        <div className="pt-4 border-t border-slate-100 space-y-3">
+                          <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
+                            <span>Subscribed Vendors:</span>
+                            <span className="font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded-md">
+                              {plan.activeVendorsCount || 0} Stores
+                            </span>
+                          </div>
+
+                          <button
+                            onClick={() => openEditPlan(plan)}
+                            className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-95 ${
+                              plan.popular
+                                ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/25"
+                                : "bg-slate-100 hover:bg-emerald-50 text-slate-800 hover:text-emerald-700 border border-slate-200 hover:border-emerald-300"
                             }`}
                           >
-                            <Icon className="w-5 h-5 stroke-[2.2]" />
-                          </div>
-                        </div>
-
-                        <p className="text-xs text-slate-500 leading-relaxed mb-5 min-h-[36px]">
-                          {plan.description}
-                        </p>
-
-                        {/* Price Tag */}
-                        <div className="pb-5 mb-5 border-b border-slate-100">
-                          <div className="flex items-baseline gap-1">
-                            <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-                              ₹{currentPrice.toLocaleString("en-IN")}
-                            </span>
-                            <span className="text-xs font-semibold text-slate-400">
-                              / month
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-slate-500 mt-1 font-medium">
-                            {billingCycle === "annual" ? (
-                              <span>
-                                Billed annually at{" "}
-                                <strong className="text-slate-700">
-                                  ₹{totalCyclePrice.toLocaleString("en-IN")}
-                                </strong>
-                                /yr (2 months free)
-                              </span>
-                            ) : (
-                              <span>Billed monthly with cancel anytime flex</span>
-                            )}
-                          </p>
-                        </div>
-
-                        {/* Features Checklist */}
-                        <div className="space-y-3 mb-6">
-                          <span className="text-xs font-bold text-slate-900 uppercase tracking-wider block">
-                            Included Capabilities
-                          </span>
-                          <ul className="space-y-2.5">
-                            {plan.features.map((featText, idx) => (
-                              <li
-                                key={idx}
-                                className="text-xs flex items-start gap-2.5 text-slate-700 font-medium"
-                              >
-                                <div className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
-                                  <Check className="w-2.5 h-2.5 stroke-[3]" />
-                                </div>
-                                <span>{featText}</span>
-                              </li>
-                            ))}
-                          </ul>
+                            <Edit3 className="w-3.5 h-3.5" />
+                            <span>Configure {plan.name}</span>
+                          </button>
                         </div>
                       </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
-                      {/* Card Bottom: Active Subscribers Count & Admin Edit Button */}
-                      <div className="pt-4 border-t border-slate-100 space-y-3">
-                        <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
-                          <span>Subscribed Vendors:</span>
-                          <span className="font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded-md">
-                            {plan.activeVendorsCount} Stores
-                          </span>
-                        </div>
-
-                        <button
-                          onClick={() => openEditPlan(plan)}
-                          className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-95 ${
-                            plan.popular
-                              ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/25"
-                              : "bg-slate-100 hover:bg-emerald-50 text-slate-800 hover:text-emerald-700 border border-slate-200 hover:border-emerald-300"
-                          }`}
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                          <span>Configure {plan.name}</span>
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
+            {/* Active Vendor Subscriptions & Invoices Section */}
+            <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 sm:p-8 border border-white/80 shadow-[0_8px_32px_0_rgba(16,185,129,0.06)] relative overflow-hidden">
+              <div className="flex items-center justify-between pb-5 border-b border-emerald-100/60 mb-6">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <UserCheck className="w-5 h-5 text-emerald-600" />
+                    <h3 className="text-lg font-black text-slate-900 tracking-tight">
+                      Vendor Subscription Invoices & Activity
+                    </h3>
+                  </div>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    Real-time transaction log of marketplace vendor plan purchases & renewals.
+                  </p>
+                </div>
+                <div className="px-3 py-1 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold">
+                  {subscribers.length} Total Subscriptions
+                </div>
               </div>
+
+              {subscribers.length === 0 ? (
+                <div className="py-12 px-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 flex flex-col items-center justify-center text-center">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-3">
+                    <CreditCard className="w-6 h-6" />
+                  </div>
+                  <h4 className="text-sm font-bold text-slate-800 mb-1">
+                    No Subscription Transactions Yet
+                  </h4>
+                  <p className="text-xs text-slate-500 max-w-md">
+                    When vendors purchase membership tiers from their dashboard, their active subscriptions, invoices, and validity dates will be displayed here in real time.
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-200 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                        <th className="pb-3 px-3">Invoice #</th>
+                        <th className="pb-3 px-3">Store Name</th>
+                        <th className="pb-3 px-3">Plan</th>
+                        <th className="pb-3 px-3">Amount Paid</th>
+                        <th className="pb-3 px-3">Valid Until</th>
+                        <th className="pb-3 px-3">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                      {subscribers.map((sub) => (
+                        <tr key={sub.id} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="py-3.5 px-3 font-mono font-bold text-slate-800">
+                            {sub.invoiceNumber || `INV-${sub.id}`}
+                          </td>
+                          <td className="py-3.5 px-3">
+                            <span className="font-bold text-slate-900 block">{sub.vendorName}</span>
+                            <span className="text-[11px] text-slate-400">{sub.vendorEmail}</span>
+                          </td>
+                          <td className="py-3.5 px-3">
+                            <span className="inline-block px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-bold border border-emerald-100">
+                              {sub.planName}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-3 font-bold text-slate-900">
+                            ₹{Number(sub.pricePaid || 0).toLocaleString("en-IN")}
+                          </td>
+                          <td className="py-3.5 px-3 text-slate-500">
+                            {sub.endDate ? new Date(sub.endDate).toLocaleDateString() : "Ongoing"}
+                          </td>
+                          <td className="py-3.5 px-3">
+                            <span
+                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                sub.status === "active"
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : "bg-slate-100 text-slate-600"
+                              }`}
+                            >
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full ${
+                                  sub.status === "active" ? "bg-emerald-500" : "bg-slate-400"
+                                }`}
+                              />
+                              <span>{sub.status || "active"}</span>
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </main>
         </div>
       </div>
 
-      {/* MODAL: Edit Plan Settings */}
+      {/* MODAL: Edit Plan Settings in Database */}
       {editingPlan && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-emerald-100 space-y-5 animate-in zoom-in-95 duration-200">
@@ -545,7 +692,7 @@ export default function Subscription() {
                     Configure {editingPlan.name}
                   </h3>
                   <span className="text-xs text-slate-500">
-                    Adjust plan details and subscription price points
+                    Adjust plan details and persist changes to MySQL Database
                   </span>
                 </div>
               </div>
@@ -614,6 +761,24 @@ export default function Subscription() {
 
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1">
+                  Product Listing Quota Limit
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  value={editFormData.productLimit}
+                  onChange={(e) =>
+                    setEditFormData({
+                      ...editFormData,
+                      productLimit: e.target.value,
+                    })
+                  }
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">
                   Plan Description
                 </label>
                 <textarea
@@ -633,15 +798,18 @@ export default function Subscription() {
                 <button
                   type="button"
                   onClick={() => setEditingPlan(null)}
+                  disabled={saving}
                   className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-md shadow-emerald-600/20 transition-all"
+                  disabled={saving}
+                  className="px-5 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-md shadow-emerald-600/20 transition-all flex items-center gap-1.5"
                 >
-                  Save Plan Changes
+                  {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Save Plan to DB</span>
                 </button>
               </div>
             </form>

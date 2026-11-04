@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -14,8 +14,36 @@ import {
   Star,
   ThumbsDown,
   ThumbsUp,
+  Loader2,
 } from "lucide-react";
 import Footer from "../components/Footer";
+import { productService, getUploadUrl, cartService } from "../../../services";
+
+// Helper: parse product images safely into an array of URLs
+const parseImages = (prod) => {
+  if (!prod) return [];
+  let list = [];
+  if (Array.isArray(prod.images)) {
+    list = prod.images;
+  } else if (typeof prod.images === "string") {
+    try {
+      const parsed = JSON.parse(prod.images);
+      if (Array.isArray(parsed)) list = parsed;
+      else if (typeof parsed === "string") list = [parsed];
+      else list = prod.images.split(",").map((s) => s.trim());
+    } catch {
+      list = prod.images.split(",").map((s) => s.trim());
+    }
+  }
+  if (list.length === 0 && prod.image) {
+    if (Array.isArray(prod.image)) list = prod.image;
+    else list = [prod.image];
+  }
+  const cleanList = list.filter(Boolean).map((img) => getUploadUrl(img));
+  return cleanList.length > 0
+    ? cleanList
+    : ["https://images.unsplash.com/photo-1542838132-92c53300491e?w=600&h=600&fit=crop&q=80"];
+};
 
 const customerReviews = [
   {
@@ -249,22 +277,56 @@ export default function ProductDetailspage() {
   const { id } = useParams();
   const { state } = useLocation();
 
-  // Resolve product from state, catalog or fallback
-  const product =
-    state?.product ||
-    PRODUCT_CATALOG[id] || {
-      id: id || "item-1",
-      name: "Fresh Premium Market Choice",
-      unit: "1 unit",
-      price: 99,
-      mrp: 120,
-      rating: 4.8,
-      reviews: 420,
-      categoryName: state?.categoryName || "Shop",
-      categorySlug: "dairy-bread-eggs",
-      image: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=600&h=600&fit=crop&q=80",
-      description: "Carefully selected and freshly packaged for guaranteed quality and superior taste.",
+  const [productData, setProductData] = useState(
+    state?.product || PRODUCT_CATALOG[id] || null
+  );
+  const [loadingProduct, setLoadingProduct] = useState(
+    !state?.product && !PRODUCT_CATALOG[id]
+  );
+
+  useEffect(() => {
+    if (state?.product) {
+      setProductData(state.product);
+      return;
+    }
+    if (PRODUCT_CATALOG[id]) {
+      setProductData(PRODUCT_CATALOG[id]);
+      return;
+    }
+
+    let isMounted = true;
+    const fetchProduct = async () => {
+      try {
+        setLoadingProduct(true);
+        const res = await productService.getProductById(id);
+        if (isMounted && res && res.product) {
+          setProductData(res.product);
+        }
+      } catch (err) {
+        console.error("Failed to load product details from DB:", err);
+      } finally {
+        if (isMounted) setLoadingProduct(false);
+      }
     };
+    fetchProduct();
+    return () => {
+      isMounted = false;
+    };
+  }, [id, state?.product]);
+
+  const product = productData || {
+    id: id || "item-1",
+    name: "Fresh Premium Market Choice",
+    unit: "1 unit",
+    price: 99,
+    mrp: 120,
+    rating: 4.8,
+    reviews: 420,
+    categoryName: state?.categoryName || "Shop",
+    categorySlug: "dairy-bread-eggs",
+    image: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=600&h=600&fit=crop&q=80",
+    description: "Carefully selected and freshly packaged for guaranteed quality and superior taste.",
+  };
 
   const [quantity, setQuantity] = useState(1);
   const [isAdded, setIsAdded] = useState(false);
@@ -275,21 +337,61 @@ export default function ProductDetailspage() {
   const reviewsRef = useRef(null);
 
   const name = product.name || product.title;
-  const categoryName = state?.categoryName || product.categoryName || "Shop";
-  const images = product.images?.length ? product.images : [product.image];
+  const categoryName =
+    state?.categoryName ||
+    product.category?.name ||
+    product.categoryName ||
+    "Shop";
+  const categorySlug =
+    product.categorySlug ||
+    (product.category?.name
+      ? product.category.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")
+      : "dairy-bread-eggs");
+  const images = parseImages(product);
   const units = product.variants?.length
     ? product.variants
     : [{ unit: product.unit || "1 unit", price: product.price, mrp: product.mrp }];
   const selectedUnit = units[selectedUnitIndex] || units[0];
-  const price = selectedUnit.price ?? product.price;
-  const mrp = selectedUnit.mrp ?? product.mrp ?? price;
-  const unit = selectedUnit.unit || product.unit;
+  const price = Number(
+    selectedUnit.price ??
+      (product.discountPrice && Number(product.discountPrice) > 0
+        ? product.discountPrice
+        : product.price)
+  );
+  const mrp = Number(
+    selectedUnit.mrp ??
+      (product.discountPrice && Number(product.discountPrice) > 0
+        ? product.price
+        : product.mrp ?? price)
+  );
+  const unit = selectedUnit.unit || product.unit || "1 unit";
   const savings = mrp > price ? mrp - price : 0;
-  const reviews = product.reviews ?? product.ratingCount ?? "0";
-  const rating = product.rating || 4.8;
-  const inStock = product.inStock !== false;
+  const reviews = product.reviews ?? product.reviewCount ?? product.ratingCount ?? "120+";
+  const rating = Number(product.rating) ? Number(product.rating).toFixed(1) : "4.8";
+  const inStock = product.status !== "out_of_stock" && product.stock !== 0;
   const formattedReviews =
     typeof reviews === "number" ? reviews.toLocaleString("en-IN") : reviews;
+
+  const handleAddToCart = async () => {
+    setQuantity(1);
+    setIsAdded(true);
+    try {
+      await cartService.addToCart({ productId: product.id, quantity: 1 });
+    } catch {
+      // Local fallback
+    }
+  };
+
+  if (loadingProduct) {
+    return (
+      <div className="min-h-screen bg-[#F6F8FD] flex flex-col items-center justify-center gap-3">
+        <Loader2 className="w-10 h-10 text-emerald-600 animate-spin" />
+        <p className="text-sm font-semibold text-slate-600">
+          Loading product details...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -436,10 +538,7 @@ export default function ProductDetailspage() {
                     <button
                       type="button"
                       disabled={!inStock}
-                      onClick={() => {
-                        setQuantity(1);
-                        setIsAdded(true);
-                      }}
+                      onClick={handleAddToCart}
                       className="h-11 min-w-32 rounded-xl bg-[#049669] hover:bg-[#03704f] px-6 text-sm font-bold text-white transition disabled:cursor-not-allowed disabled:bg-slate-300 shadow-md shadow-emerald-600/20 cursor-pointer"
                     >
                       Add to cart
