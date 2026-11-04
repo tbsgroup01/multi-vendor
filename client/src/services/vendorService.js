@@ -6,6 +6,7 @@ export const vendorService = {
   approveVendor: (id) => api.put(`/vendors/${id}/approve`),
   rejectVendor: (id, reason = "") => api.put(`/vendors/${id}/reject`, { reason }),
   updateVendorStatus: (id, status) => api.put(`/vendors/${id}/status`, { status }),
+  deleteVendor: (id) => api.delete(`/vendors/${id}`),
 };
 
 export default vendorService;

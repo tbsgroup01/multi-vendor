@@ -1,18 +1,14 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Star,
   ShoppingCart,
-  ChevronLeft,
-  ChevronRight,
   Check,
   Zap,
 } from "lucide-react";
 
 export default function SuggestedItem() {
-  const [wishlist, setWishlist] = useState({});
   const [addedItems, setAddedItems] = useState({});
-  const scrollContainerRef = useRef(null);
 
   const products = [
     {
@@ -135,13 +131,157 @@ export default function SuggestedItem() {
       specs: "100% UV Protection | Gold Metal Frame",
       categorySlug: "fashion",
     },
+    {
+      id: "fk9",
+      title: "OnePlus 12 5G (Flowy Emerald, 256 GB)",
+      brand: "OnePlus",
+      rating: 4.6,
+      ratingCount: "38,210",
+      price: 64999,
+      mrp: 69999,
+      image:
+        "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=500&h=500&fit=crop&q=80",
+      assured: true,
+      tag: "Flagship",
+      specs: "Snapdragon 8 Gen 3 | 5400mAh Battery",
+      categorySlug: "electronics",
+    },
+    {
+      id: "fk10",
+      title: "Samsung Galaxy Watch 6 Bluetooth (Graphite, 44mm)",
+      brand: "Samsung",
+      rating: 4.5,
+      ratingCount: "21,430",
+      price: 21999,
+      mrp: 33999,
+      image:
+        "https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=500&h=500&fit=crop&q=80",
+      assured: true,
+      tag: "Hot Deal",
+      specs: "Sapphire Crystal | Sleep Coaching",
+      categorySlug: "electronics",
+    },
+    {
+      id: "fk11",
+      title: "Bose QuietComfort Ultra Wireless Earbuds",
+      brand: "Bose",
+      rating: 4.7,
+      ratingCount: "17,890",
+      price: 23900,
+      mrp: 29900,
+      image:
+        "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=500&h=500&fit=crop&q=80",
+      assured: true,
+      tag: "Top Audio",
+      specs: "Spatial Audio | CustomTune Technology",
+      categorySlug: "electronics",
+    },
+    {
+      id: "fk12",
+      title: "Sony PlayStation 5 Slim Console (1TB Edition)",
+      brand: "Sony",
+      rating: 4.9,
+      ratingCount: "42,670",
+      price: 49990,
+      mrp: 54990,
+      image:
+        "https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=500&h=500&fit=crop&q=80",
+      assured: true,
+      tag: "Top Gaming",
+      specs: "Ultra-Speed SSD | 4K 120Hz Ray Tracing",
+      categorySlug: "electronics",
+    },
+    {
+      id: "fk13",
+      title: "Logitech MX Master 3S Wireless Performance Mouse",
+      brand: "Logitech",
+      rating: 4.8,
+      ratingCount: "31,540",
+      price: 8995,
+      mrp: 10995,
+      image:
+        "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=500&h=500&fit=crop&q=80",
+      assured: true,
+      tag: "Productivity",
+      specs: "8K DPI Any-Surface | Quiet Clicks",
+      categorySlug: "electronics",
+    },
+    {
+      id: "fk14",
+      title: "Marshall Emberton II Portable Bluetooth Speaker",
+      brand: "Marshall",
+      rating: 4.7,
+      ratingCount: "14,320",
+      price: 14999,
+      mrp: 19999,
+      image:
+        "https://images.unsplash.com/photo-1543512214-318c7553f230?w=500&h=500&fit=crop&q=80",
+      assured: true,
+      tag: "Iconic Sound",
+      specs: "30+ Hours Battery | Stack Mode",
+      categorySlug: "electronics",
+    },
+    {
+      id: "fk15",
+      title: "Apple iPad Air M2 11-inch (Space Grey, 128 GB Wi-Fi)",
+      brand: "Apple",
+      rating: 4.8,
+      ratingCount: "16,400",
+      price: 59900,
+      mrp: 64900,
+      image:
+        "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=500&h=500&fit=crop&q=80",
+      assured: true,
+      tag: "Best Tablet",
+      specs: "Liquid Retina Display | Apple Pencil Pro",
+      categorySlug: "electronics",
+    },
+    {
+      id: "fk16",
+      title: "Fujifilm Instax Mini 12 Instant Film Camera",
+      brand: "Fujifilm",
+      rating: 4.6,
+      ratingCount: "29,810",
+      price: 6499,
+      mrp: 7999,
+      image:
+        "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=500&h=500&fit=crop&q=80",
+      assured: true,
+      tag: "Instant Fun",
+      specs: "Selfie Mirror | Automatic Exposure",
+      categorySlug: "electronics",
+    },
+    {
+      id: "fk17",
+      title: "Keychron K2 Pro Wireless Mechanical Keyboard",
+      brand: "Keychron",
+      rating: 4.7,
+      ratingCount: "9,640",
+      price: 8499,
+      mrp: 10999,
+      image:
+        "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=500&h=500&fit=crop&q=80",
+      assured: true,
+      tag: "Custom Key",
+      specs: "Hot-Swappable | RGB Backlit QMK/VIA",
+      categorySlug: "electronics",
+    },
+    {
+      id: "fk18",
+      title: "Puma Nitro Velocity 3 Men's Running Shoes",
+      brand: "Puma",
+      rating: 4.6,
+      ratingCount: "11,280",
+      price: 5999,
+      mrp: 8999,
+      image:
+        "https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=500&h=500&fit=crop&q=80",
+      assured: true,
+      tag: "Comfort Pro",
+      specs: "NITROFOAM Cushioning | PUMAGRIP",
+      categorySlug: "fashion",
+    },
   ];
-
-  const toggleWishlist = (id, e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setWishlist((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
 
   const handleAddToCart = (id, e) => {
     e.preventDefault();
@@ -152,21 +292,13 @@ export default function SuggestedItem() {
     }, 2000);
   };
 
-  const scroll = (direction) => {
-    if (scrollContainerRef.current) {
-      const scrollAmount = direction === "left" ? -350 : 350;
-      scrollContainerRef.current.scrollBy({
-        left: scrollAmount,
-        behavior: "smooth",
-      });
-    }
-  };
-
   return (
     <section className="w-full py-6">
       <div className="max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white/65 backdrop-blur-2xl rounded-3xl border border-white/80 p-5 sm:p-7 shadow-[0_8px_32px_0_rgba(16,185,129,0.06)] relative overflow-hidden transition-all">
           <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent" />
+          
+          {/* Header */}
           <div className="flex items-center justify-between pb-4 mb-5 border-b border-emerald-100/60">
             <div>
               <div className="flex items-center gap-2">
@@ -179,41 +311,22 @@ export default function SuggestedItem() {
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-slate-500 font-normal mt-0.5">
-                Based on your interest in electronics, gadgets & trending
-                lifestyle
+                Based on your interest in electronics, gadgets & trending lifestyle
               </p>
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
               <Link
                 to="/shop"
-                className="text-xs sm:text-sm font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-100/60 hover:bg-emerald-100/90 border border-emerald-200/50 px-3 py-1 rounded-full backdrop-blur-md transition-all tracking-wide uppercase"
+                className="text-xs sm:text-sm font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-100/60 hover:bg-emerald-100/90 border border-emerald-200/50 px-4 py-1.5 rounded-full backdrop-blur-md transition-all tracking-wide uppercase shadow-2xs"
               >
                 VIEW ALL
               </Link>
-              <div className="hidden sm:flex items-center gap-1.5 pl-2 border-l border-emerald-100">
-                <button
-                  onClick={() => scroll("left")}
-                  aria-label="Previous Products"
-                  className="w-8 h-8 rounded-full border border-emerald-200/60 bg-white/70 backdrop-blur-md flex items-center justify-center text-emerald-700 hover:bg-emerald-50 transition-colors cursor-pointer shadow-2xs"
-                >
-                  <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
-                </button>
-                <button
-                  onClick={() => scroll("right")}
-                  aria-label="Next Products"
-                  className="w-8 h-8 rounded-full border border-emerald-200/60 bg-white/70 backdrop-blur-md flex items-center justify-center text-emerald-700 hover:bg-emerald-50 transition-colors cursor-pointer shadow-2xs"
-                >
-                  <ChevronRight className="w-4 h-4 stroke-[2.5]" />
-                </button>
-              </div>
             </div>
           </div>
-          <div
-            ref={scrollContainerRef}
-            className="flex items-stretch gap-4 sm:gap-5 overflow-x-auto pb-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-          >
+
+          {/* 3 Rows Grid Showcase */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5 sm:gap-4 lg:gap-5">
             {products.map((item) => {
-              const isWishlisted = !!wishlist[item.id];
               const isAdded = !!addedItems[item.id];
 
               return (
@@ -221,11 +334,11 @@ export default function SuggestedItem() {
                   key={item.id}
                   to={`/product/${item.id}`}
                   state={{ product: item, categoryName: item.categorySlug }}
-                  className="group relative flex-none w-[230px] sm:w-[260px] bg-white/70 backdrop-blur-xl rounded-2xl sm:rounded-3xl border border-white/85 p-3.5 sm:p-4 flex flex-col justify-between hover:shadow-xl hover:border-emerald-200 transition-all duration-300 cursor-pointer shadow-xs overflow-hidden"
+                  className="group relative w-full bg-white/70 backdrop-blur-xl rounded-2xl sm:rounded-3xl border border-white/85 p-3 sm:p-4 flex flex-col justify-between hover:shadow-xl hover:border-emerald-200 hover:-translate-y-1 transition-all duration-300 cursor-pointer shadow-xs overflow-hidden"
                 >
                   <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/80 to-transparent" />
                   <div>
-                    <div className="w-full h-44 sm:h-48 rounded-2xl bg-white/75 backdrop-blur-md border border-white/90 p-3 flex items-center justify-center overflow-hidden mb-3.5 shadow-2xs">
+                    <div className="w-full h-36 sm:h-40 lg:h-44 rounded-2xl bg-white/75 backdrop-blur-md border border-white/90 p-2.5 sm:p-3 flex items-center justify-center overflow-hidden mb-3 shadow-2xs">
                       <img
                         src={item.image}
                         alt={item.title}
@@ -233,36 +346,37 @@ export default function SuggestedItem() {
                         loading="lazy"
                       />
                     </div>
-                    <h3 className="text-xs sm:text-[13px] font-bold text-slate-900 leading-snug line-clamp-2 min-h-[36px] group-hover:text-emerald-700 transition-colors">
+                    <h3 className="text-xs sm:text-[13px] font-bold text-slate-900 leading-snug line-clamp-2 min-h-[34px] group-hover:text-emerald-700 transition-colors">
                       {item.title}
                     </h3>
                     <p className="text-[11px] text-slate-500 mt-1 line-clamp-1">
                       {item.specs}
                     </p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-emerald-600 text-white font-bold text-[11px] shadow-2xs">
+                    <div className="flex items-center gap-1.5 sm:gap-2 mt-2">
+                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-emerald-600 text-white font-bold text-[10px] sm:text-[11px] shadow-2xs">
                         <span>{item.rating}</span>
                         <Star className="w-2.5 h-2.5 fill-white text-white" />
                       </span>
-                      <span className="text-[11px] font-semibold text-slate-400">
+                      <span className="text-[10px] sm:text-[11px] font-semibold text-slate-400">
                         ({item.ratingCount})
                       </span>
                     </div>
                   </div>
-                  <div className="pt-3 border-t border-emerald-100/60 mt-3">
-                    <div className="flex items-baseline gap-2 mb-2">
-                      <span className="text-base sm:text-lg font-black text-slate-900 leading-none">
+                  
+                  <div className="pt-2.5 sm:pt-3 border-t border-emerald-100/60 mt-3">
+                    <div className="flex items-baseline gap-1.5 sm:gap-2 mb-2">
+                      <span className="text-sm sm:text-base lg:text-lg font-black text-slate-900 leading-none">
                         ₹{item.price.toLocaleString("en-IN")}
                       </span>
                       {item.mrp > item.price && (
-                        <span className="text-xs text-slate-400 line-through font-normal">
+                        <span className="text-[10px] sm:text-xs text-slate-400 line-through font-normal">
                           ₹{item.mrp.toLocaleString("en-IN")}
                         </span>
                       )}
                     </div>
                     <button
                       onClick={(e) => handleAddToCart(item.id, e)}
-                      className={`w-full py-2 px-3 rounded-xl font-bold text-xs transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-95 ${
+                      className={`w-full py-1.5 sm:py-2 px-2.5 sm:px-3 rounded-xl font-bold text-xs transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-95 ${
                         isAdded
                           ? "bg-emerald-600 text-white"
                           : "bg-emerald-50 hover:bg-[#059669] text-[#059669] hover:text-white border border-emerald-200/60 backdrop-blur-md"
@@ -271,12 +385,12 @@ export default function SuggestedItem() {
                       {isAdded ? (
                         <>
                           <Check className="w-3.5 h-3.5 stroke-[3]" />
-                          <span>Added to Cart</span>
+                          <span className="text-xs">Added</span>
                         </>
                       ) : (
                         <>
                           <ShoppingCart className="w-3.5 h-3.5" />
-                          <span>Add to Cart</span>
+                          <span className="text-xs">Add to Cart</span>
                         </>
                       )}
                     </button>

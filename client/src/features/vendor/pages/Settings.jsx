@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
+import bannerSettingsImg from "../../../assets/banner-settings-3d.png";
 import {
   User,
   Store,
@@ -27,7 +28,7 @@ export default function Settings() {
   const [profileData, setProfileData] = useState({
     name: "Vendor Admin",
     email: "vendor@shopmart.com",
-    phone: "+91 98201 44521",
+    phone: "+91 98xxxxxxxx",
     designation: "Store Owner & Managing Partner",
     avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=300&fit=crop&q=80",
   });
@@ -108,23 +109,87 @@ export default function Settings() {
         />
         <div className="flex-1 flex flex-col h-full min-w-0 overflow-y-auto relative z-10">
         <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-5 sm:space-y-6   w-full mx-auto pb-12">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-[#049669]/95 via-[#059669]/90 to-[#10B981]/85 backdrop-blur-2xl rounded-xl sm:rounded-2xl p-5 sm:p-7 text-white border border-white/20 shadow-[0_12px_40px_rgba(4,150,105,0.25)] relative overflow-hidden">
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-emerald-300/60 to-transparent" />
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/15 via-transparent to-black/15" />
-            <div className="space-y-1 z-10 relative">
-              <span className="text-xs uppercase font-extrabold text-emerald-100 tracking-wider">
-                Configuration &amp; Controls
-              </span>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight drop-shadow-sm">
-                Settings
-              </h1>
-              <p className="text-xs sm:text-sm text-emerald-50 max-w-xl font-medium">
-                Manage your personal vendor admin profile and configure your customer-facing store settings.
-              </p>
+          {/* Welcome Banner Created with pure Code & SVG (High-Resolution Coded Banner) */}
+          <div className="relative rounded-2xl sm:rounded-3xl p-5 sm:p-7 lg:p-8 min-h-[175px] sm:min-h-[190px] lg:min-h-[200px] flex flex-col justify-between overflow-hidden shadow-[0_16px_40px_rgba(4,150,105,0.22)] border border-emerald-400/30 group">
+            {/* Background SVG Fluid Organic Waves */}
+            <svg
+              className="pointer-events-none absolute inset-0 w-full h-full object-cover"
+              viewBox="0 0 1024 200"
+              preserveAspectRatio="none"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <defs>
+                <linearGradient id="settingsBannerBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#1B744A" />
+                  <stop offset="40%" stopColor="#228C52" />
+                  <stop offset="100%" stopColor="#2CA85C" />
+                </linearGradient>
+                <linearGradient id="settingsWaveHighlight" x1="100%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#38C260" stopOpacity="0.5" />
+                  <stop offset="60%" stopColor="#259452" stopOpacity="0.12" />
+                  <stop offset="100%" stopColor="transparent" stopOpacity="0" />
+                </linearGradient>
+                <linearGradient id="settingsWaveDeep" x1="0%" y1="100%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#114E30" stopOpacity="0.8" />
+                  <stop offset="50%" stopColor="#186740" stopOpacity="0.4" />
+                  <stop offset="100%" stopColor="transparent" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+
+              <rect width="1024" height="200" fill="url(#settingsBannerBgGrad)" />
+              <path
+                d="M 0 200 C 240 185 380 130 620 160 C 800 182 920 150 1024 115 L 1024 200 Z"
+                fill="url(#settingsWaveDeep)"
+              />
+              <path
+                d="M 280 0 C 420 75 600 40 740 100 C 870 155 945 85 1024 40 L 1024 0 Z"
+                fill="url(#settingsWaveHighlight)"
+              />
+              <path
+                d="M 0 0 C 300 0 420 120 670 80 C 850 50 930 20 1024 0 Z"
+                fill="white"
+                fillOpacity="0.07"
+              />
+            </svg>
+
+            {/* Specular glass reflection */}
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-emerald-200/60 to-transparent" />
+
+            {/* Right 3D Settings Artwork - Transparent PNG */}
+            <div className="absolute right-2 sm:right-6 lg:right-10 top-1/2 -translate-y-1/2 h-[90%] sm:h-[94%] lg:h-[98%] w-auto max-w-[38%] sm:max-w-[42%] lg:max-w-[45%] pointer-events-none select-none z-10 hidden sm:flex items-center justify-end">
+              <img
+                src={bannerSettingsImg}
+                alt="Settings 3D artwork"
+                className="h-full w-auto object-contain object-right drop-shadow-[0_12px_24px_rgba(0,0,0,0.22)]"
+              />
             </div>
-            <div className="z-10 self-start sm:self-auto flex items-center gap-2 bg-white/20 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-white/30 text-xs font-bold">
-              <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse" />
-              <span>Store is Live</span>
+
+            {/* Left Content Area */}
+            <div className="relative z-10 flex-1 flex flex-col justify-between max-w-xl">
+              <div className="space-y-1.5 sm:space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-emerald-100">
+                    CONFIGURATION &amp; CONTROLS
+                  </span>
+                  <span className="w-7 h-[1.5px] bg-emerald-200/80 rounded-full inline-block" />
+                </div>
+
+                <h1 className="text-xl sm:text-2xl lg:text-[30px] font-black tracking-tight text-white leading-tight drop-shadow-sm">
+                  Settings &amp; Preferences
+                </h1>
+
+                <p className="text-xs sm:text-[13px] text-emerald-50/95 font-medium leading-relaxed max-w-md lg:max-w-lg">
+                  Manage your personal vendor admin profile and configure your customer-facing store settings.
+                </p>
+              </div>
+
+              <div className="pt-3.5 sm:pt-4">
+                <div className="inline-flex items-center gap-2 px-5 sm:px-6 py-2 sm:py-2.5 rounded-full bg-white text-[#049669] font-bold text-xs sm:text-sm shadow-md shadow-emerald-950/20">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#049669] animate-pulse" />
+                  <span>Store is Live</span>
+                </div>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2 bg-white/70 backdrop-blur-xl p-1.5 rounded-xl sm:rounded-2xl border border-white/80 shadow-[0_4px_20px_rgba(4,150,105,0.06)] w-full sm:w-fit">
@@ -254,14 +319,15 @@ export default function Settings() {
                       Phone Number *
                     </label>
                     <input
-                      type="text"
+                      type="tel"
                       required
-                      value={profileData.phone}
+                      maxLength={10}
+                      value={profileData.phone}       
                       onChange={(e) =>
-                        setProfileData({ ...profileData, phone: e.target.value })
+                        setProfileData({ ...profileData, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })
                       }
                       className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-white/90 text-xs sm:text-sm font-semibold text-slate-800 focus:border-[#049669] focus:ring-4 focus:ring-emerald-500/15 outline-none transition"
-                      placeholder="+91 98201 44521"
+                      placeholder="10-digit mobile number"
                     />
                   </div>
 
@@ -291,7 +357,7 @@ export default function Settings() {
                     setProfileData({
                       ...profileData,
                       name: "Vendor Admin",
-                      phone: "+91 98201 44521",
+                      phone: "+91 98xxxxxxxx",
                       designation: "Store Owner & Managing Partner",
                     })
                   }

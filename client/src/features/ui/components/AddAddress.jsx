@@ -45,6 +45,12 @@ export default function AddAddress({ onSave, onClose }) {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+    if (name === "phone") {
+      const digitsOnly = value.replace(/\D/g, "").slice(0, 10);
+      setFormData((prev) => ({ ...prev, [name]: digitsOnly }));
+      if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+      return;
+    }
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,

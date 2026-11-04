@@ -106,13 +106,14 @@ export default function Navbar({ onToggleSidebar }) {
           <ExternalLink className="w-3.5 h-3.5" />
         </Link>
 
-        <button
+        <Link
+          to="/vendor/notifications"
           className="w-10 h-10 rounded-xl bg-white border border-slate-200/80 text-slate-600 hover:text-[#049669] hover:bg-emerald-50 flex items-center justify-center relative transition-colors cursor-pointer shadow-2xs hover:shadow-sm"
           aria-label="Vendor Notifications"
         >
           <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
           <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#049669] ring-2 ring-white" />
-        </button>
+        </Link>
 
         <div className="flex items-center gap-2.5 sm:gap-3 pl-2.5 sm:pl-3 border-l border-slate-200/80">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#049669] to-[#10B981] text-white font-black text-sm sm:text-base flex items-center justify-center shadow-md shadow-emerald-600/25 shrink-0">
