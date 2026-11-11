@@ -29,6 +29,10 @@ const User = sequelize.define("User", {
         type: DataTypes.TEXT,
         allowNull: true
     },
+    designation: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
     role: {
         type: DataTypes.ENUM("user", "vendor", "admin"),
         allowNull: false,
@@ -49,6 +53,11 @@ const User = sequelize.define("User", {
     isResetOtpVerified: {
         type: DataTypes.BOOLEAN,
         defaultValue: false
+    },
+    addresses: {
+        type: DataTypes.JSON,
+        allowNull: true,
+        defaultValue: []
     }
 });
 

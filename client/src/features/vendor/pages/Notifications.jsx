@@ -23,85 +23,12 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import bannerNotificationsImg from "../../../assets/banner-notifications-3d.png";
-
-const INITIAL_NOTIFICATIONS = [
-  {
-    id: "notif-1",
-    type: "order",
-    title: "New Order Received #ORD-1024",
-    message: "Customer 'Aarav Sharma' placed a new order for 3 items worth ₹2,499. Please review and pack.",
-    time: "5 mins ago",
-    date: "Today, 12:28 PM",
-    isUnread: true,
-    link: "/vendor/orders",
-    linkText: "View Order",
-    category: "orders",
-  },
-  {
-    id: "notif-2",
-    type: "payout",
-    title: "Payout Disbursed ₹18,450",
-    message: "Weekly settlement payout has been processed successfully to your registered HDFC Bank account.",
-    time: "42 mins ago",
-    date: "Today, 11:51 AM",
-    isUnread: true,
-    link: "/vendor/payments",
-    linkText: "View Settlement",
-    category: "payouts",
-  },
-  {
-    id: "notif-3",
-    type: "stock",
-    title: "Low Stock Alert: Organic Cow Ghee (1L)",
-    message: "Current stock level is 3 units, which is below your safety threshold of 5 units. Replenish soon.",
-    time: "2 hours ago",
-    date: "Today, 10:30 AM",
-    isUnread: true,
-    link: "/vendor/products",
-    linkText: "Update Stock",
-    category: "stock",
-  },
-  {
-    id: "notif-4",
-    type: "order",
-    title: "Order Delivered Successfully #ORD-0998",
-    message: "Order #ORD-0998 has been marked as Delivered by the logistics partner. Payment credited to pending balance.",
-    time: "5 hours ago",
-    date: "Today, 07:15 AM",
-    isUnread: false,
-    link: "/vendor/orders",
-    linkText: "Order Details",
-    category: "orders",
-  },
-  {
-    id: "notif-5",
-    type: "system",
-    title: "Category 'Fresh Farm Organics' Approved",
-    message: "Your requested category addition has been verified and approved by the ShopMart Marketplace Team.",
-    time: "Yesterday",
-    date: "Nov 02, 05:40 PM",
-    isUnread: false,
-    link: "/vendor/categories",
-    linkText: "View Categories",
-    category: "system",
-  },
-  {
-    id: "notif-8",
-    type: "stock",
-    title: "Out of Stock: Whole Farm Milk (500ml)",
-    message: "Inventory reached zero. The product listing is temporarily hidden from customer store search.",
-    time: "3 days ago",
-    date: "Oct 31, 04:22 PM",
-    isUnread: false,
-    link: "/vendor/products",
-    linkText: "Restock Now",
-    category: "stock",
-  },
-];
+import vendorService from "../../../services/vendorService";
 
 export default function Notifications() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -109,6 +36,45 @@ export default function Notifications() {
   const scrollContainerRef = useRef(null);
   const [scrollY, setScrollY] = useState(0);
   const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // Fetch real order & payment notifications from backend
+  useEffect(() => {
+    let isMounted = true;
+    const fetchNotifications = async () => {
+      try {
+        setIsLoading(true);
+        const res = await vendorService.getMyNotifications();
+        if (isMounted && res && Array.isArray(res.notifications)) {
+          const readIds = new Set(JSON.parse(localStorage.getItem("vendor_read_notifications") || "[]"));
+          const deletedIds = new Set(JSON.parse(localStorage.getItem("vendor_deleted_notifications") || "[]"));
+
+          const loaded = res.notifications
+            .filter((n) => !deletedIds.has(n.id))
+            .map((n) => ({
+              ...n,
+              isUnread: !readIds.has(n.id),
+            }));
+
+          setNotifications(loaded);
+        }
+      } catch (err) {
+        console.warn("Could not fetch vendor notifications:", err);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+
+    fetchNotifications();
+
+    const handleUpdate = () => {
+      fetchNotifications();
+    };
+    window.addEventListener("vendor_notifications_updated", handleUpdate);
+    return () => {
+      isMounted = false;
+      window.removeEventListener("vendor_notifications_updated", handleUpdate);
+    };
+  }, []);
 
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -132,21 +98,41 @@ export default function Notifications() {
 
   // Notification Operations
   const markAsRead = (id) => {
+    const readIds = new Set(JSON.parse(localStorage.getItem("vendor_read_notifications") || "[]"));
+    readIds.add(id);
+    localStorage.setItem("vendor_read_notifications", JSON.stringify(Array.from(readIds)));
+
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, isUnread: false } : n))
     );
+    window.dispatchEvent(new Event("vendor_notifications_updated"));
   };
 
   const markAllAsRead = () => {
+    const readIds = new Set(JSON.parse(localStorage.getItem("vendor_read_notifications") || "[]"));
+    notifications.forEach((n) => readIds.add(n.id));
+    localStorage.setItem("vendor_read_notifications", JSON.stringify(Array.from(readIds)));
+
     setNotifications((prev) => prev.map((n) => ({ ...n, isUnread: false })));
+    window.dispatchEvent(new Event("vendor_notifications_updated"));
   };
 
   const deleteNotification = (id) => {
+    const deletedIds = new Set(JSON.parse(localStorage.getItem("vendor_deleted_notifications") || "[]"));
+    deletedIds.add(id);
+    localStorage.setItem("vendor_deleted_notifications", JSON.stringify(Array.from(deletedIds)));
+
     setNotifications((prev) => prev.filter((n) => n.id !== id));
+    window.dispatchEvent(new Event("vendor_notifications_updated"));
   };
 
   const clearReadNotifications = () => {
+    const deletedIds = new Set(JSON.parse(localStorage.getItem("vendor_deleted_notifications") || "[]"));
+    notifications.filter((n) => !n.isUnread).forEach((n) => deletedIds.add(n.id));
+    localStorage.setItem("vendor_deleted_notifications", JSON.stringify(Array.from(deletedIds)));
+
     setNotifications((prev) => prev.filter((n) => n.isUnread));
+    window.dispatchEvent(new Event("vendor_notifications_updated"));
   };
 
   // Filtered Notifications

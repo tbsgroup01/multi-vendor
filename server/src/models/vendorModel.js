@@ -33,6 +33,10 @@ const Vendor = sequelize.define("Vendor", {
         type: DataTypes.STRING,
         allowNull: false
     },
+    storeSettings: {
+        type: DataTypes.JSON,
+        allowNull: true
+    },
     status: {
         type: DataTypes.ENUM("pending", "approved", "rejected"),
         defaultValue: "pending"

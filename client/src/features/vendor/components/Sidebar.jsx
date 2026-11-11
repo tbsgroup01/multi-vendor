@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { authService } from "../../../services";
+import { authService, getUploadUrl } from "../../../services";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Home,
@@ -10,6 +10,7 @@ import {
   CircleDollarSign,
   Settings as SettingsIcon,
   Bell,
+  Sparkles,
   LogOut,
   X,
   ChevronLeft,
@@ -84,6 +85,12 @@ export default function Sidebar({ isOpen, onClose }) {
       path: "/vendor/settings",
     },
     {
+      id: "plans",
+      label: "Plans & Pricing",
+      icon: Sparkles,
+      path: "/vendor/plans",
+    },
+    {
       id: "notifications",
       label: "Notifications",
       icon: Bell,
@@ -115,7 +122,7 @@ export default function Sidebar({ isOpen, onClose }) {
               <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#049669] via-[#059669] to-[#10B981] backdrop-blur-md flex items-center justify-center text-white shadow-md shadow-emerald-600/25 border border-white/30 transition-transform group-hover:scale-105 shrink-0 overflow-hidden">
                 {sidebarLogo ? (
                   <img
-                    src={sidebarLogo}
+                    src={getUploadUrl(sidebarLogo)}
                     alt="Sidebar Logo"
                     className="w-full h-full object-cover"
                   />

@@ -1,3 +1,4 @@
+const crypto = require("crypto");
 const { SubscriptionPlan, VendorSubscription, Vendor, User } = require("../models");
 const transporter = require("../config/mail");
 
@@ -216,16 +217,43 @@ const previewPurchase = async (req, res) => {
 // 4. Proper Plan Purchase Execution
 const purchasePlan = async (req, res) => {
     try {
-        const { planId, paymentMethod, transactionRef } = req.body;
+        const {
+            planId,
+            paymentMethod,
+            transactionRef,
+            razorpay_order_id,
+            razorpay_signature
+        } = req.body;
 
         if (!planId) {
             return res.status(400).json({ message: "planId is required" });
         }
 
-        const vendor = await Vendor.findOne({
+        // Razorpay payment verification if paying online
+        if (paymentMethod === "razorpay" && razorpay_order_id && transactionRef && razorpay_signature) {
+            const secret = process.env.RAZORPAY_KEY_SECRET;
+            if (secret) {
+                const body = `${razorpay_order_id}|${transactionRef}`;
+                const expectedSignature = crypto
+                    .createHmac("sha256", secret)
+                    .update(body.toString())
+                    .digest("hex");
+                if (expectedSignature !== razorpay_signature) {
+                    return res.status(400).json({ message: "Razorpay payment signature verification failed" });
+                }
+            }
+        }
+
+        let vendor = await Vendor.findOne({
             where: { userId: req.user.id },
             include: [{ model: User, as: "user", attributes: ["name", "email", "phone"] }]
         });
+
+        if (!vendor && req.user.role === "admin") {
+            vendor = await Vendor.findOne({
+                include: [{ model: User, as: "user", attributes: ["name", "email", "phone"] }]
+            });
+        }
 
         if (!vendor) {
             return res.status(404).json({ message: "Vendor profile not found" });
@@ -286,6 +314,10 @@ const purchasePlan = async (req, res) => {
             paymentStatus: "completed",
             paymentMethod: paymentMethod || "card"
         });
+
+        vendor.productsLimit = plan.productLimit;
+        vendor.plan = plan.tierKey || (plan.name.toLowerCase().includes("starter") ? "starter" : plan.name.toLowerCase().includes("growth") ? "professional" : "premium");
+        await vendor.save();
 
         // Send Email Confirmation with full invoice details
         if (vendor.user && vendor.user.email) {
@@ -355,7 +387,10 @@ const purchasePlan = async (req, res) => {
 // 5. Vendor gets their current active subscription with days remaining
 const getMySubscription = async (req, res) => {
     try {
-        const vendor = await Vendor.findOne({ where: { userId: req.user.id } });
+        let vendor = await Vendor.findOne({ where: { userId: req.user.id } });
+        if (!vendor && req.user.role === "admin") {
+            vendor = await Vendor.findOne();
+        }
         if (!vendor) {
             return res.status(404).json({ message: "Vendor profile not found" });
         }

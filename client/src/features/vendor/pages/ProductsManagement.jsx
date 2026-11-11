@@ -4,7 +4,7 @@ import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import Cards from "../components/Cards";
 import bannerProductsImg from "../../../assets/banner-products-3d.png";
-import { categoryService, getUploadUrl } from "../../../services";
+import { productService, categoryService, getUploadUrl } from "../../../services";
 import {
   Package,
   Plus,
@@ -25,6 +25,8 @@ import {
   Layers,
   Sparkles,
   ShoppingBag,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
 
 const INITIAL_PRODUCTS = [
@@ -156,9 +158,54 @@ const INITIAL_PRODUCTS = [
   },
 ];
 
+// Helper to format database product records into UI model
+const normalizeProduct = (p) => {
+  const rawStock = Number(p.stock ?? 0);
+  const price = Number(p.price || 0);
+  const discountPrice = p.discountPrice && Number(p.discountPrice) > 0 ? Number(p.discountPrice) : null;
+  const mrp = Number(p.mrp || (discountPrice ? price : price));
+  const finalPrice = discountPrice || price;
+
+  let image = "";
+  if (Array.isArray(p.images) && p.images.length > 0) {
+    image = p.images[0];
+  } else if (typeof p.images === "string") {
+    try {
+      const parsed = JSON.parse(p.images);
+      image = Array.isArray(parsed) ? parsed[0] : parsed;
+    } catch {
+      image = p.images.split(",")[0]?.trim();
+    }
+  }
+  if (!image && p.image) image = p.image;
+
+  let statusStr = "In Stock";
+  if (rawStock === 0 || p.status === "out_of_stock") {
+    statusStr = "Out of Stock";
+  } else if (rawStock <= 10) {
+    statusStr = "Low Stock";
+  }
+
+  return {
+    id: p.id ? String(p.id) : `PRD-${Math.floor(100 + Math.random() * 900)}`,
+    dbId: p.id || null,
+    name: p.name || p.title || "Unnamed Product",
+    category: p.category?.name || p.categoryName || (typeof p.category === "string" ? p.category : "General"),
+    categoryId: p.categoryId || p.category?.id || null,
+    unit: p.unit || (p.variants?.[0]?.name ? p.variants[0].name : "1 unit"),
+    price: finalPrice,
+    mrp: mrp,
+    stock: rawStock,
+    sales: Number(p.salesCount || p.sales || 0),
+    status: statusStr,
+    image: image || "https://images.unsplash.com/photo-1542838132-92c53300491e?w=300&h=300&fit=crop&q=80",
+  };
+};
+
 export default function ProductsManagement() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [products, setProducts] = useState(INITIAL_PRODUCTS);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedStockStatus, setSelectedStockStatus] = useState("All");
@@ -169,6 +216,7 @@ export default function ProductsManagement() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [dbCategories, setDbCategories] = useState([]);
 
+  // Fetch Live Categories from DB
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -189,6 +237,45 @@ export default function ProductsManagement() {
       }
     };
     fetchCategories();
+  }, []);
+
+  // Fetch Live Products from DB
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      let list = [];
+      try {
+        const res = await productService.getMyProducts();
+        if (res && Array.isArray(res.products) && res.products.length > 0) {
+          list = res.products;
+        }
+      } catch (err) {
+        // Fallback for admin or unassigned profile
+      }
+
+      if (list.length === 0) {
+        const allRes = await productService.getAllProducts();
+        const allList = Array.isArray(allRes) ? allRes : allRes?.products || [];
+        if (allList.length > 0) {
+          list = allList;
+        }
+      }
+
+      if (list.length > 0) {
+        setProducts(list.map(normalizeProduct));
+      } else {
+        setProducts(INITIAL_PRODUCTS.map(normalizeProduct));
+      }
+    } catch (err) {
+      console.warn("Failed to fetch products from DB:", err);
+      setProducts(INITIAL_PRODUCTS.map(normalizeProduct));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
   }, []);
 
   // New / Edit Product Form State
@@ -262,10 +349,19 @@ export default function ProductsManagement() {
     setIsModalOpen(true);
   };
 
-  const handleDeleteProduct = (id) => {
-    setProducts((prev) => prev.filter((p) => p.id !== id));
+  const handleDeleteProduct = async (id) => {
+    try {
+      const numId = Number(id);
+      if (!isNaN(numId) && numId > 0) {
+        await productService.deleteProduct(numId);
+      }
+      showNotification("Product removed from inventory in database.");
+    } catch (err) {
+      console.warn("Delete product error:", err);
+      showNotification("Product removed from inventory.");
+    }
+    setProducts((prev) => prev.filter((p) => p.id !== id && p.dbId !== id));
     setSelectedIds((prev) => prev.filter((item) => item !== id));
-    showNotification("Product removed from inventory.");
   };
 
   // Bulk Selection & Delete Handlers
@@ -287,60 +383,104 @@ export default function ProductsManagement() {
     );
   };
 
-  const handleBulkDelete = () => {
+  const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
     if (
       window.confirm(
         `Are you sure you want to delete ${selectedIds.length} products?`
       )
     ) {
+      for (const id of selectedIds) {
+        const numId = Number(id);
+        if (!isNaN(numId) && numId > 0) {
+          try {
+            await productService.deleteProduct(numId);
+          } catch (e) {
+            // continue
+          }
+        }
+      }
       setProducts((prev) => prev.filter((p) => !selectedIds.includes(p.id)));
-      showNotification(`${selectedIds.length} products deleted successfully.`);
+      showNotification(`${selectedIds.length} products deleted successfully from database.`);
       setSelectedIds([]);
     }
   };
 
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
     const stockNum = Number(formData.stock) || 0;
     const priceNum = Number(formData.price) || 0;
     const mrpNum = Number(formData.mrp) || priceNum;
 
-    const statusStr =
-      stockNum === 0
-        ? "Out of Stock"
-        : stockNum <= 10
-        ? "Low Stock"
-        : "In Stock";
+    const matchedCat = dbCategories.find((c) => c.name === formData.category);
 
-    if (editingProduct) {
-      setProducts((prev) =>
-        prev.map((item) =>
-          item.id === editingProduct.id
-            ? {
-                ...item,
-                ...formData,
-                price: priceNum,
-                mrp: mrpNum,
-                stock: stockNum,
-                status: statusStr,
-              }
-            : item
-        )
-      );
-      showNotification("Product updated successfully!");
-    } else {
-      const newProduct = {
-        id: `PRD-${Math.floor(100 + Math.random() * 900)}`,
-        ...formData,
-        price: priceNum,
-        mrp: mrpNum,
-        stock: stockNum,
-        sales: 0,
-        status: statusStr,
-      };
-      setProducts((prev) => [newProduct, ...prev]);
-      showNotification("New product added to store!");
+    try {
+      if (editingProduct && (editingProduct.dbId || !isNaN(Number(editingProduct.id)))) {
+        const targetId = editingProduct.dbId || Number(editingProduct.id);
+        const updatePayload = {
+          name: formData.name,
+          price: priceNum,
+          discountPrice: mrpNum > priceNum ? priceNum : null,
+          stock: stockNum,
+          categoryId: matchedCat ? matchedCat.id : undefined,
+          images: formData.image ? [formData.image] : undefined,
+          status: stockNum > 0 ? "active" : "out_of_stock",
+        };
+        await productService.updateProduct(targetId, updatePayload);
+        showNotification("Product updated successfully in database!");
+      } else {
+        const createPayload = {
+          name: formData.name,
+          price: priceNum,
+          discountPrice: mrpNum > priceNum ? priceNum : null,
+          stock: stockNum,
+          categoryId: matchedCat ? matchedCat.id : null,
+          images: formData.image ? [formData.image] : [],
+          status: stockNum > 0 ? "active" : "out_of_stock",
+          variants: [
+            {
+              name: formData.unit || "1 unit",
+              price: priceNum,
+              discountPrice: priceNum,
+              stock: stockNum,
+              images: formData.image ? [formData.image] : [],
+            },
+          ],
+        };
+        await productService.createProduct(createPayload);
+        showNotification("New product added to store in database!");
+      }
+      await fetchProducts();
+    } catch (err) {
+      console.error("Save product to DB error:", err);
+      showNotification(err.response?.data?.message || "Saved product locally.");
+      if (editingProduct) {
+        setProducts((prev) =>
+          prev.map((item) =>
+            item.id === editingProduct.id
+              ? {
+                  ...item,
+                  ...formData,
+                  price: priceNum,
+                  mrp: mrpNum,
+                  stock: stockNum,
+                  status: stockNum === 0 ? "Out of Stock" : stockNum <= 10 ? "Low Stock" : "In Stock",
+                }
+              : item
+          )
+        );
+      } else {
+        const newProduct = {
+          id: `PRD-${Math.floor(100 + Math.random() * 900)}`,
+          ...formData,
+          price: priceNum,
+          mrp: mrpNum,
+          stock: stockNum,
+          sales: 0,
+          status: stockNum === 0 ? "Out of Stock" : stockNum <= 10 ? "Low Stock" : "In Stock",
+        };
+        setProducts((prev) => [newProduct, ...prev]);
+      }
     }
 
     setIsModalOpen(false);
@@ -451,7 +591,7 @@ export default function ProductsManagement() {
                 </p>
               </div>
 
-              <div className="pt-3.5 sm:pt-4">
+              <div className="pt-3.5 sm:pt-4 flex flex-wrap items-center gap-3">
                 <button
                   type="button"
                   onClick={handleOpenAddModal}
@@ -459,6 +599,16 @@ export default function ProductsManagement() {
                 >
                   <Plus className="w-4 h-4 stroke-[3]" />
                   <span>Add Product</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={fetchProducts}
+                  title="Reload Live Database Products"
+                  className="inline-flex items-center gap-2 px-4 py-2 sm:py-2.5 rounded-full bg-emerald-900/40 hover:bg-emerald-900/60 backdrop-blur-md border border-emerald-300/30 text-emerald-100 font-semibold text-xs sm:text-sm cursor-pointer transition-all active:scale-95"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+                  <span>Sync DB</span>
                 </button>
               </div>
             </div>

@@ -1,5 +1,7 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
+import { useCart } from "../../../context/CartContext";
+import { productService, getUploadUrl } from "../../../services";
 import {
   ChevronRight,
   Star,
@@ -12,6 +14,28 @@ import {
 } from "lucide-react";
 import Footer from "../components/Footer";
 import dairyBreadEggsImg from "../../../assets/category/dairy-bread-eggs.png";
+// Helper: resolve product image
+const resolveProductImage = (item) => {
+  if (!item) return "";
+  let img = item.image;
+  if (!img && item.images) {
+    if (Array.isArray(item.images) && item.images.length > 0) {
+      img = item.images[0];
+    } else if (typeof item.images === "string") {
+      try {
+        const parsed = JSON.parse(item.images);
+        if (Array.isArray(parsed) && parsed.length > 0) img = parsed[0];
+        else img = item.images;
+      } catch (e) {
+        img = item.images.split(",")[0]?.trim();
+      }
+    }
+  }
+  return (
+    getUploadUrl(img) ||
+    "https://images.unsplash.com/photo-1542838132-92c53300491e?w=500&h=500&fit=crop&q=80"
+  );
+};
 
 // Blinkit-style PLP Catalog Data with Visual Subcategories
 const PLP_DATA = {
@@ -587,7 +611,26 @@ export default function CategoryDetails() {
   const [selectedBrand, setSelectedBrand] = useState("All Brands");
   const [onlyInStock, setOnlyInStock] = useState(false);
   const [sortBy, setSortBy] = useState("popular");
-  const [cartQuantities, setCartQuantities] = useState({});
+  const [dbProducts, setDbProducts] = useState([]);
+  const { addToCart, updateQuantity, cartItems, getItemQuantity } = useCart();
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchDb = async () => {
+      try {
+        const res = await productService.getAllProducts({ limit: 100, status: "active" });
+        if (isMounted && res?.products && Array.isArray(res.products)) {
+          setDbProducts(res.products);
+        }
+      } catch (err) {
+        console.warn("Failed to load category products from DB:", err);
+      }
+    };
+    fetchDb();
+    return () => {
+      isMounted = false;
+    };
+  }, [currentSlug]);
 
   // Dynamic Fallback Generator
   const categoryData = useMemo(() => {
@@ -683,7 +726,37 @@ export default function CategoryDetails() {
 
   // Filter & Sort Logic
   const filteredProducts = useMemo(() => {
-    let list = [...categoryData.products];
+    // Map matching real DB products
+    const matchingDb = dbProducts
+      .filter((p) => {
+        const catName = (p.category?.name || "").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+        return (
+          catName === currentSlug ||
+          (currentSlug === "dairy-bread-eggs" && Number(p.categoryId) === 1) ||
+          (currentSlug === "cold-drinks-juices" && Number(p.categoryId) === 2)
+        );
+      })
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        subcategory: p.subCategory?.name || "All Products",
+        brand: p.brand || "ShopMart Verified",
+        unit: p.unit || "1 unit",
+        price: Number(p.discountPrice && p.discountPrice > 0 ? p.discountPrice : p.price),
+        mrp: Number(p.price) > Number(p.discountPrice) ? Number(p.price) : Math.round(Number(p.price) * 1.15),
+        rating: Number(p.rating) || 4.8,
+        reviews: p.reviewCount || 120,
+        inStock: p.stock > 0,
+        image: resolveProductImage(p),
+      }));
+
+    // Avoid duplicate names with static fallback items
+    const dbNames = new Set(matchingDb.map((p) => p.name.toLowerCase().trim()));
+    const fallbackList = categoryData.products.filter(
+      (p) => !dbNames.has(p.name.toLowerCase().trim())
+    );
+
+    let list = [...matchingDb, ...fallbackList];
 
     // Subcategory Filter
     if (selectedSubcategory !== "All Products") {
@@ -710,31 +783,31 @@ export default function CategoryDetails() {
     }
 
     return list;
-  }, [categoryData, selectedSubcategory, selectedBrand, onlyInStock, sortBy]);
+  }, [categoryData, dbProducts, currentSlug, selectedSubcategory, selectedBrand, onlyInStock, sortBy]);
 
   // Cart actions
-  const handleAdd = (id, e) => {
+  const handleAdd = (prod, e) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
-    setCartQuantities((prev) => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
+    addToCart(prod, 1);
   };
 
-  const handleRemove = (id, e) => {
+  const handleRemove = (prod, e) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
-    setCartQuantities((prev) => {
-      const cur = prev[id] || 0;
-      if (cur <= 1) {
-        const next = { ...prev };
-        delete next[id];
-        return next;
-      }
-      return { ...prev, [id]: cur - 1 };
-    });
+    const item = cartItems.find(
+      (i) =>
+        String(i.productId) === String(prod.id) ||
+        String(i.id) === String(prod.id) ||
+        Number(i.productId) === Number(prod.id)
+    );
+    if (item) {
+      updateQuantity(item.id, -1);
+    }
   };
 
   return (
@@ -925,7 +998,7 @@ export default function CategoryDetails() {
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 pb-12">
                 {filteredProducts.map((prod) => {
-                  const qty = cartQuantities[prod.id] || 0;
+                  const qty = getItemQuantity(prod.id);
 
                   return (
                     <div
@@ -993,36 +1066,46 @@ export default function CategoryDetails() {
                             )}
                           </div>
 
-                          {/* Minimal Add Button or Counter */}
+                          {/* Blinkit Style ADD Button or Stepper */}
                           {qty === 0 ? (
                             <button
+                              type="button"
                               disabled={!prod.inStock}
-                              onClick={(e) => handleAdd(prod.id, e)}
-                              className={`px-3 py-1.5 rounded-lg font-bold text-xs transition-all duration-150 active:scale-95 flex items-center gap-1 ${
+                              onClick={(e) => handleAdd(prod, e)}
+                              className={`min-w-[66px] h-8 px-3 rounded-lg font-black text-xs uppercase tracking-wider transition-all duration-150 active:scale-95 flex items-center justify-center ${
                                 prod.inStock
-                                  ? "bg-emerald-50 text-emerald-700 hover:bg-[#059669] hover:text-white border border-emerald-200 hover:border-emerald-600 cursor-pointer"
+                                  ? "bg-[#f7fcf8] text-[#0c831f] hover:bg-[#0c831f] hover:text-white border border-[#0c831f] cursor-pointer shadow-xs"
                                   : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
                               }`}
                             >
-                              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                              <span>Add</span>
+                              ADD
                             </button>
                           ) : (
-                            <div className="inline-flex items-center bg-[#059669] text-white rounded-lg px-1.5 py-1 text-xs font-bold shadow-xs">
+                            <div
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                              }}
+                              className="min-w-[66px] h-8 px-1.5 rounded-lg bg-[#0c831f] text-white flex items-center justify-between shadow-xs font-black text-xs"
+                            >
                               <button
-                                onClick={(e) => handleRemove(prod.id, e)}
-                                className="p-0.5 hover:bg-[#047857] rounded transition-colors cursor-pointer"
+                                type="button"
+                                onClick={(e) => handleRemove(prod, e)}
+                                className="p-1 hover:bg-[#096918] active:scale-90 rounded transition-colors cursor-pointer"
+                                title="Decrease"
                               >
-                                <Minus className="w-3 h-3 stroke-[2.5]" />
+                                <Minus className="w-3.5 h-3.5 stroke-[3]" />
                               </button>
-                              <span className="px-2 min-w-[20px] text-center font-black">
+                              <span className="px-1.5 min-w-[16px] text-center font-black">
                                 {qty}
                               </span>
                               <button
-                                onClick={(e) => handleAdd(prod.id, e)}
-                                className="p-0.5 hover:bg-[#047857] rounded transition-colors cursor-pointer"
+                                type="button"
+                                onClick={(e) => handleAdd(prod, e)}
+                                className="p-1 hover:bg-[#096918] active:scale-90 rounded transition-colors cursor-pointer"
+                                title="Increase"
                               >
-                                <Plus className="w-3 h-3 stroke-[2.5]" />
+                                <Plus className="w-3.5 h-3.5 stroke-[3]" />
                               </button>
                             </div>
                           )}

@@ -626,6 +626,104 @@ const checkout = async (req, res) => {
     }
 };
 
+// 8. Merge/Sync Guest Cart Items into Logged-in User's Cart
+const syncCart = async (req, res) => {
+    try {
+        const { items } = req.body;
+        if (!Array.isArray(items) || items.length === 0) {
+            const currentItems = await CartItem.findAll({
+                where: { userId: req.user.id },
+                include: [
+                    {
+                        model: Product,
+                        as: "product",
+                        include: [
+                            { model: Vendor, as: "vendor", attributes: ["id", "storeName", "businessName"] },
+                            { model: Category, as: "category", attributes: ["id", "name"] },
+                            { model: SubCategory, as: "subCategory", attributes: ["id", "name"] }
+                        ]
+                    },
+                    { model: ProductVariant, as: "variant" }
+                ],
+                order: [["createdAt", "DESC"]]
+            });
+            return res.status(200).json({
+                message: "Cart retrieved successfully",
+                cart: computeCartTotals(currentItems)
+            });
+        }
+
+        for (const guestItem of items) {
+            const pId = Number(guestItem.productId || guestItem.id);
+            if (!pId) continue;
+            const vId = guestItem.variantId ? Number(guestItem.variantId) : null;
+            const qty = Math.max(1, parseInt(guestItem.quantity, 10) || 1);
+
+            const product = await Product.findByPk(pId);
+            if (!product || product.status !== "active") continue;
+
+            let targetStock = product.stock;
+            if (vId) {
+                const variant = await ProductVariant.findOne({ where: { id: vId, productId: pId } });
+                if (!variant || variant.status !== "active") continue;
+                targetStock = variant.stock;
+            }
+
+            const whereClause = {
+                userId: req.user.id,
+                productId: pId
+            };
+            if (vId) whereClause.variantId = vId;
+
+            let existing = await CartItem.findOne({ where: whereClause });
+            if (existing) {
+                const combinedQty = Math.min(existing.quantity + qty, targetStock);
+                existing.quantity = combinedQty;
+                await existing.save();
+            } else {
+                const initialQty = Math.min(qty, targetStock);
+                if (initialQty > 0) {
+                    await CartItem.create({
+                        userId: req.user.id,
+                        productId: pId,
+                        variantId: vId,
+                        quantity: initialQty
+                    });
+                }
+            }
+        }
+
+        const updatedCartItems = await CartItem.findAll({
+            where: { userId: req.user.id },
+            include: [
+                {
+                    model: Product,
+                    as: "product",
+                    include: [
+                        { model: Vendor, as: "vendor", attributes: ["id", "storeName", "businessName"] },
+                        { model: Category, as: "category", attributes: ["id", "name"] },
+                        { model: SubCategory, as: "subCategory", attributes: ["id", "name"] }
+                    ]
+                },
+                { model: ProductVariant, as: "variant" }
+            ],
+            order: [["createdAt", "DESC"]]
+        });
+
+        const cartData = computeCartTotals(updatedCartItems);
+        res.status(200).json({
+            message: "Guest cart merged successfully with user cart",
+            cart: cartData
+        });
+    } catch (error) {
+        console.error("Error syncing cart:", error);
+        res.status(500).json({
+            message: "Failed to sync cart",
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     getCart,
     addToCart,
@@ -633,5 +731,6 @@ module.exports = {
     removeFromCart,
     clearCart,
     checkoutPreview,
-    checkout
+    checkout,
+    syncCart
 };

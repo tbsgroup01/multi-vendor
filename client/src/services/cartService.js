@@ -9,6 +9,7 @@ export const cartService = {
   clearCart: () => api.delete("/cart/clear"),
   getCheckoutPreview: () => api.get("/cart/checkout-preview"),
   checkout: (payload) => api.post("/cart/checkout", payload),
+  syncCart: (items) => api.post("/cart/sync", { items }),
 };
 
 export default cartService;

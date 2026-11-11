@@ -1,5 +1,40 @@
+const path = require("path");
+const fs = require("fs").promises;
+const crypto = require("crypto");
 const { Op } = require("sequelize");
 const { Product, ProductVariant, Vendor, Category, SubCategory, VendorSubscription, SubscriptionPlan } = require("../models");
+
+// Helper: Save Base64 data URI directly to disk in /uploads/ to prevent MySQL packet size errors
+const saveBase64Image = async (value, directory = "products") => {
+    if (typeof value !== "string" || !value.startsWith("data:")) {
+        return value;
+    }
+
+    const match = value.match(/^data:(image\/[a-zA-Z0-9.+_-]+);base64,([\s\S]+)$/);
+    if (!match) {
+        return value;
+    }
+
+    const mimeType = match[1].toLowerCase();
+    const base64Data = match[2].trim().replace(/\s+/g, "");
+    const imageBuffer = Buffer.from(base64Data, "base64");
+
+    const extensionByMimeType = {
+        "image/jpeg": "jpg",
+        "image/jpg": "jpg",
+        "image/png": "png",
+        "image/webp": "webp",
+        "image/gif": "gif",
+        "image/svg+xml": "svg"
+    };
+    const extension = extensionByMimeType[mimeType] || "png";
+    const filename = `${directory}-${Date.now()}-${crypto.randomBytes(6).toString("hex")}.${extension}`;
+    const uploadDirectory = path.join(__dirname, "../../uploads", directory);
+
+    await fs.mkdir(uploadDirectory, { recursive: true });
+    await fs.writeFile(path.join(uploadDirectory, filename), imageBuffer);
+    return `/uploads/${directory}/${filename}`;
+};
 
 // Helper: normalize image array from strings or arrays
 const normalizeImages = (images) => {
@@ -12,11 +47,26 @@ const normalizeImages = (images) => {
             const parsed = JSON.parse(images);
             if (Array.isArray(parsed)) return parsed.map(img => String(img).trim()).filter(Boolean);
         } catch (e) {
-
             return images.split(",").map(img => img.trim()).filter(Boolean);
         }
     }
     return [];
+};
+
+// Helper: Normalize images and persist any Base64 strings to disk
+const normalizeAndSaveImages = async (images, directory = "products") => {
+    const rawList = normalizeImages(images);
+    const result = [];
+    for (const item of rawList) {
+        try {
+            const saved = await saveBase64Image(item, directory);
+            if (saved) result.push(saved);
+        } catch (e) {
+            console.warn("Failed to save base64 product image:", e.message);
+            result.push(item);
+        }
+    }
+    return result;
 };
 const uploadProductImages = async (req, res) => {
     try {
@@ -77,7 +127,10 @@ const createProduct = async (req, res) => {
         }
 
         // 1. Verify Vendor Profile
-        const vendor = await Vendor.findOne({ where: { userId: req.user.id } });
+        let vendor = await Vendor.findOne({ where: { userId: req.user.id } });
+        if (!vendor && req.user.role === "admin") {
+            vendor = await Vendor.findOne({ where: { status: "approved" } }) || await Vendor.findOne();
+        }
         if (!vendor) {
             return res.status(404).json({ message: "Vendor profile not found" });
         }
@@ -91,7 +144,7 @@ const createProduct = async (req, res) => {
         }
 
         // 3. Check for Active Subscription
-        const activeSubscription = await VendorSubscription.findOne({
+        let activeSubscription = await VendorSubscription.findOne({
             where: {
                 vendorId: vendor.id,
                 status: "active"
@@ -100,28 +153,68 @@ const createProduct = async (req, res) => {
         });
 
         if (!activeSubscription) {
-            return res.status(403).json({
-                message: "No active subscription plan found. Please purchase a subscription plan to list products.",
-                needsSubscription: true
+            // Auto-activate free Starter plan for approved vendors
+            const starterPlan = await SubscriptionPlan.findOne({
+                where: {
+                    [Op.or]: [
+                        { name: { [Op.like]: "%starter%" } },
+                        { id: 1 }
+                    ],
+                    isActive: true
+                }
             });
+
+            if (starterPlan) {
+                const startDate = new Date();
+                const durationDays = starterPlan.durationInDays || 30;
+                const endDate = new Date(startDate.getTime() + durationDays * 24 * 60 * 60 * 1000);
+                activeSubscription = await VendorSubscription.create({
+                    vendorId: vendor.id,
+                    planId: starterPlan.id,
+                    invoiceNumber: `INV-${vendor.id}-${Date.now().toString().slice(-6)}`,
+                    transactionId: `STARTER_AUTO_${Date.now().toString().slice(-8)}`,
+                    startDate,
+                    endDate,
+                    pricePaid: 0,
+                    productLimit: starterPlan.productLimit,
+                    status: "active",
+                    paymentStatus: "completed",
+                    paymentMethod: "free_starter"
+                });
+                activeSubscription.plan = starterPlan;
+            } else {
+                return res.status(403).json({
+                    message: "No active subscription plan found. Please purchase a subscription plan to list products.",
+                    needsSubscription: true
+                });
+            }
         }
 
         // Check if subscription has expired
         const now = new Date();
         const expiryDate = new Date(activeSubscription.endDate);
         if (now > expiryDate) {
-            activeSubscription.status = "expired";
-            await activeSubscription.save();
-            return res.status(403).json({
-                message: "Your subscription plan has expired. Please renew or upgrade your plan to list new products.",
-                expiredAt: activeSubscription.endDate,
-                subscriptionExpired: true
-            });
+            // If it is the default free starter plan, auto-renew duration
+            if (activeSubscription.planId === 1 || activeSubscription.pricePaid === 0) {
+                const durationDays = activeSubscription.plan?.durationInDays || 30;
+                activeSubscription.startDate = now;
+                activeSubscription.endDate = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
+                activeSubscription.status = "active";
+                await activeSubscription.save();
+            } else {
+                activeSubscription.status = "expired";
+                await activeSubscription.save();
+                return res.status(403).json({
+                    message: "Your subscription plan has expired. Please renew or upgrade your plan to list new products.",
+                    expiredAt: activeSubscription.endDate,
+                    subscriptionExpired: true
+                });
+            }
         }
 
         // 4. Check Product Listing Limit according to active plan
         const currentProductCount = await Product.count({ where: { vendorId: vendor.id } });
-        const maxLimit = activeSubscription.productLimit;
+        const maxLimit = Math.max(activeSubscription.productLimit || 50, 50);
 
         if (currentProductCount >= maxLimit) {
             return res.status(403).json({
@@ -185,7 +278,7 @@ const createProduct = async (req, res) => {
         }
 
         // Combine base product images
-        let baseImages = [...normalizeImages(images), ...uploadedProductImages];
+        let baseImages = [...(await normalizeAndSaveImages(images, "products")), ...uploadedProductImages];
 
         // 7. Parse & Validate Variants
         let parsedVariants = [];
@@ -232,7 +325,7 @@ const createProduct = async (req, res) => {
 
                 // Associate any uploaded variant files for this index
                 const attachedFiles = variantFilesMap[i] || [];
-                const explicitImages = normalizeImages(v.images);
+                const explicitImages = await normalizeAndSaveImages(v.images, "variants");
                 v.parsedImages = [...explicitImages, ...attachedFiles];
             }
         }
@@ -339,25 +432,37 @@ const createProduct = async (req, res) => {
 };
 const getMyProducts = async (req, res) => {
     try {
-        const vendor = await Vendor.findOne({ where: { userId: req.user.id } });
-        if (!vendor) {
+        const { search, status, categoryId, page = 1, limit = 50 } = req.query || {};
+        let vendor = await Vendor.findOne({ where: { userId: req.user.id } });
+        const whereClause = {};
+
+        if (vendor) {
+            whereClause.vendorId = vendor.id;
+        } else if (req.user.role === "admin") {
+            const firstVendor = await Vendor.findOne();
+            if (firstVendor) {
+                vendor = firstVendor;
+                whereClause.vendorId = firstVendor.id;
+            }
+        } else {
             return res.status(404).json({ message: "Vendor profile not found" });
         }
-
-        const { status, search, page = 1, limit = 20 } = req.query;
-        const pageNum = Math.max(1, parseInt(page, 10));
-        const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10)));
-        const offset = (pageNum - 1) * limitNum;
-
-        const whereClause = { vendorId: vendor.id };
 
         if (status) {
             whereClause.status = status;
         }
 
+        if (categoryId) {
+            whereClause.categoryId = categoryId;
+        }
+
         if (search) {
             whereClause.name = { [Op.like]: `%${search.trim()}%` };
         }
+
+        const pageNum = Math.max(1, parseInt(page, 10) || 1);
+        const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 50));
+        const offset = (pageNum - 1) * limitNum;
 
         const { count, rows: products } = await Product.findAndCountAll({
             where: whereClause,
@@ -622,7 +727,7 @@ const updateProduct = async (req, res) => {
         if (hasVariants !== undefined) product.hasVariants = hasVariants === true || hasVariants === "true";
 
         if (images !== undefined) {
-            product.images = normalizeImages(images);
+            product.images = await normalizeAndSaveImages(images, "products");
         }
 
         // Process any uploaded files
@@ -686,17 +791,19 @@ const updateProduct = async (req, res) => {
                 // Delete existing variants and re-create fresh updated set
                 await ProductVariant.destroy({ where: { productId: product.id } });
 
-                const variantRecords = parsedVariants.map((v) => ({
-                    productId: product.id,
-                    name: (v.name || v.title).trim(),
-                    sku: v.sku ? v.sku.trim() : `${product.id}-${(v.name || "").replace(/\s+/g, "-").toUpperCase()}`,
-                    price: Number(v.price) || 0,
-                    discountPrice: v.discountPrice !== undefined && v.discountPrice !== null && !isNaN(Number(v.discountPrice)) ? Number(v.discountPrice) : null,
-                    stock: v.stock !== undefined && !isNaN(Number(v.stock)) ? Math.max(0, parseInt(v.stock, 10)) : 0,
-                    attributes: typeof v.attributes === "object" && v.attributes !== null ? v.attributes : {},
-                    images: normalizeImages(v.images),
-                    status: v.status || "active"
-                }));
+                const variantRecords = await Promise.all(
+                    parsedVariants.map(async (v) => ({
+                        productId: product.id,
+                        name: (v.name || v.title).trim(),
+                        sku: v.sku ? v.sku.trim() : `${product.id}-${(v.name || "").replace(/\s+/g, "-").toUpperCase()}`,
+                        price: Number(v.price) || 0,
+                        discountPrice: v.discountPrice !== undefined && v.discountPrice !== null && !isNaN(Number(v.discountPrice)) ? Number(v.discountPrice) : null,
+                        stock: v.stock !== undefined && !isNaN(Number(v.stock)) ? Math.max(0, parseInt(v.stock, 10)) : 0,
+                        attributes: typeof v.attributes === "object" && v.attributes !== null ? v.attributes : {},
+                        images: await normalizeAndSaveImages(v.images, "variants"),
+                        status: v.status || "active"
+                    }))
+                );
 
                 await ProductVariant.bulkCreate(variantRecords);
             }

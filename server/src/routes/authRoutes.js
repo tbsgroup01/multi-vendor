@@ -10,7 +10,10 @@ const {
     resetPassword,
     resendOtp,
     sendCustomerLoginOtp,
-    verifyCustomerLoginOtp
+    verifyCustomerLoginOtp,
+    getUserAddresses,
+    addUserAddress,
+    deleteUserAddress
 } = require("../controllers/authController");
 const { protect } = require("../middlewares/authMiddleware");
 
@@ -24,6 +27,11 @@ router.post("/login", login);
 router.post("/send-login-otp", sendCustomerLoginOtp);
 router.post("/verify-login-otp", verifyCustomerLoginOtp);
 router.get("/me", protect, getCurrentUser);
+
+// Saved Addresses (Database-backed)
+router.get("/addresses", protect, getUserAddresses);
+router.post("/addresses", protect, addUserAddress);
+router.delete("/addresses/:id", protect, deleteUserAddress);
 
 // Password Reset OTP flow
 router.post("/forgot-password", forgotPassword);
