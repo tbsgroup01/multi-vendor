@@ -1,6 +1,7 @@
 import api from "./api";
 
 export const adminService = {
+  getDashboardStats: () => api.get("/admin/dashboard-stats"),
   createPlan: (data) => api.post("/admin/plans", data),
   getAllPlans: (params) => api.get("/admin/plans", params),
   getPlanById: (id) => api.get(`/admin/plans/${id}`),

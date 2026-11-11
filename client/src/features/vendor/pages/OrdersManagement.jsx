@@ -1,204 +1,145 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import Cards from "../components/Cards";
 import bannerOrdersImg from "../../../assets/banner-orders-3d.png";
+import orderService from "../../../services/orderService";
 import {
   ShoppingCart,
   Search,
-  Filter,
   Grid,
   List,
   CheckCircle2,
   Clock,
   Truck,
-  AlertTriangle,
-  XCircle,
   Eye,
-  FileText,
   X,
   Phone,
   MapPin,
-  Calendar,
-  CreditCard,
-  ChevronDown,
-  ArrowRight,
   PackageCheck,
   RefreshCw,
-    Download,
-  Trash2,
 } from "lucide-react";
 
-const INITIAL_ORDERS = [
-  {
-    id: "#ORD-1001",
-    customer: {
-      name: "Aarav Sharma",
-      phone: "",
-      email: "aarav.sharma@example.com",
-      address: "Flat 402, Green Meadows, Andheri West, Mumbai, MH - 400053",
-    },
-    items: [
-      { name: "Amul Taaza Fresh Toned Milk (1 L)", qty: 2, price: 54 },
-      { name: "Harvest Gold White Sandwich Bread (400 g)", qty: 1, price: 40 },
-      { name: "Farm Fresh Brown Table Eggs (Pack of 6)", qty: 2, price: 68 },
-    ],
-    totalAmount: "₹2,499",
-    paymentMethod: "UPI (Google Pay)",
-    paymentStatus: "Paid",
-    status: "Delivered",
-    date: "Today, 11:30 AM",
-    trackingId: "TRK-982144",
-  },
-  {
-    id: "#ORD-1000",
-    customer: {
-      name: "Priya Patel",
-      phone: "+91 94280 11982",
-      email: "priya.patel@example.com",
-      address: "12, Shanti Niketan Society, Satellite, Ahmedabad, GJ - 380015",
-    },
-    items: [
-      { name: "Shimla Crisp Royal Gala Apples (4 pcs)", qty: 2, price: 140 },
-      { name: "Cold Drinks & Juices Pack (1 L)", qty: 1, price: 99 },
-    ],
-    totalAmount: "₹1,799",
-    paymentMethod: "Net Banking (HDFC)",
-    paymentStatus: "Paid",
-    status: "Processing",
-    date: "Today, 09:15 AM",
-    trackingId: "TRK-982103",
-  },
-  {
-    id: "#ORD-0999",
-    customer: {
-      name: "Rohan Verma",
-      phone: "+91 97410 88204",
-      email: "rohan.v@example.com",
-      address: "B-204, Palm Grove Apts, Koramangala 4th Block, Bengaluru, KA - 560034",
-    },
-    items: [
-      { name: "Sport Running Sneakers", qty: 1, price: 3299 },
-    ],
-    totalAmount: "₹3,299",
-    paymentMethod: "Credit Card (Visa)",
-    paymentStatus: "Paid",
-    status: "Shipped",
-    date: "Yesterday, 06:40 PM",
-    trackingId: "TRK-981944",
-  },
-  {
-    id: "#ORD-0998",
-    customer: {
-      name: "Ananya Singh",
-      phone: "+91 98112 33491",
-      email: "ananya.s@example.com",
-      address: "House 54, Sector 15, Gurugram, HR - 122001",
-    },
-    items: [
-      { name: "Aashirvaad Superior MP Sharbati Whole Wheat Atta (5 kg)", qty: 1, price: 345 },
-      { name: "Amul Pasteurised Salted Table Butter (100 g)", qty: 2, price: 58 },
-    ],
-    totalAmount: "₹850",
-    paymentMethod: "Cash on Delivery",
-    paymentStatus: "Pending",
-    status: "Pending",
-    date: "Today, 01:20 PM",
-    trackingId: "TRK-982310",
-  },
-  {
-    id: "#ORD-0997",
-    customer: {
-      name: "Rajesh Nair",
-      phone: "+91 98470 55198",
-      email: "rajesh.nair@example.com",
-      address: "TC 14/204, Rose Gardens, Panampilly Nagar, Kochi, KL - 682036",
-    },
-    items: [
-      { name: "Dairy, Bread & Grocery Combo", qty: 3, price: 1100 },
-      { name: "Organic Honey (500 g)", qty: 1, price: 420 },
-    ],
-    totalAmount: "₹4,150",
-    paymentMethod: "UPI (PhonePe)",
-    paymentStatus: "Paid",
-    status: "Delivered",
-    date: "30 Oct, 04:10 PM",
-    trackingId: "TRK-980421",
-  },
-  {
-    id: "#ORD-0996",
-    customer: {
-      name: "Sneha Kulkarni",
-      phone: "+91 98220 77319",
-      email: "sneha.k@example.com",
-      address: "Flat 101, Galaxy Heights, Kothrud, Pune, MH - 411038",
-    },
-    items: [
-      { name: "Snacks & Munchies Festival Hamper", qty: 1, price: 1290 },
-    ],
-    totalAmount: "₹1,290",
-    paymentMethod: "UPI (Paytm)",
-    paymentStatus: "Paid",
-    status: "Shipped",
-    date: "30 Oct, 02:45 PM",
-    trackingId: "TRK-980199",
-  },
-  {
-    id: "#ORD-0995",
-    customer: {
-      name: "Vikram Choudhary",
-      phone: "+91 94140 22891",
-      email: "vikram.c@example.com",
-      address: "Plot 88, Shyam Nagar, Ajmer Road, Jaipur, RJ - 302019",
-    },
-    items: [
-      { name: "Personal Care Grooming Essentials", qty: 2, price: 450 },
-    ],
-    totalAmount: "₹999",
-    paymentMethod: "Cash on Delivery",
-    paymentStatus: "Cancelled",
-    status: "Cancelled",
-    date: "29 Oct, 11:20 AM",
-    trackingId: "TRK-979920",
-  },
-  {
-    id: "#ORD-0994",
-    customer: {
-      name: "Meera Sengupta",
-      phone: "+91 98300 44102",
-      email: "meera.s@example.com",
-      address: "24/1, Ballygunge Circular Road, Kolkata, WB - 700019",
-    },
-    items: [
-      { name: "Assam Royal CTC Tea (1 kg)", qty: 2, price: 420 },
-      { name: "Bakery & Biscuits Gift Tin", qty: 2, price: 380 },
-    ],
-    totalAmount: "₹2,100",
-    paymentMethod: "Debit Card (SBI)",
-    paymentStatus: "Paid",
-    status: "Delivered",
-    date: "28 Oct, 05:15 PM",
-    trackingId: "TRK-978450",
-  },
-];
+const formatStatus = (status) => {
+  if (!status || status === "placed") return "Pending";
+  return status.charAt(0).toUpperCase() + status.slice(1);
+};
+
+const formatPaymentStatus = (status) => {
+  if (status === "completed") return "Paid";
+  if (status === "failed") return "Failed";
+  return formatStatus(status);
+};
+
+const formatAddress = (address) => {
+  if (!address) return "Address unavailable";
+  if (typeof address === "string") return address;
+  return [
+    address.addressLine1,
+    address.addressLine2,
+    address.city,
+    address.state,
+    address.postalCode,
+  ]
+    .filter(Boolean)
+    .join(", ") || "Address unavailable";
+};
+
+const mapVendorOrderItems = (orderItems = []) => {
+  const groupedOrders = new Map();
+
+  orderItems.forEach((orderItem) => {
+    const order = orderItem.order || {};
+    const orderId = order.id ?? orderItem.orderId;
+    if (orderId == null) return;
+
+    if (!groupedOrders.has(orderId)) {
+      const customer = order.user || {};
+      groupedOrders.set(orderId, {
+        id: order.orderNumber || `ORD-${orderId}`,
+        orderItemIds: [],
+        customer: {
+          name: customer.name || "Customer",
+          phone: customer.phone || "",
+          email: customer.email || "",
+          address: formatAddress(order.shippingAddress),
+        },
+        items: [],
+        totalAmount: 0,
+        paymentMethod: order.paymentMethod === "cod" ? "Cash on Delivery" : order.paymentMethod || "N/A",
+        paymentStatus: formatPaymentStatus(order.paymentStatus),
+        statuses: new Set(),
+        date: order.createdAt
+          ? new Date(order.createdAt).toLocaleString("en-IN")
+          : "Date unavailable",
+        trackingId: "N/A",
+      });
+    }
+
+    const groupedOrder = groupedOrders.get(orderId);
+    const price = Number(orderItem.productPrice) || 0;
+    const quantity = Number(orderItem.quantity) || 0;
+    groupedOrder.orderItemIds.push(orderItem.id);
+    groupedOrder.statuses.add(formatStatus(orderItem.status));
+    groupedOrder.items.push({
+      id: orderItem.id,
+      name: orderItem.productName || orderItem.variantName || "Product",
+      qty: quantity,
+      price,
+      totalPrice: Number(orderItem.totalPrice) || price * quantity,
+    });
+    groupedOrder.totalAmount += Number(orderItem.totalPrice) || price * quantity;
+  });
+
+  return Array.from(groupedOrders.values()).map((order) => ({
+    ...order,
+    status: order.statuses.size === 1 ? Array.from(order.statuses)[0] : "Mixed",
+    totalAmount: `₹${order.totalAmount.toLocaleString("en-IN")}`,
+  }));
+};
 
 export default function OrdersManagement() {
-  const [orders, setOrders] = useState(INITIAL_ORDERS);
+  const [orders, setOrders] = useState([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All");
   const [selectedPayment, setSelectedPayment] = useState("All");
   const [viewMode, setViewMode] = useState("table"); // "table" or "grid"
   const [toastMessage, setToastMessage] = useState("");
-  const [selectedIds, setSelectedIds] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [updatingOrderId, setUpdatingOrderId] = useState(null);
 
   // Modal / Drawer state for Order Details
   const [activeOrder, setActiveOrder] = useState(null);
 
-  const showToast = (msg) => {
+  const showToast = useCallback((msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(""), 3000);
-  };
+  }, []);
+
+  const loadOrders = useCallback(async (showSuccess = false) => {
+    setIsLoading(true);
+    setLoadError("");
+    try {
+      const response = await orderService.getVendorOrders({ limit: 50 });
+      const orderItems = [...(response.orderItems || [])];
+      for (let page = 2; page <= (response.totalPages || 1); page += 1) {
+        const nextPage = await orderService.getVendorOrders({ page, limit: 50 });
+        orderItems.push(...(nextPage.orderItems || []));
+      }
+      setOrders(mapVendorOrderItems(orderItems));
+      if (showSuccess) showToast("Orders refreshed successfully.");
+    } catch (error) {
+      setLoadError(error.message || "Failed to load orders.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [showToast]);
+
+  useEffect(() => {
+    loadOrders();
+  }, [loadOrders]);
 
   // Status Pill Styling
   const getStatusBadge = (status) => {
@@ -288,56 +229,28 @@ export default function OrdersManagement() {
     },
   ];
 
-  // Update Status Handler
-  const handleUpdateStatus = (id, newStatus) => {
-    setOrders((prev) =>
-      prev.map((ord) => (ord.id === id ? { ...ord, status: newStatus } : ord))
-    );
-    if (activeOrder && activeOrder.id === id) {
-      setActiveOrder((prev) => ({ ...prev, status: newStatus }));
-    }
-    showToast(`Order ${id} updated to "${newStatus}"!`);
-  };
+  const handleUpdateStatus = async (id, newStatus) => {
+    const order = orders.find((item) => item.id === id);
+    if (!order) return;
 
-  // Delete Order
-  const handleDeleteOrder = (id) => {
-    if (window.confirm(`Are you sure you want to delete order ${id}?`)) {
-      setOrders((prev) => prev.filter((o) => o.id !== id));
-      setSelectedIds((prev) => prev.filter((item) => item !== id));
-      showToast(`Order ${id} deleted successfully.`);
-    }
-  };
-
-  // Bulk Selection & Delete Handlers
-  const isAllSelected =
-    filteredOrders.length > 0 &&
-    filteredOrders.every((o) => selectedIds.includes(o.id));
-
-  const handleToggleSelectAll = () => {
-    if (isAllSelected) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(filteredOrders.map((o) => o.id));
-    }
-  };
-
-  const handleToggleSelect = (id) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
-  };
-
-  const handleBulkDelete = () => {
-    if (selectedIds.length === 0) return;
-    if (
-      window.confirm(
-        `Are you sure you want to delete ${selectedIds.length} orders?`
+    setUpdatingOrderId(id);
+    const results = await Promise.allSettled(
+      order.orderItemIds.map((orderItemId) =>
+        orderService.updateOrderItemStatus(orderItemId, newStatus.toLowerCase())
       )
-    ) {
-      setOrders((prev) => prev.filter((o) => !selectedIds.includes(o.id)));
-      showToast(`${selectedIds.length} orders deleted successfully.`);
-      setSelectedIds([]);
+    );
+    const failedUpdate = results.find((result) => result.status === "rejected");
+
+    if (failedUpdate) {
+      await loadOrders();
+      showToast(failedUpdate.reason?.message || "Failed to update order status.");
+    } else {
+      const updatedOrder = { ...order, status: newStatus };
+      setOrders((prev) => prev.map((item) => item.id === id ? updatedOrder : item));
+      setActiveOrder((prev) => prev?.id === id ? updatedOrder : prev);
+      showToast(`Order ${id} updated to "${newStatus}".`);
     }
+    setUpdatingOrderId(null);
   };
 
   return (
@@ -448,13 +361,11 @@ export default function OrdersManagement() {
               <div className="pt-3.5 sm:pt-4">
                 <button
                   type="button"
-                  onClick={() => {
-                    setOrders(INITIAL_ORDERS);
-                    showToast("Orders refreshed with live data!");
-                  }}
-                  className="inline-flex items-center gap-2 px-5 sm:px-6 py-2 sm:py-2.5 rounded-full bg-white text-[#049669] hover:text-[#03704f] hover:bg-emerald-50 font-bold text-xs sm:text-sm shadow-md shadow-emerald-950/20 hover:shadow-lg hover:scale-[1.02] active:scale-98 transition-all duration-200 cursor-pointer"
+                  onClick={() => loadOrders(true)}
+                  disabled={isLoading}
+                  className="inline-flex items-center gap-2 px-5 sm:px-6 py-2 sm:py-2.5 rounded-full bg-white text-[#049669] hover:text-[#03704f] hover:bg-emerald-50 font-bold text-xs sm:text-sm shadow-md shadow-emerald-950/20 hover:shadow-lg hover:scale-[1.02] active:scale-98 transition-all duration-200 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  <RefreshCw className="w-4 h-4 stroke-[2.5]" />
+                  <RefreshCw className={`w-4 h-4 stroke-[2.5] ${isLoading ? "animate-spin" : ""}`} />
                   <span>Refresh Orders</span>
                 </button>
               </div>
@@ -463,6 +374,12 @@ export default function OrdersManagement() {
 
           {/* Metric Stats Cards Reusing Shared Cards Component */}
           <Cards stats={orderStats} />
+
+          {loadError && (
+            <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              {loadError}
+            </div>
+          )}
 
           {/* Search, Filter & View Controls */}
           <div className="bg-white/60 backdrop-blur-2xl rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-white/80 shadow-[0_8px_30px_rgba(4,150,105,0.06)] flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3.5 relative overflow-hidden">
@@ -505,7 +422,7 @@ export default function OrdersManagement() {
                 <option value="All">All Payments</option>
                 <option value="Paid">Paid</option>
                 <option value="Pending">Pending (COD)</option>
-                <option value="Cancelled">Cancelled</option>
+                <option value="Failed">Failed</option>
               </select>
 
               {/* View Toggle */}
@@ -538,36 +455,6 @@ export default function OrdersManagement() {
             </div>
           </div>
 
-          {/* ================= BULK ACTIONS FLOATING BAR ================= */}
-          {selectedIds.length > 0 && (
-            <div className="bg-slate-900/90 backdrop-blur-xl text-white px-4 sm:px-5 py-3 rounded-xl sm:rounded-2xl shadow-xl flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2 duration-200 border border-slate-700/60 mb-5">
-              <div className="flex items-center gap-2.5 text-xs sm:text-sm font-semibold">
-                <span className="w-6 h-6 rounded-lg bg-[#049669] flex items-center justify-center font-bold text-xs text-white">
-                  {selectedIds.length}
-                </span>
-                <span>Selected Orders</span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setSelectedIds([])}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/10 transition cursor-pointer"
-                >
-                  Deselect All
-                </button>
-                <button
-                  type="button"
-                  onClick={handleBulkDelete}
-                  className="px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-sm cursor-pointer"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>Bulk Delete ({selectedIds.length})</span>
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* ================= ORDER CONTENT: TABLE VIEW ================= */}
           {viewMode === "table" ? (
             <div className="bg-white/60 backdrop-blur-2xl rounded-xl sm:rounded-2xl border border-white/80 shadow-[0_8px_30px_rgba(4,150,105,0.06)] overflow-hidden relative">
@@ -577,15 +464,6 @@ export default function OrdersManagement() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-slate-100 bg-emerald-50/40 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                      <th className="py-3.5 px-4 w-10 text-center">
-                        <input
-                          type="checkbox"
-                          checked={isAllSelected}
-                          onChange={handleToggleSelectAll}
-                          className="w-4 h-4 rounded text-[#049669] focus:ring-emerald-500 accent-[#049669] cursor-pointer"
-                          aria-label="Select all orders"
-                        />
-                      </th>
                       <th className="py-3.5 px-4 sm:px-6">Order ID &amp; Date</th>
                       <th className="py-3.5 px-4">Customer</th>
                       <th className="py-3.5 px-4">Items Summary</th>
@@ -597,26 +475,11 @@ export default function OrdersManagement() {
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-xs sm:text-sm">
                     {filteredOrders.map((ord) => {
-                      const isSelected = selectedIds.includes(ord.id);
                       return (
                         <tr
                           key={ord.id}
-                          className={`transition-colors group ${
-                            isSelected
-                              ? "bg-emerald-50/60"
-                              : "hover:bg-emerald-50/30"
-                          }`}
+                          className="transition-colors group hover:bg-emerald-50/30"
                         >
-                          <td className="py-3.5 px-4 text-center">
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() => handleToggleSelect(ord.id)}
-                              className="w-4 h-4 rounded text-[#049669] focus:ring-emerald-500 accent-[#049669] cursor-pointer"
-                              aria-label={`Select order ${ord.id}`}
-                            />
-                          </td>
-
                           <td className="py-3.5 px-4 sm:px-6">
                             <span className="font-extrabold text-[#1E1B4B] block group-hover:text-[#049669] transition-colors">
                               {ord.id}
@@ -691,8 +554,10 @@ export default function OrdersManagement() {
                               <select
                                 value={ord.status}
                                 onChange={(e) => handleUpdateStatus(ord.id, e.target.value)}
+                                disabled={updatingOrderId === ord.id || ord.status === "Mixed"}
                                 className="h-8 px-2 rounded-lg border border-slate-200 bg-white text-[11px] font-semibold text-slate-700 focus:border-[#049669] outline-none cursor-pointer"
                               >
+                                {ord.status === "Mixed" && <option value="Mixed">Mixed</option>}
                                 <option value="Pending">Pending</option>
                                 <option value="Processing">Processing</option>
                                 <option value="Shipped">Shipped</option>
@@ -700,15 +565,6 @@ export default function OrdersManagement() {
                                 <option value="Cancelled">Cancelled</option>
                               </select>
 
-                              {/* Delete Order Button */}
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteOrder(ord.id)}
-                                title="Delete Order"
-                                className="p-1.5 rounded-lg border border-slate-200 hover:text-rose-600 hover:bg-rose-50 text-slate-400 transition cursor-pointer shadow-2xs"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
                             </div>
                           </td>
                         </tr>
@@ -722,15 +578,10 @@ export default function OrdersManagement() {
             /* ================= ORDER CONTENT: GRID / CARDS VIEW ================= */
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
               {filteredOrders.map((ord) => {
-                const isSelected = selectedIds.includes(ord.id);
                 return (
                   <div
                     key={ord.id}
-                    className={`backdrop-blur-2xl rounded-2xl p-4 sm:p-5 border shadow-[0_8px_30px_rgba(4,150,105,0.06)] hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgba(4,150,105,0.12)] transition-all duration-300 relative overflow-hidden flex flex-col justify-between group ${
-                      isSelected
-                        ? "border-[#049669] ring-2 ring-emerald-500/25 bg-emerald-50/40"
-                        : "bg-white/70 border-white/80 hover:border-emerald-300"
-                    }`}
+                    className="backdrop-blur-2xl rounded-2xl p-4 sm:p-5 border shadow-[0_8px_30px_rgba(4,150,105,0.06)] hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgba(4,150,105,0.12)] transition-all duration-300 relative overflow-hidden flex flex-col justify-between group bg-white/70 border-white/80 hover:border-emerald-300"
                   >
                     {/* Top glass edge highlight */}
                     <div className="pointer-events-none absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-white/90 to-transparent" />
@@ -739,24 +590,15 @@ export default function OrdersManagement() {
                     <div className="pointer-events-none absolute -right-6 -bottom-6 w-24 h-24 rounded-full bg-emerald-400/10 blur-xl group-hover:scale-125 transition-transform duration-500" />
 
                     <div>
-                      {/* Header: Checkbox, ID, Date & Status */}
+                      {/* Header: ID, Date & Status */}
                       <div className="flex items-start justify-between gap-2 mb-3">
-                        <div className="flex items-start gap-2.5">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => handleToggleSelect(ord.id)}
-                            className="w-4 h-4 mt-0.5 rounded text-[#049669] focus:ring-emerald-500 accent-[#049669] cursor-pointer"
-                            aria-label={`Select order ${ord.id}`}
-                          />
-                          <div>
-                            <span className="font-black text-[#1E1B4B] text-sm group-hover:text-[#049669] transition-colors block">
-                              {ord.id}
-                            </span>
-                            <span className="text-[10px] text-slate-400 font-medium">
-                              {ord.date}
-                            </span>
-                          </div>
+                        <div>
+                          <span className="font-black text-[#1E1B4B] text-sm group-hover:text-[#049669] transition-colors block">
+                            {ord.id}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-medium">
+                            {ord.date}
+                          </span>
                         </div>
 
                         <span
@@ -829,14 +671,6 @@ export default function OrdersManagement() {
                         >
                           Details
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteOrder(ord.id)}
-                          title="Delete Order"
-                          className="p-1.5 rounded-lg border border-slate-200 hover:text-rose-600 hover:bg-rose-50 text-slate-400 transition cursor-pointer shadow-2xs"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
                       </div>
                     </div>
                   </div>
@@ -845,7 +679,13 @@ export default function OrdersManagement() {
             </div>
           )}
 
-          {filteredOrders.length === 0 && (
+          {isLoading && filteredOrders.length === 0 && (
+            <div className="text-center py-16 bg-white/60 backdrop-blur-2xl rounded-2xl border border-white/80 p-8 shadow-sm text-sm text-slate-500">
+              Loading orders...
+            </div>
+          )}
+
+          {!isLoading && filteredOrders.length === 0 && (
             <div className="text-center py-16 bg-white/60 backdrop-blur-2xl rounded-2xl border border-white/80 p-8 shadow-sm">
               <ShoppingCart className="w-12 h-12 text-slate-300 mx-auto mb-3" />
               <h3 className="text-base font-bold text-slate-700">No orders found</h3>
@@ -911,11 +751,12 @@ export default function OrdersManagement() {
                     key={st}
                     type="button"
                     onClick={() => handleUpdateStatus(activeOrder.id, st)}
+                    disabled={updatingOrderId === activeOrder.id}
                     className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
                       activeOrder.status === st
                         ? "bg-[#049669] text-white shadow-xs"
                         : "bg-white text-slate-700 border border-slate-200 hover:bg-emerald-100/60"
-                    }`}
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     {st}
                   </button>
@@ -1013,4 +854,3 @@ export default function OrdersManagement() {
     </div>
   );
 }
-

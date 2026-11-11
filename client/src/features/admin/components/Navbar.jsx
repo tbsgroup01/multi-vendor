@@ -97,24 +97,7 @@ export default function Navbar({ onToggleSidebar }) {
 
       {/* Right: Actions & Super Admin Profile */}
       <div className="flex items-center gap-2.5 sm:gap-4 shrink-0">
-        <Link
-          to="/"
-          target="_blank"
-          className="hidden sm:inline-flex items-center gap-2 text-xs sm:text-[13px] font-bold text-[#049669] hover:text-[#03704f] bg-emerald-50/90 hover:bg-emerald-100 border border-emerald-200/80 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl transition-all shadow-2xs hover:shadow-sm"
-        >
-          <span>View Customer Store</span>
-          <ExternalLink className="w-3.5 h-3.5" />
-        </Link>
-
-        <Link
-          to="/vendor"
-          className="hidden md:inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-[#049669] bg-white border border-slate-200/80 hover:bg-emerald-50 px-3 py-2 rounded-xl transition-all shadow-2xs"
-        >
-          <Layers className="w-3.5 h-3.5 text-[#049669]" />
-          <span>Vendor Portal</span>
-        </Link>
-
-        <button
+      <button
           className="w-10 h-10 rounded-xl bg-white border border-slate-200/80 text-slate-600 hover:text-[#049669] hover:bg-emerald-50 flex items-center justify-center relative transition-colors cursor-pointer shadow-2xs hover:shadow-sm"
           aria-label="Admin Notifications"
         >

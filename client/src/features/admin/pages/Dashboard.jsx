@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import Cards from "../components/Cards";
+import { adminService, vendorService } from "../../../services";
 import {
   TrendingUp,
   Store,
@@ -21,6 +22,8 @@ import {
   X,
   Sparkles,
   ShoppingBag,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
 import bannerAdminImg from "../../../assets/banner-admin-dashboard-3d.png";
 
@@ -28,6 +31,53 @@ export default function Dashboard() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeDay, setActiveDay] = useState("Sat");
   const [timeRange, setTimeRange] = useState("weekly");
+  const [loading, setLoading] = useState(true);
+
+  // Live Database Statistics
+  const [stats, setStats] = useState({
+    totalGMV: 0,
+    formattedGMV: "₹0",
+    activeVendors: 0,
+    registeredUsers: 0,
+    pendingApprovals: 0,
+  });
+
+  const [pendingVendors, setPendingVendors] = useState([]);
+  const [recentOrders, setRecentOrders] = useState([]);
+  const [chartDays, setChartDays] = useState([
+    { day: "Mon", sales: "₹0", heightPct: 20, x: 120, y: 155 },
+    { day: "Tue", sales: "₹0", heightPct: 20, x: 260, y: 135 },
+    { day: "Wed", sales: "₹0", heightPct: 20, x: 400, y: 145 },
+    { day: "Thu", sales: "₹0", heightPct: 20, x: 540, y: 100 },
+    { day: "Fri", sales: "₹0", heightPct: 20, x: 680, y: 65 },
+    { day: "Sat", sales: "₹0", heightPct: 20, x: 820, y: 35 },
+    { day: "Sun", sales: "₹0", heightPct: 20, x: 960, y: 80 },
+  ]);
+
+  // Fetch Dashboard Analytics from DB
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const res = await adminService.getDashboardStats();
+      if (res && res.success) {
+        if (res.stats) setStats(res.stats);
+        if (Array.isArray(res.pendingVendors)) setPendingVendors(res.pendingVendors);
+        if (Array.isArray(res.recentOrders)) setRecentOrders(res.recentOrders);
+        if (Array.isArray(res.chartDays) && res.chartDays.length > 0) {
+          setChartDays(res.chartDays);
+          setActiveDay(res.chartDays[res.chartDays.length - 1].day);
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to load admin dashboard stats from DB:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
   // Scroll Animation & Parallax State
   const scrollContainerRef = useRef(null);
@@ -54,86 +104,88 @@ export default function Dashboard() {
     }
   };
 
-  // Mock Pending Vendor Approvals
-  const [pendingVendors, setPendingVendors] = useState([
-    {
-      id: "v-101",
-      storeName: "Organic Bliss Farms",
-      owner: "Devendra Patel",
-      category: "Fruits & Vegetables",
-      appliedDate: "Today, 10:20 AM",
-      status: "KYC Pending",
-    },
-    {
-      id: "v-102",
-      storeName: "Sweet Treats Bakery",
-      owner: "Pooja Malhotra",
-      category: "Bakery & Biscuits",
-      appliedDate: "Yesterday",
-      status: "Document Review",
-    },
-    {
-      id: "v-103",
-      storeName: "Daily Clean Essentials",
-      owner: "Rajesh Kulkarni",
-      category: "Cleaning Essentials",
-      appliedDate: "Nov 01, 2026",
-      status: "Verification Due",
-    },
-  ]);
-
-  const handleApprove = (id) => {
+  // Handle Live Vendor Approval directly from DB
+  const handleApprove = async (id) => {
+    try {
+      await vendorService.approveVendor(id);
+    } catch (err) {
+      console.warn("Failed to approve vendor in DB:", err);
+    }
     setPendingVendors((prev) => prev.filter((v) => v.id !== id));
+    setStats((prev) => ({
+      ...prev,
+      activeVendors: (prev.activeVendors || 0) + 1,
+      pendingApprovals: Math.max(0, (prev.pendingApprovals || 0) - 1),
+    }));
   };
 
-  const handleReject = (id) => {
+  // Handle Live Vendor Rejection in DB
+  const handleReject = async (id) => {
+    try {
+      await vendorService.rejectVendor(id, "Rejected by admin from dashboard");
+    } catch (err) {
+      console.warn("Failed to reject vendor in DB:", err);
+    }
     setPendingVendors((prev) => prev.filter((v) => v.id !== id));
+    setStats((prev) => ({
+      ...prev,
+      pendingApprovals: Math.max(0, (prev.pendingApprovals || 0) - 1),
+    }));
   };
 
-  // Chart Data
-  const chartDays = [
-    { day: "Mon", sales: "₹1,20,000", heightPct: 40, x: 120, y: 155 },
-    { day: "Tue", sales: "₹1,45,000", heightPct: 52, x: 260, y: 135 },
-    { day: "Wed", sales: "₹1,32,000", heightPct: 48, x: 400, y: 145 },
-    { day: "Thu", sales: "₹1,95,000", heightPct: 68, x: 540, y: 100 },
-    { day: "Fri", sales: "₹2,60,000", heightPct: 82, x: 680, y: 65 },
-    { day: "Sat", sales: "₹3,42,500", heightPct: 98, x: 820, y: 35 },
-    { day: "Sun", sales: "₹2,80,000", heightPct: 78, x: 960, y: 80 },
-  ];
-
-  // Recent Marketplace Orders
-  const recentOrders = [
+  // Live Stats Cards Data
+  const statsCardsData = [
     {
-      id: "#ORD-9904",
-      customer: "Sneha Roy",
-      store: "Best Deals Store",
-      amount: "₹1,840",
-      status: "Completed",
-      statusColor: "bg-emerald-50 text-[#049669] border-emerald-200/80",
+      id: "platform-gmv",
+      title: "Platform GMV (Sales)",
+      value: stats.formattedGMV || `₹${Number(stats.totalGMV || 0).toLocaleString("en-IN")}`,
+      change: "Live DB Aggregate",
+      isPositive: true,
+      icon: CircleDollarSign,
+      iconColor: "text-white bg-gradient-to-tr from-[#049669] to-[#10B981] border-emerald-400/40 shadow-md shadow-emerald-600/25",
+      bgGradient: "from-emerald-50/90 via-white/85 to-white/60",
+      accentBorder: "border-emerald-200/80 hover:border-emerald-400 hover:shadow-[0_16px_36px_rgba(4,150,105,0.15)]",
+      glowColor: "bg-emerald-400/25",
+      valueColor: "text-[#049669]",
     },
     {
-      id: "#ORD-9903",
-      customer: "Vikram Malhotra",
-      store: "Fresh Farm Organics",
-      amount: "₹3,450",
-      status: "Processing",
-      statusColor: "bg-teal-50 text-teal-700 border-teal-200/80",
+      id: "vendors",
+      title: "Active Vendors",
+      value: String(stats.activeVendors ?? 0),
+      change: "Approved store partners",
+      isPositive: true,
+      icon: Store,
+      iconColor: "text-white bg-gradient-to-tr from-[#059669] to-teal-500 border-teal-400/40 shadow-md shadow-teal-600/25",
+      bgGradient: "from-teal-50/90 via-white/85 to-white/60",
+      accentBorder: "border-teal-200/80 hover:border-teal-400 hover:shadow-[0_16px_36px_rgba(13,148,136,0.15)]",
+      glowColor: "bg-teal-400/25",
+      valueColor: "text-[#1E1B4B]",
     },
     {
-      id: "#ORD-9902",
-      customer: "Ananya Deshmukh",
-      store: "Dairy Direct",
-      amount: "₹720",
-      status: "Completed",
-      statusColor: "bg-emerald-50 text-[#049669] border-emerald-200/80",
+      id: "customers",
+      title: "Registered Users",
+      value: Number(stats.registeredUsers ?? 0).toLocaleString("en-IN"),
+      change: "Platform accounts",
+      isPositive: true,
+      icon: Users,
+      iconColor: "text-white bg-gradient-to-tr from-[#049669] via-emerald-600 to-teal-600 border-emerald-400/40 shadow-md shadow-emerald-600/25",
+      bgGradient: "from-emerald-50/70 via-white/85 to-white/60",
+      accentBorder: "border-emerald-200/80 hover:border-emerald-400 hover:shadow-[0_16px_36px_rgba(4,150,105,0.15)]",
+      glowColor: "bg-emerald-400/20",
+      valueColor: "text-[#1E1B4B]",
     },
     {
-      id: "#ORD-9901",
-      customer: "Mohit Verma",
-      store: "Spice Corner",
-      amount: "₹2,110",
-      status: "Pending Dispatch",
-      statusColor: "bg-amber-50 text-amber-700 border-amber-200/80",
+      id: "pending-approvals",
+      title: "Pending Approvals",
+      value: String(stats.pendingApprovals ?? pendingVendors.length),
+      change: "Vendor KYC & Stores",
+      isPositive: false,
+      icon: Clock,
+      iconColor: "text-white bg-gradient-to-tr from-amber-500 to-amber-400 border-amber-300 shadow-md shadow-amber-500/25",
+      bgGradient: "from-amber-50/90 via-white/85 to-white/60",
+      accentBorder: "border-amber-200/80 hover:border-amber-400 hover:shadow-[0_16px_36px_rgba(245,158,11,0.15)]",
+      glowColor: "bg-amber-400/25",
+      valueColor: "text-amber-600",
     },
   ];
 
@@ -252,6 +304,16 @@ export default function Dashboard() {
                     <span>Manage Vendors</span>
                   </Link>
 
+                  <button
+                    type="button"
+                    onClick={fetchDashboardData}
+                    className="inline-flex items-center gap-2 px-4 py-2 sm:py-2.5 rounded-full bg-emerald-900/40 hover:bg-emerald-900/60 backdrop-blur-md border border-emerald-300/30 text-emerald-100 font-semibold text-xs sm:text-sm cursor-pointer transition-all active:scale-95"
+                    title="Reload Live Database Stats"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+                    <span>Sync DB</span>
+                  </button>
+
                   <div className="hidden sm:inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-900/40 backdrop-blur-md border border-emerald-300/30 text-emerald-100 text-xs font-semibold">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                     <span>All Services Healthy</span>
@@ -261,7 +323,7 @@ export default function Dashboard() {
             </div>
 
             {/* Dashboard Stats Cards */}
-            <Cards />
+            <Cards stats={statsCardsData} />
 
             {/* Platform Analytics & Recent Activity Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6">
@@ -305,7 +367,7 @@ export default function Dashboard() {
                 <div className="relative pt-6">
                   {/* Floating active data tooltip */}
                   <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#049669] text-white font-bold text-xs shadow-md shadow-emerald-700/20 mb-2">
-                    <span>{chartDays.find((d) => d.day === activeDay)?.sales || "₹3,42,500"}</span>
+                    <span>{chartDays.find((d) => d.day === activeDay)?.sales || chartDays[0]?.sales || "₹0"}</span>
                     <span className="text-[10px] font-normal text-emerald-100">on {activeDay}</span>
                   </div>
 
@@ -329,17 +391,21 @@ export default function Dashboard() {
 
                       {/* Area Fill */}
                       <path
-                        d="M 120 155 Q 190 145 260 135 T 400 145 T 540 100 T 680 65 T 820 35 T 960 80 L 960 200 L 120 200 Z"
+                        d={`M 120 ${chartDays[0]?.y ?? 155} ` +
+                          chartDays.slice(1).map((pt) => `L ${pt.x} ${pt.y}`).join(" ") +
+                          ` L ${chartDays[chartDays.length - 1]?.x ?? 960} 200 L 120 200 Z`}
                         fill="url(#chartFillGrad)"
                       />
 
                       {/* Smooth Curve Stroke */}
                       <path
-                        d="M 120 155 Q 190 145 260 135 T 400 145 T 540 100 T 680 65 T 820 35 T 960 80"
+                        d={`M 120 ${chartDays[0]?.y ?? 155} ` +
+                          chartDays.slice(1).map((pt) => `L ${pt.x} ${pt.y}`).join(" ")}
                         fill="none"
                         stroke="#049669"
                         strokeWidth="3.5"
                         strokeLinecap="round"
+                        strokeLinejoin="round"
                       />
 
                       {/* Interactive Dots */}
@@ -492,26 +558,34 @@ export default function Dashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
-                    {recentOrders.map((ord) => (
-                      <tr key={ord.id} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="py-3 px-3 font-bold text-slate-800">{ord.id}</td>
-                        <td className="py-3 px-3 text-slate-600">{ord.customer}</td>
-                        <td className="py-3 px-3 text-slate-600 font-medium">{ord.store}</td>
-                        <td className="py-3 px-3 font-black text-slate-800">{ord.amount}</td>
-                        <td className="py-3 px-3">
-                          <span
-                            className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${ord.statusColor}`}
-                          >
-                            {ord.status}
-                          </span>
-                        </td>
-                        <td className="py-3 px-3 text-right">
-                          <button className="text-slate-400 hover:text-[#049669] p-1 rounded-lg hover:bg-emerald-50 transition-colors">
-                            <Eye className="w-4 h-4" />
-                          </button>
+                    {recentOrders.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-8 text-center text-slate-400 text-xs">
+                          No recent transactions recorded in database yet.
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      recentOrders.map((ord) => (
+                        <tr key={ord.id} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="py-3 px-3 font-bold text-slate-800">{ord.id}</td>
+                          <td className="py-3 px-3 text-slate-600">{ord.customer}</td>
+                          <td className="py-3 px-3 text-slate-600 font-medium">{ord.store}</td>
+                          <td className="py-3 px-3 font-black text-slate-800">{ord.amount}</td>
+                          <td className="py-3 px-3">
+                            <span
+                              className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${ord.statusColor}`}
+                            >
+                              {ord.status}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-right">
+                            <button className="text-slate-400 hover:text-[#049669] p-1 rounded-lg hover:bg-emerald-50 transition-colors">
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>

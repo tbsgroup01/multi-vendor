@@ -2,6 +2,10 @@ const express = require("express");
 const router = express.Router();
 
 const {
+    getMyVendorDashboard,
+    getMyVendorNotifications,
+    getMyVendorSettings,
+    updateMyVendorSettings,
     getAllVendors,
     getVendorById,
     approveVendor,
@@ -10,11 +14,15 @@ const {
     deleteVendor
 } = require("../controllers/vendorController");
 
-const { protect, restrictTo } = require("../middlewares/authMiddleware");
+const { protect, restrictTo, isApprovedVendor } = require("../middlewares/authMiddleware");
 
 
 router.use(protect);
 
+router.get("/me/dashboard", restrictTo("vendor"), isApprovedVendor, getMyVendorDashboard);
+router.get("/me/notifications", restrictTo("vendor"), isApprovedVendor, getMyVendorNotifications);
+router.get("/me/settings", restrictTo("vendor"), isApprovedVendor, getMyVendorSettings);
+router.put("/me/settings", restrictTo("vendor"), isApprovedVendor, updateMyVendorSettings);
 router.get("/:id", getVendorById);
 
 // Admin-only routes

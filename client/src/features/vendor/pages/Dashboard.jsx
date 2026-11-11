@@ -3,39 +3,76 @@ import { Link } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import Cards from "../components/Cards";
+import vendorService from "../../../services/vendorService";
+import { getUploadUrl } from "../../../services";
 import {
-  TrendingUp,
   Package,
   ShoppingCart,
-  Plus,
   ArrowRight,
   Clock,
-  CheckCircle2,
-  ExternalLink,
   Shapes,
   CreditCard,
-  Building2,
   Wallet,
-  ArrowUpRight,
   ChevronUp,
+  CircleDollarSign,
 } from "lucide-react";
 
-// Real Category Packshots
-import dairyBreadEggsImg from "../../../assets/category/dairy-bread-eggs.png";
-import coldDrinksJuicesImg from "../../../assets/category/cold-drinks-juices.png";
-import snacksMunchiesImg from "../../../assets/category/snacks-munchies.png";
-import fruitsVegetablesImg from "../../../assets/category/fruits-vegetables.png";
 import vendorBannerIllustration from "../../../assets/vendor-banner-illustration.png";
+
+const formatCurrency = (amount) =>
+  `₹${(Number(amount) || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+
+const formatStatus = (status = "pending") =>
+  status.charAt(0).toUpperCase() + status.slice(1);
+
+const getStatusColor = (status) => {
+  if (status === "delivered" || status === "completed") {
+    return "bg-emerald-50 text-[#049669] border-emerald-200/80";
+  }
+  if (status === "failed" || status === "cancelled") {
+    return "bg-rose-50 text-rose-700 border-rose-200/80";
+  }
+  if (status === "shipped" || status === "processing") {
+    return "bg-teal-50 text-[#049669] border-teal-200/80";
+  }
+  return "bg-amber-50 text-amber-700 border-amber-200/80";
+};
 
 export default function Dashboard() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [activeDay, setActiveDay] = useState("Sat");
+  const [activeDay, setActiveDay] = useState(() =>
+    new Date().toLocaleDateString("en-US", { weekday: "short" })
+  );
+  const [dashboardData, setDashboardData] = useState(null);
+  const [isDashboardLoading, setIsDashboardLoading] = useState(true);
+  const [dashboardError, setDashboardError] = useState("");
 
   // Scroll Animation & Parallax State
   const scrollContainerRef = useRef(null);
   const [scrollY, setScrollY] = useState(0);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [isChartInView, setIsChartInView] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    vendorService.getMyDashboard()
+      .then((data) => {
+        if (isMounted) {
+          setDashboardData(data);
+          setDashboardError("");
+        }
+      })
+      .catch((error) => {
+        if (isMounted) setDashboardError(error.message || "Failed to load dashboard.");
+      })
+      .finally(() => {
+        if (isMounted) setIsDashboardLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -88,112 +125,97 @@ export default function Dashboard() {
     };
   }, []);
 
-  // Chart data for Sales Overview matching the reference image
-  const chartData = [
-    { day: "Mon", x: 60, y: 145, value: "₹36,200" },
-    { day: "Tue", x: 130, y: 125, value: "₹52,400" },
-    { day: "Wed", x: 200, y: 80, value: "₹85,000" },
-    { day: "Thu", x: 270, y: 98, value: "₹69,800" },
-    { day: "Fri", x: 340, y: 48, value: "₹1,11,500" },
-    { day: "Sat", x: 410, y: 35, value: "₹72,500" },
-    { day: "Sun", x: 480, y: 68, value: "₹95,200" },
-  ];
-
-  // Recent Orders matching the screenshot
-  const recentOrders = [
+  const weeklySales = dashboardData?.weeklySales || [];
+  const maxDailySales = Math.max(0, ...weeklySales.map((day) => Number(day.total) || 0));
+  const chartData = weeklySales.map((day, index) => ({
+    ...day,
+    x: 60 + index * 70,
+    y: maxDailySales ? 175 - ((Number(day.total) || 0) / maxDailySales) * 145 : 175,
+    value: formatCurrency(day.total),
+  }));
+  const chartLinePath = chartData
+    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
+    .join(" ");
+  const chartAreaPath = chartData.length
+    ? `${chartLinePath} L ${chartData[chartData.length - 1].x} 175 L ${chartData[0].x} 175 Z`
+    : "";
+  const recentOrders = (() => {
+    const orders = new Map();
+    for (const item of dashboardData?.recentOrderItems || []) {
+      const order = item.order || {};
+      const orderKey = item.orderId || order.id;
+      if (!orders.has(orderKey)) {
+        orders.set(orderKey, {
+          id: order.orderNumber || `ORD-${orderKey}`,
+          status: item.status || "pending",
+          statusColor: getStatusColor(item.status),
+          amount: 0,
+          image: item.productImage || "",
+          title: item.productName || "Product",
+          paymentStatus: order.paymentStatus || "pending",
+          paymentMethod: order.paymentMethod || "Payment method unavailable",
+          date: order.createdAt || item.createdAt,
+        });
+      }
+      orders.get(orderKey).amount += Number(item.totalPrice) || 0;
+    }
+    return Array.from(orders.values()).slice(0, 5).map((order) => ({
+      ...order,
+      price: formatCurrency(order.amount),
+    }));
+  })();
+  const latestCategories = dashboardData?.categories || [];
+  const recentPayments = recentOrders.slice(0, 3).map((order) => ({
+    ...order,
+    status: formatStatus(order.paymentStatus),
+    statusColor: getStatusColor(order.paymentStatus),
+    id: `#${order.id}`,
+    date: order.date
+      ? new Date(order.date).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })
+      : "Date unavailable",
+  }));
+  const dashboardStats = [
     {
-      id: "#ORD1001",
-      status: "Delivered",
-      statusColor: "bg-emerald-50 text-[#049669] border-emerald-200/80",
-      price: "₹2,499",
-      image:
-        "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=140&h=140&fit=crop&q=80",
-      title: "Leather Travel Backpack",
+      id: "revenue",
+      title: "Total Revenue",
+      value: isDashboardLoading ? "—" : formatCurrency(dashboardData?.stats?.totalRevenue),
+      icon: CircleDollarSign,
+      iconColor: "text-white bg-gradient-to-tr from-[#049669] to-[#10B981] border-emerald-400/40 shadow-md shadow-emerald-600/25",
+      bgGradient: "from-emerald-50/90 via-white/85 to-white/60",
+      accentBorder: "border-emerald-200/80 hover:border-emerald-400",
+      glowColor: "bg-emerald-400/25",
+      valueColor: "text-[#049669]",
     },
     {
-      id: "#ORD1000",
-      status: "Processing",
-      statusColor: "bg-teal-50 text-[#049669] border-teal-200/80",
-      price: "₹1,799",
-      image:
-        "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=140&h=140&fit=crop&q=80",
-      title: "Active Smartwatch 2 Max",
+      id: "orders",
+      title: "Total Orders",
+      value: isDashboardLoading ? "—" : String(dashboardData?.stats?.totalOrders || 0),
+      icon: ShoppingCart,
+      iconColor: "text-white bg-gradient-to-tr from-[#059669] to-teal-500 border-teal-400/40 shadow-md shadow-teal-600/25",
+      bgGradient: "from-teal-50/90 via-white/85 to-white/60",
+      accentBorder: "border-teal-200/80 hover:border-teal-400",
+      glowColor: "bg-teal-400/25",
     },
     {
-      id: "#ORD0999",
-      status: "Shipped",
-      statusColor: "bg-emerald-50 text-[#049669] border-emerald-200/80",
-      price: "₹3,299",
-      image:
-        "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=140&h=140&fit=crop&q=80",
-      title: "Sport Running Sneakers",
-    },
-  ];
-
-  // Latest Categories for Vendor Shop
-  const latestCategories = [
-    {
-      id: "dairy",
-      name: "Dairy, Bread & Eggs",
-      image: dairyBreadEggsImg,
-      productsCount: "24 Products",
-      sales: "₹46,200",
-      change: "+18%",
+      id: "products",
+      title: "Active Products",
+      value: isDashboardLoading ? "—" : String(dashboardData?.stats?.activeProducts || 0),
+      icon: Package,
+      iconColor: "text-white bg-gradient-to-tr from-[#049669] via-emerald-600 to-teal-600 border-emerald-400/40 shadow-md shadow-emerald-600/25",
+      bgGradient: "from-emerald-50/70 via-white/85 to-white/60",
+      accentBorder: "border-emerald-200/80 hover:border-emerald-400",
+      glowColor: "bg-emerald-400/20",
     },
     {
-      id: "drinks",
-      name: "Cold Drinks & Juices",
-      image: coldDrinksJuicesImg,
-      productsCount: "18 Products",
-      sales: "₹32,800",
-      change: "+12%",
-    },
-    {
-      id: "snacks",
-      name: "Snacks & Munchies",
-      image: snacksMunchiesImg,
-      productsCount: "35 Products",
-      sales: "₹28,450",
-      change: "+24%",
-    },
-    {
-      id: "produce",
-      name: "Fruits & Vegetables",
-      image: fruitsVegetablesImg,
-      productsCount: "16 Products",
-      sales: "₹19,200",
-      change: "+9%",
-    },
-  ];
-
-  // Recent Vendor Payout Settlements
-  const recentPayments = [
-    {
-      id: "#PAY-89241",
-      method: "HDFC Bank (A/C **4921)",
-      type: "Bank Transfer",
-      date: "Today, 11:20 AM",
-      amount: "₹42,500",
-      status: "Completed",
-      statusColor: "bg-emerald-50 text-[#049669] border-emerald-200/80",
-    },
-    {
-      id: "#PAY-89218",
-      method: "UPI (vendor@okaxis)",
-      type: "Instant Payout",
-      date: "Yesterday, 04:45 PM",
-      amount: "₹18,200",
-      status: "Completed",
-      statusColor: "bg-emerald-50 text-[#049669] border-emerald-200/80",
-    },
-    {
-      id: "#PAY-89190",
-      method: "ICICI Bank (A/C **8104)",
-      type: "Weekly Settlement",
-      date: "28 Oct, 2026",
-      amount: "₹35,000",
-      status: "Processing",
-      statusColor: "bg-teal-50 text-[#049669] border-teal-200/80",
+      id: "pending",
+      title: "Pending Orders",
+      value: isDashboardLoading ? "—" : String(dashboardData?.stats?.pendingOrders || 0),
+      icon: Clock,
+      iconColor: "text-white bg-gradient-to-tr from-amber-500 to-amber-400 border-amber-300 shadow-md shadow-amber-500/25",
+      bgGradient: "from-amber-50/90 via-white/85 to-white/60",
+      accentBorder: "border-amber-200/80 hover:border-amber-400",
+      glowColor: "bg-amber-400/25",
+      valueColor: "text-amber-600",
     },
   ];
 
@@ -227,6 +249,11 @@ export default function Dashboard() {
           className="flex-1 flex flex-col h-full min-w-0 overflow-y-auto relative z-10 scroll-smooth [scrollbar-gutter:stable]"
         >
         <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-5 sm:space-y-6   w-full mx-auto">
+          {dashboardError && (
+            <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+              {dashboardError}
+            </div>
+          )}
           {/* Welcome Banner Created with pure Code & SVG (High-Resolution Coded Banner) */}
           <div className="scroll-reveal relative rounded-2xl sm:rounded-3xl p-5 sm:p-7 lg:p-8 min-h-[175px] sm:min-h-[190px] lg:min-h-[200px] flex flex-col justify-between overflow-hidden shadow-[0_16px_40px_rgba(4,150,105,0.22)] border border-emerald-400/30 group">
             {/* Background SVG Fluid Organic Waves */}
@@ -303,12 +330,12 @@ export default function Dashboard() {
 
                 {/* Main Heading */}
                 <h1 className="text-xl sm:text-2xl lg:text-[30px] font-black tracking-tight text-white leading-tight drop-shadow-sm">
-                  Welcome back, Best Deals Store!
+                  Welcome back, {dashboardData?.storeName || "Your Store"}!
                 </h1>
 
                 {/* Subtitle */}
                 <p className="text-xs sm:text-[13px] text-emerald-50/95 font-medium leading-relaxed max-w-md lg:max-w-lg">
-                  Here's what is happening with your store today. You have 14 orders pending for dispatch.
+                  Here's what's happening with your store. You have {isDashboardLoading ? "..." : dashboardData?.stats?.pendingOrders || 0} orders pending for dispatch.
                 </p>
               </div>
 
@@ -318,7 +345,7 @@ export default function Dashboard() {
 
           {/* Metric Stats Cards with Staggered Scroll Reveal */}
           <div className="scroll-reveal scroll-reveal-delay-1">
-            <Cards />
+            <Cards stats={dashboardStats} />
           </div>
 
           {/* ================= ROW 1: Sales Overview + Recent Orders (Scroll Reveal) ================= */}
@@ -357,31 +384,30 @@ export default function Dashboard() {
                   </defs>
 
                   {/* Horizontal Grid Lines */}
-                  {[
-                    { y: 20, label: "150k" },
-                    { y: 73, label: "100k" },
-                    { y: 126, label: "50k" },
-                    { y: 175, label: "0" },
-                  ].map((grid) => (
-                    <g key={grid.label}>
+                  {[0, 1, 2, 3].map((index) => {
+                    const y = 20 + index * (155 / 3);
+                    const value = maxDailySales * (1 - index / 3);
+                    return (
+                    <g key={index}>
                       <text
                         x="34"
-                        y={grid.y + 4}
+                        y={y + 4}
                         textAnchor="end"
                         className="text-[11px] fill-slate-400 font-semibold select-none font-['Poppins']"
                       >
-                        {grid.label}
+                        {value >= 1000 ? `${(value / 1000).toFixed(0)}k` : Math.round(value)}
                       </text>
                       <line
                         x1="48"
-                        y1={grid.y}
+                        y1={y}
                         x2="495"
-                        y2={grid.y}
+                        y2={y}
                         stroke="#F1F5F9"
                         strokeWidth="1.2"
                       />
                     </g>
-                  ))}
+                    );
+                  })}
 
                   {/* Vertical Subtle Grid Lines */}
                   {chartData.map((pt) => (
@@ -397,20 +423,17 @@ export default function Dashboard() {
                   ))}
 
                   {/* Gradient Area Under Curve */}
-                  <path
-                    d="M 60 145 C 95 135, 95 125, 130 125 C 165 125, 165 80, 200 80 C 235 80, 235 98, 270 98 C 305 98, 305 48, 340 48 C 375 48, 375 35, 410 35 C 445 35, 445 68, 480 68 L 480 175 L 60 175 Z"
-                    fill="url(#salesGradient)"
-                  />
+                  {chartAreaPath && <path d={chartAreaPath} fill="url(#salesGradient)" />}
 
                   {/* Smooth Curved Line in Emerald Green #049669 with Scroll Draw Animation */}
                   <path
-                    d="M 60 145 C 95 135, 95 125, 130 125 C 165 125, 165 80, 200 80 C 235 80, 235 98, 270 98 C 305 98, 305 48, 340 48 C 375 48, 375 35, 410 35 C 445 35, 445 68, 480 68"
+                    d={chartLinePath}
                     fill="none"
                     stroke="#049669"
                     strokeWidth="3.2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className={isChartInView ? "animate-draw-curve" : "opacity-40"}
+                    className={isChartInView && chartData.length ? "animate-draw-curve" : "opacity-40"}
                   />
 
                   {/* Interactive Points on Line */}
@@ -437,7 +460,8 @@ export default function Dashboard() {
 
                   {/* Emerald Green Pill Tooltip */}
                   {(() => {
-                    const activePt = chartData.find((p) => p.day === activeDay) || chartData[5];
+                    const activePt = chartData.find((p) => p.day === activeDay) || chartData[chartData.length - 1];
+                    if (!activePt) return null;
                     return (
                       <g transform={`translate(${activePt.x}, ${activePt.y - 12})`}>
                         <rect
@@ -507,6 +531,11 @@ export default function Dashboard() {
 
               {/* Orders List */}
               <div className="divide-y divide-slate-100 flex-1 flex flex-col justify-around">
+                {recentOrders.length === 0 && (
+                  <p className="py-6 text-center text-xs text-slate-400">
+                    {isDashboardLoading ? "Loading recent orders..." : "No orders yet."}
+                  </p>
+                )}
                 {recentOrders.map((ord) => (
                   <div
                     key={ord.id}
@@ -515,22 +544,26 @@ export default function Dashboard() {
                     <div className="flex items-center gap-3 min-w-0">
                       {/* Product Thumbnail */}
                       <div className="w-12 h-12 rounded-xl bg-emerald-50/50 border border-emerald-100/60 p-1.5 flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform overflow-hidden">
-                        <img
-                          src={ord.image}
-                          alt={ord.title}
-                          className="w-full h-full object-cover rounded-lg"
-                        />
+                        {ord.image ? (
+                          <img
+                            src={getUploadUrl(ord.image)}
+                            alt={ord.title}
+                            className="w-full h-full object-cover rounded-lg"
+                          />
+                        ) : (
+                          <Package className="w-5 h-5 text-emerald-600" />
+                        )}
                       </div>
 
                       {/* Order ID & Status Pill */}
                       <div className="space-y-1 min-w-0">
                         <h4 className="text-xs sm:text-sm font-bold text-[#1E1B4B]">
-                          {ord.id}
+                          #{ord.id}
                         </h4>
                         <span
                           className={`inline-block px-2.5 py-0.5 rounded-md text-[10px] font-bold border ${ord.statusColor}`}
                         >
-                          {ord.status}
+                          {formatStatus(ord.status)}
                         </span>
                       </div>
                     </div>
@@ -582,6 +615,11 @@ export default function Dashboard() {
 
               {/* Categories Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                {latestCategories.length === 0 && (
+                  <p className="sm:col-span-2 py-6 text-center text-xs text-slate-400">
+                    {isDashboardLoading ? "Loading categories..." : "No active product categories."}
+                  </p>
+                )}
                 {latestCategories.map((cat) => (
                   <div
                     key={cat.id}
@@ -589,25 +627,29 @@ export default function Dashboard() {
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-11 h-11 rounded-lg bg-emerald-50/80 border border-emerald-100/60 p-1 flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
-                        <img
-                          src={cat.image}
-                          alt={cat.name}
-                          className="w-full h-full object-contain"
-                        />
+                        {cat.image ? (
+                          <img
+                            src={getUploadUrl(cat.image)}
+                            alt={cat.name}
+                            className="w-full h-full object-contain"
+                          />
+                        ) : (
+                          <Shapes className="w-5 h-5 text-emerald-600" />
+                        )}
                       </div>
                       <div className="min-w-0">
                         <h4 className="text-xs sm:text-[13px] font-bold text-[#1E1B4B] truncate">
                           {cat.name}
                         </h4>
                         <p className="text-[11px] text-slate-400 font-medium mt-0.5">
-                          {cat.productsCount}
+                          Active inventory
                         </p>
                       </div>
                     </div>
 
                     <div className="text-right shrink-0 pl-2">
                       <span className="text-xs sm:text-sm font-bold text-[#1E1B4B] block">
-                        {cat.sales}
+                        {cat.productsCount} products
                       </span>
                     </div>
                   </div>
@@ -627,10 +669,10 @@ export default function Dashboard() {
                   </div>
                   <div>
                     <h3 className="text-base sm:text-lg font-black text-[#1E1B4B] tracking-tight leading-snug">
-                      Recent Payments
+                      Recent Order Payments
                     </h3>
                     <p className="text-[11px] text-slate-400 font-medium">
-                      Payout settlements & bank transfers
+                      Payment status for your orders
                     </p>
                   </div>
                 </div>
@@ -646,6 +688,11 @@ export default function Dashboard() {
 
               {/* Payments List */}
               <div className="divide-y divide-slate-100 flex-1 flex flex-col justify-around">
+                {recentPayments.length === 0 && (
+                  <p className="py-6 text-center text-xs text-slate-400">
+                    {isDashboardLoading ? "Loading payment records..." : "No payment records yet."}
+                  </p>
+                )}
                 {recentPayments.map((pay) => (
                   <div
                     key={pay.id}
@@ -666,12 +713,15 @@ export default function Dashboard() {
                             {pay.status}
                           </span>
                         </div>
+                        <p className="text-[10px] text-slate-400 mt-1 capitalize">
+                          {pay.paymentMethod}
+                        </p>
                       </div>
                     </div>
 
                     <div className="text-right shrink-0">
                       <span className="text-xs sm:text-sm font-black text-[#049669]">
-                        +{pay.amount}
+                        {pay.price}
                       </span>
                       <p className="text-[10px] text-slate-400 mt-0.5">
                         {pay.date}

@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { useCart } from "../../../context/CartContext";
+import { productService, getUploadUrl } from "../../../services";
 import {
   Home,
   ChevronLeft,
@@ -14,8 +16,28 @@ import {
   X,
 } from "lucide-react";
 import Footer from "../components/Footer";
+const resolveProductImage = (item) => {
+  if (!item) return "";
+  let img = item.image;
+  if (!img && item.images) {
+    if (Array.isArray(item.images) && item.images.length > 0) {
+      img = item.images[0];
+    } else if (typeof item.images === "string") {
+      try {
+        const parsed = JSON.parse(item.images);
+        if (Array.isArray(parsed) && parsed.length > 0) img = parsed[0];
+        else img = item.images;
+      } catch (e) {
+        img = item.images.split(",")[0]?.trim();
+      }
+    }
+  }
+  return (
+    getUploadUrl(img) ||
+    "https://images.unsplash.com/photo-1542838132-92c53300491e?w=500&h=500&fit=crop&q=80"
+  );
+};
 
-// Real category packshots
 import dairyBreadEggsImg from "../../../assets/category/dairy-bread-eggs.png";
 import fruitsVegetablesImg from "../../../assets/category/fruits-vegetables.png";
 import coldDrinksJuicesImg from "../../../assets/category/cold-drinks-juices.png";
@@ -29,7 +51,6 @@ import masalaOilMoreImg from "../../../assets/category/masala-oil-more.png";
 import cleaningEssentialsImg from "../../../assets/category/cleaning-essentials.png";
 import personalCareImg from "../../../assets/category/personal-care.png";
 
-// Category definitions matching real packshot images
 const CATEGORIES = [
   { id: "all", name: "All Products" },
   { id: "dairy-bread-eggs", name: "Dairy, Bread & Eggs", img: dairyBreadEggsImg },
@@ -48,9 +69,7 @@ const CATEGORIES = [
   { id: "fashion", name: "Fashion", img: "https://pngimg.com/uploads/running_shoes/running_shoes_PNG5823.png" },
 ];
 
-// Catalog matching exact products from screenshot followed by full variety
 const ALL_PRODUCTS = [
-  // 1. Maggi 2-Minute Masala Instant Noodles (Top 1)
   {
     id: "p1",
     name: "Maggi 2-Minute Masala Instant Noodles",
@@ -64,7 +83,6 @@ const ALL_PRODUCTS = [
     inStock: true,
     image: "https://images.unsplash.com/photo-1612927601601-6638404737ce?w=500&h=500&fit=crop&q=80",
   },
-  // 2. boAt Airdopes 141 ANC Wireless Earbuds (Top 2)
   {
     id: "p2",
     name: "boAt Airdopes 141 ANC Wireless Earbuds",
@@ -78,7 +96,7 @@ const ALL_PRODUCTS = [
     inStock: true,
     image: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=500&h=500&fit=crop&q=80",
   },
-  // 3. Parle-G Original Glucose Biscuits (Top 3)
+
   {
     id: "p3",
     name: "Parle-G Original Glucose Biscuits",
@@ -91,7 +109,6 @@ const ALL_PRODUCTS = [
     inStock: true,
     image: "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=500&h=500&fit=crop&q=80",
   },
-  // 4. Aashirvaad Shudh Chakki Whole Wheat Atta (Top 4)
   {
     id: "p4",
     name: "Aashirvaad Shudh Chakki Whole Wheat Atta",
@@ -104,7 +121,7 @@ const ALL_PRODUCTS = [
     inStock: true,
     image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=500&h=500&fit=crop&q=80",
   },
-  // 5. Noise ColorFit Pulse 2 Max Smartwatch (Top 5)
+
   {
     id: "p5",
     name: "Noise ColorFit Pulse 2 Max Smartwatch",
@@ -118,7 +135,6 @@ const ALL_PRODUCTS = [
     inStock: true,
     image: "https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=500&h=500&fit=crop&q=80",
   },
-  // 6. Haldiram's Classic Bhujia Sev (Top 6)
   {
     id: "p6",
     name: "Haldiram's Classic Bhujia Sev",
@@ -344,14 +360,40 @@ const ALL_PRODUCTS = [
 export default function Shop() {
   const [searchParams, setSearchParams] = useSearchParams();
   const categoryParam = searchParams.get("category") || "all";
+  const urlSearchParam = searchParams.get("search") || searchParams.get("q") || "";
   const [selectedCategory, setSelectedCategory] = useState(categoryParam);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(urlSearchParam);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [sortBy, setSortBy] = useState("Popularity");
   const [isSortOpen, setIsSortOpen] = useState(false);
-  const [cartQuantities, setCartQuantities] = useState({});
+  const [dbProducts, setDbProducts] = useState([]);
+  const { addToCart, updateQuantity, removeFromCart, cartItems, getItemQuantity } = useCart();
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const categoryScrollRef = useRef(null);
+
+  // Sync searchQuery with URL query params
+  useEffect(() => {
+    const q = searchParams.get("search") || searchParams.get("q") || "";
+    setSearchQuery(q);
+  }, [searchParams]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchDb = async () => {
+      try {
+        const res = await productService.getAllProducts({ limit: 100, status: "active" });
+        if (isMounted && res?.products && Array.isArray(res.products)) {
+          setDbProducts(res.products);
+        }
+      } catch (err) {
+        console.warn("Failed to load products from DB in shop:", err);
+      }
+    };
+    fetchDb();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const checkScroll = () => {
     if (categoryScrollRef.current) {
@@ -395,32 +437,65 @@ export default function Shop() {
     }
   };
 
-  const handleIncrease = (id, e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setCartQuantities((prev) => ({
-      ...prev,
-      [id]: (prev[id] || 0) + 1,
-    }));
+  const handleIncrease = (product, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    addToCart(product, 1);
   };
 
-  const handleDecrease = (id, e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setCartQuantities((prev) => {
-      const current = prev[id] || 0;
-      if (current <= 1) {
-        const copy = { ...prev };
-        delete copy[id];
-        return copy;
+  const handleDecrease = (product, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    const item = cartItems.find(
+      (i) =>
+        String(i.productId) === String(product.id) ||
+        String(i.id) === String(product.id) ||
+        (Number(product.id) && Number(i.productId) === Number(product.id))
+    );
+    if (item) {
+      if (item.quantity <= 1) {
+        removeFromCart(item.id);
+      } else {
+        updateQuantity(item.id, -1);
       }
-      return { ...prev, [id]: current - 1 };
-    });
+    } else {
+      updateQuantity(product.id, -1);
+    }
   };
 
   // Filter and sort products
   const filteredProducts = useMemo(() => {
-    return ALL_PRODUCTS.filter((p) => {
+    const matchingDb = dbProducts.map((p) => {
+      const catSlug = (p.category?.name || "grocery")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-");
+      return {
+        id: p.id,
+        name: p.name,
+        categorySlug: catSlug,
+        categoryName: p.category?.name || "Grocery",
+        brand: p.brand || "ShopMart Verified",
+        unit: p.unit || "1 unit",
+        price: Number(p.discountPrice && p.discountPrice > 0 ? p.discountPrice : p.price),
+        mrp: Number(p.price) > Number(p.discountPrice) ? Number(p.price) : Math.round(Number(p.price) * 1.15),
+        rating: Number(p.rating) || 4.8,
+        inStock: p.stock > 0,
+        image: resolveProductImage(p),
+      };
+    });
+
+    const dbNames = new Set(matchingDb.map((p) => (p.name || "").toLowerCase().trim()));
+    const fallbackList = ALL_PRODUCTS.filter(
+      (p) => !dbNames.has((p.name || "").toLowerCase().trim())
+    );
+
+    const allCombined = [...matchingDb, ...fallbackList];
+
+    return allCombined.filter((p) => {
       // Category filter
       if (selectedCategory !== "all" && p.categorySlug !== selectedCategory) {
         return false;
@@ -432,9 +507,9 @@ export default function Shop() {
       // Search query filter
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim();
-        const matchesName = p.name.toLowerCase().includes(query);
-        const matchesBrand = p.brand.toLowerCase().includes(query);
-        const matchesCategory = p.categoryName.toLowerCase().includes(query);
+        const matchesName = (p.name || "").toLowerCase().includes(query);
+        const matchesBrand = (p.brand || "").toLowerCase().includes(query);
+        const matchesCategory = (p.categoryName || "").toLowerCase().includes(query);
         if (!matchesName && !matchesBrand && !matchesCategory) {
           return false;
         }
@@ -640,7 +715,7 @@ export default function Shop() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5 sm:gap-4 lg:gap-4.5">
             {filteredProducts.map((product) => {
-              const qty = cartQuantities[product.id] || 0;
+              const qty = getItemQuantity(product.id);
 
               return (
                 <div
@@ -692,33 +767,41 @@ export default function Shop() {
                       )}
                     </div>
 
-                    {/* Green Add Button or Interactive Stepper */}
+                    {/* Blinkit Style ADD Button or Stepper */}
                     {qty === 0 ? (
                       <button
-                        onClick={(e) => handleIncrease(product.id, e)}
-                        className="bg-emerald-50 hover:bg-[#059669] text-[#059669] hover:text-white px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-colors shadow-2xs cursor-pointer active:scale-95"
+                        type="button"
+                        onClick={(e) => handleIncrease(product, e)}
+                        className="min-w-[66px] h-8 px-3 rounded-lg font-black text-xs uppercase tracking-wider transition-all duration-150 active:scale-95 flex items-center justify-center bg-[#f7fcf8] text-[#0c831f] hover:bg-[#0c831f] hover:text-white border border-[#0c831f] cursor-pointer shadow-xs"
                       >
-                        <ShoppingCart className="w-3.5 h-3.5" />
-                        <span>Add</span>
+                        ADD
                       </button>
                     ) : (
-                      <div className="bg-[#059669] text-white rounded-xl px-2 py-1 flex items-center gap-2 font-bold text-xs shadow-md shadow-emerald-600/20">
+                      <div
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                        className="min-w-[66px] h-8 px-1.5 rounded-lg bg-[#0c831f] text-white flex items-center justify-between shadow-xs font-black text-xs"
+                      >
                         <button
-                          onClick={(e) => handleDecrease(product.id, e)}
+                          type="button"
+                          onClick={(e) => handleDecrease(product, e)}
                           aria-label="Decrease quantity"
-                          className="hover:opacity-75 transition-opacity cursor-pointer"
+                          className="p-1 hover:bg-[#096918] active:scale-90 rounded transition-colors cursor-pointer"
                         >
-                          <Minus className="w-3 h-3 stroke-[3]" />
+                          <Minus className="w-3.5 h-3.5 stroke-[3]" />
                         </button>
-                        <span className="min-w-[12px] text-center font-bold text-xs select-none">
+                        <span className="px-1.5 min-w-[16px] text-center font-black">
                           {qty}
                         </span>
                         <button
-                          onClick={(e) => handleIncrease(product.id, e)}
+                          type="button"
+                          onClick={(e) => handleIncrease(product, e)}
                           aria-label="Increase quantity"
-                          className="hover:opacity-75 transition-opacity cursor-pointer"
+                          className="p-1 hover:bg-[#096918] active:scale-90 rounded transition-colors cursor-pointer"
                         >
-                          <Plus className="w-3 h-3 stroke-[3]" />
+                          <Plus className="w-3.5 h-3.5 stroke-[3]" />
                         </button>
                       </div>
                     )}

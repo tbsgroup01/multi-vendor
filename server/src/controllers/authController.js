@@ -1,6 +1,6 @@
 const bcrypt = require("bcryptjs");
 const { Op } = require("sequelize");
-const { User, Vendor } = require("../models");
+const { User, Vendor, SubscriptionPlan, VendorSubscription, Order } = require("../models");
 const transporter = require("../config/mail");
 const { generateToken, verifyToken } = require("../utils/jwt");
 
@@ -83,7 +83,8 @@ const register = async (req, res) => {
             : `ShopMartUser_${Math.random().toString(36).slice(-8)}!`;
         const hashedPassword = await bcrypt.hash(finalPassword, 10);
 
-        const isVerified = true;
+        // Vendor accounts require Admin approval before verification; other accounts are verified
+        const isVerified = userRole === "vendor" ? false : true;
 
         const user = await User.create({
             name: userName,
@@ -96,14 +97,50 @@ const register = async (req, res) => {
 
         let vendorProfile = null;
         if (userRole === "vendor") {
+            const starterPlan = await SubscriptionPlan.findOne({
+                where: {
+                    [Op.or]: [
+                        { name: { [Op.like]: "%starter%" } },
+                        { id: 1 }
+                    ],
+                    isActive: true
+                }
+            });
+
+            const productLimit = starterPlan ? starterPlan.productLimit : 50;
+
             vendorProfile = await Vendor.create({
                 userId: user.id,
                 businessName: vendorBusinessName,
                 storeName: vendorStoreName,
                 gstNumber: vendorGstNumber,
                 category: vendorCategory,
-                status: "approved"
+                status: "pending",
+                plan: "starter",
+                productsLimit: productLimit
             });
+
+            if (starterPlan) {
+                const startDate = new Date();
+                const durationDays = starterPlan.durationInDays || 30;
+                const endDate = new Date(startDate.getTime() + durationDays * 24 * 60 * 60 * 1000);
+                const invoiceNumber = `INV-${vendorProfile.id}-${Date.now().toString().slice(-6)}`;
+                const transactionId = `STARTER_AUTO_${Date.now().toString().slice(-8)}`;
+
+                await VendorSubscription.create({
+                    vendorId: vendorProfile.id,
+                    planId: starterPlan.id,
+                    invoiceNumber,
+                    transactionId,
+                    startDate,
+                    endDate,
+                    pricePaid: 0,
+                    productLimit: starterPlan.productLimit,
+                    status: "active",
+                    paymentStatus: "completed",
+                    paymentMethod: "free_starter"
+                });
+            }
         }
 
         try {
@@ -191,11 +228,20 @@ const login = async (req, res) => {
         }
 
 
-        if (user.isVerified === false) {
-            const message = user.role === "vendor"
-                ? "Your vendor account is pending admin approval. You will be able to log in once approved."
-                : "User account is not verified";
-            return res.status(401).json({ message, isVerified: false });
+        if (user.role === "vendor") {
+            const vendorStatus = user.vendorProfile ? user.vendorProfile.status : (user.isVerified ? "approved" : "pending");
+            if (vendorStatus !== "approved" || user.isVerified === false) {
+                const message = vendorStatus === "rejected"
+                    ? "Your vendor account has been rejected by the admin. Please contact support."
+                    : "Your vendor account is pending admin approval. You will be able to log in once approved by the admin.";
+                return res.status(403).json({
+                    message,
+                    isVerified: false,
+                    vendorStatus: vendorStatus || "pending"
+                });
+            }
+        } else if (user.isVerified === false) {
+            return res.status(401).json({ message: "User account is not verified", isVerified: false });
         }
 
 
@@ -659,6 +705,188 @@ const verifyCustomerLoginOtp = async (req, res) => {
     }
 };
 
+// Customer Address Management (Saved directly to DB)
+const getUserAddresses = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        let addresses = user.addresses;
+        if (typeof addresses === "string") {
+            try { addresses = JSON.parse(addresses); } catch (e) { addresses = []; }
+        }
+        if (!Array.isArray(addresses)) {
+            addresses = [];
+        }
+
+        // If user has no saved addresses yet, initialize from their latest real order's shipping address
+        if (addresses.length === 0) {
+            const latestOrder = await Order.findOne({
+                where: { userId },
+                order: [["id", "DESC"]]
+            });
+
+            if (latestOrder && latestOrder.shippingAddress) {
+                let parsed = latestOrder.shippingAddress;
+                if (typeof parsed === "string") {
+                    try { parsed = JSON.parse(parsed); } catch (e) {}
+                }
+                if (parsed && typeof parsed === "object") {
+                    const fallbackAddr = {
+                        id: "addr-" + Date.now(),
+                        tag: "Home",
+                        isDefault: true,
+                        addressLine: parsed.addressLine1 || parsed.addressLine || "",
+                        area: [parsed.city, parsed.state].filter(Boolean).join(", "),
+                        city: parsed.city || "Noida",
+                        state: parsed.state || "Uttar Pradesh",
+                        pincode: parsed.postalCode || parsed.pincode || "201301",
+                        receiver: parsed.fullName || user.name || "Customer",
+                        phone: parsed.phone
+                            ? (parsed.phone.startsWith("+91") ? parsed.phone : `+91 ${parsed.phone}`)
+                            : (user.phone ? `+91 ${user.phone}` : "")
+                    };
+                    addresses = [fallbackAddr];
+                    user.addresses = addresses;
+                    await user.save();
+                }
+            }
+        }
+
+        return res.status(200).json({
+            success: true,
+            addresses
+        });
+    } catch (error) {
+        console.error("Error fetching user addresses:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch addresses",
+            error: error.message
+        });
+    }
+};
+
+const addUserAddress = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const {
+            receiver,
+            phone,
+            addressLine,
+            area,
+            landmark,
+            city,
+            state,
+            pincode,
+            tag,
+            isDefault
+        } = req.body;
+
+        if (!receiver || !phone || !addressLine || !pincode) {
+            return res.status(400).json({
+                message: "Receiver name, phone, address line, and pincode are required"
+            });
+        }
+
+        let addresses = user.addresses;
+        if (typeof addresses === "string") {
+            try { addresses = JSON.parse(addresses); } catch (e) { addresses = []; }
+        }
+        if (!Array.isArray(addresses)) {
+            addresses = [];
+        }
+
+        const newAddress = {
+            id: "addr-" + Date.now(),
+            receiver: receiver.trim(),
+            phone: phone.startsWith("+91") ? phone.trim() : `+91 ${phone.replace(/\D/g, "").slice(-10)}`,
+            addressLine: addressLine.trim(),
+            area: (area || "").trim(),
+            landmark: (landmark || "").trim(),
+            city: (city || "Noida").trim(),
+            state: (state || "Uttar Pradesh").trim(),
+            pincode: pincode.toString().trim(),
+            tag: tag || "Home",
+            isDefault: Boolean(isDefault || addresses.length === 0)
+        };
+
+        if (newAddress.isDefault) {
+            addresses = addresses.map((a) => ({ ...a, isDefault: false }));
+            addresses.unshift(newAddress);
+        } else {
+            addresses.push(newAddress);
+        }
+
+        user.addresses = addresses;
+        await user.save();
+
+        return res.status(201).json({
+            success: true,
+            message: "Address saved to database successfully",
+            address: newAddress,
+            addresses
+        });
+    } catch (error) {
+        console.error("Error adding address:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to save address",
+            error: error.message
+        });
+    }
+};
+
+const deleteUserAddress = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const addressId = req.params.id;
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        let addresses = user.addresses;
+        if (typeof addresses === "string") {
+            try { addresses = JSON.parse(addresses); } catch (e) { addresses = []; }
+        }
+        if (!Array.isArray(addresses)) {
+            addresses = [];
+        }
+
+        const wasDefault = addresses.find((a) => a.id === addressId)?.isDefault;
+        addresses = addresses.filter((a) => a.id !== addressId);
+
+        if (wasDefault && addresses.length > 0) {
+            addresses[0].isDefault = true;
+        }
+
+        user.addresses = addresses;
+        await user.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Address deleted successfully",
+            addresses
+        });
+    } catch (error) {
+        console.error("Error deleting address:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to delete address",
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     register,
     login,
@@ -668,5 +896,8 @@ module.exports = {
     resetPassword,
     resendOtp,
     sendCustomerLoginOtp,
-    verifyCustomerLoginOtp
+    verifyCustomerLoginOtp,
+    getUserAddresses,
+    addUserAddress,
+    deleteUserAddress
 };

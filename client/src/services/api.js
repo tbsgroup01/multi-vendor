@@ -50,7 +50,11 @@ const request = async (endpoint, method = "GET", body = null, params = null) => 
   });
 
   const data = await res.json().catch(() => null);
-  if (!res.ok) throw new Error(data?.message || res.statusText);
+  if (!res.ok) {
+    const error = new Error(data?.message || res.statusText);
+    error.details = data?.error;
+    throw error;
+  }
   return data;
 };
 

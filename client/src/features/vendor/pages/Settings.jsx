@@ -2,11 +2,11 @@ import React, { useState, useRef, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import bannerSettingsImg from "../../../assets/banner-settings-3d.png";
+import vendorService from "../../../services/vendorService";
+import { getUploadUrl } from "../../../services";
 import {
   User,
   Store,
-  Mail,
-  Phone,
   MapPin,
   Upload,
   CheckCircle2,
@@ -14,75 +14,264 @@ import {
   Building2,
   BadgeCheck,
   Camera,
-  RefreshCw,
 } from "lucide-react";
 
 export default function Settings() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("store"); // "profile" | "store"
   const [toastMessage, setToastMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [loadError, setLoadError] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [savingSection, setSavingSection] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
 
   const logoFileInputRef = useRef(null);
+  const avatarFileInputRef = useRef(null);
 
   // Profile Settings State
   const [profileData, setProfileData] = useState({
-    name: "Vendor Admin",
-    email: "vendor@shopmart.com",
-    phone: "+91 98xxxxxxxx",
-    designation: "Store Owner & Managing Partner",
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=300&fit=crop&q=80",
+    name: "",
+    email: "",
+    phone: "",
+    designation: "",
+    avatar: "",
+    isVerified: false,
   });
+  const [savedProfileData, setSavedProfileData] = useState(profileData);
 
   // Store Settings State
   const [storeData, setStoreData] = useState({
-    storeName: "Best Deals Superstore",
-    storeSlug: "best-deals-superstore",
-    tagline: "Fresh groceries & daily household essentials at wholesale prices.",
-    logo:
-      localStorage.getItem("vendor_sidebar_logo") ||
-      "https://images.unsplash.com/photo-1542838132-92c53300491e?w=300&h=300&fit=crop&q=80",
-    banner: "https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=1200&h=400&fit=crop&q=80",
-    supportEmail: "support@bestdealstore.com",
-    supportPhone: "+91 1800 200 4567",
-    companyName: "Best Deals Retail Private Limited",
-    gstin: "27AAACB2234P1Z3",
-    pan: "AAACB2234P",
-    businessType: "Supermarket / FMCG Retail",
-    address: "Plot 42, Marol Industrial Area, Andheri East",
-    city: "Mumbai",
-    state: "Maharashtra",
-    pincode: "400059",
+    storeName: "",
+    storeSlug: "",
+    tagline: "",
+    logo: "",
+    banner: "",
+    supportEmail: "",
+    supportPhone: "",
+    companyName: "",
+    gstin: "",
+    pan: "",
+    businessType: "",
+    address: "",
+    city: "",
+    state: "",
+    pincode: "",
   });
+  const [savedStoreData, setSavedStoreData] = useState(storeData);
 
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(""), 3200);
   };
 
+  useEffect(() => {
+    let isMounted = true;
+    vendorService.getMySettings()
+      .then(({ vendor }) => {
+        if (!isMounted) return;
+        setLoadError("");
+        const user = vendor.user || {};
+        const profile = {
+          name: user.name || "",
+          email: user.email || "",
+          phone: user.phone || "",
+          designation: user.designation || "",
+          avatar: user.avatar || "",
+          isVerified: Boolean(user.isVerified),
+        };
+        const settings = vendor.storeSettings || {};
+        const store = {
+          storeName: vendor.storeName || "",
+          storeSlug: settings.storeSlug || "",
+          tagline: settings.tagline || "",
+          logo: settings.logo || "",
+          banner: settings.banner || "",
+          supportEmail: settings.supportEmail || "",
+          supportPhone: settings.supportPhone || "",
+          companyName: vendor.businessName || "",
+          gstin: vendor.gstNumber || "",
+          pan: settings.pan || "",
+          businessType: vendor.category || "",
+          address: settings.address || "",
+          city: settings.city || "",
+          state: settings.state || "",
+          pincode: settings.pincode || "",
+        };
+        setProfileData(profile);
+        setSavedProfileData(profile);
+        setStoreData(store);
+        setSavedStoreData(store);
+        if (store.logo) {
+          localStorage.setItem("vendor_sidebar_logo", store.logo);
+          localStorage.setItem("brand_sidebar_logo", store.logo);
+          window.dispatchEvent(new Event("vendor_logo_updated"));
+          window.dispatchEvent(new Event("brand_logo_updated"));
+        }
+      })
+      .catch((error) => {
+        if (isMounted) setLoadError(error.message || "Failed to load settings.");
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [reloadKey]);
+
   const handleLogoFileUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      setErrorMessage("Store logo must be smaller than 2 MB.");
+      e.target.value = "";
+      return;
+    }
     const reader = new FileReader();
     reader.onloadend = () => {
-      const dataUrl = reader.result;
+      const dataUrl = typeof reader.result === "string" ? reader.result : "";
       setStoreData((prev) => ({ ...prev, logo: dataUrl }));
-      localStorage.setItem("vendor_sidebar_logo", dataUrl);
-      window.dispatchEvent(new Event("vendor_logo_updated"));
-      showToast("Sidebar logo uploaded successfully!");
+      setErrorMessage("");
     };
     reader.readAsDataURL(file);
   };
 
-  const handleSaveProfile = (e) => {
-    e.preventDefault();
-    showToast("Profile settings saved successfully!");
+  const handleAvatarFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      setErrorMessage("Profile photo must be smaller than 2 MB.");
+      e.target.value = "";
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const dataUrl = typeof reader.result === "string" ? reader.result : "";
+      setProfileData((prev) => ({ ...prev, avatar: dataUrl }));
+      setErrorMessage("");
+    };
+    reader.readAsDataURL(file);
   };
 
-  const handleSaveStore = (e) => {
+  const handleSaveProfile = async (e) => {
     e.preventDefault();
-    localStorage.setItem("vendor_sidebar_logo", storeData.logo);
-    window.dispatchEvent(new Event("vendor_logo_updated"));
-    showToast("Store settings & sidebar logo updated successfully!");
+    setSavingSection("profile");
+    setErrorMessage("");
+    try {
+      const { vendor } = await vendorService.updateMySettings({ profile: profileData });
+      const user = vendor.user;
+      const savedProfile = {
+        ...profileData,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        designation: user.designation || "",
+        avatar: user.avatar || "",
+        isVerified: Boolean(user.isVerified),
+      };
+      setProfileData(savedProfile);
+      setSavedProfileData(savedProfile);
+      const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+      localStorage.setItem("user", JSON.stringify({ ...storedUser, ...user }));
+      window.dispatchEvent(new Event("vendor_profile_updated"));
+      window.dispatchEvent(new Event("storage"));
+      showToast("Profile settings saved successfully!");
+    } catch (error) {
+      setErrorMessage(
+        error.details
+          ? `${error.message || "Failed to save profile settings."}: ${error.details}`
+          : error.message || "Failed to save profile settings."
+      );
+    } finally {
+      setSavingSection("");
+    }
+  };
+
+  const storeSectionFields = {
+    branding: ["storeName", "storeSlug", "tagline", "logo", "banner"],
+    legal: ["companyName", "businessType", "gstin", "pan"],
+    address: ["address", "city", "state", "pincode"],
+  };
+
+  const mapSavedStore = (vendor) => {
+    const settings = vendor.storeSettings || {};
+    return {
+      storeName: vendor.storeName || "",
+      storeSlug: settings.storeSlug || "",
+      tagline: settings.tagline || "",
+      logo: settings.logo || "",
+      banner: settings.banner || "",
+      supportEmail: settings.supportEmail || "",
+      supportPhone: settings.supportPhone || "",
+      companyName: vendor.businessName || "",
+      gstin: vendor.gstNumber || "",
+      pan: settings.pan || "",
+      businessType: vendor.category || "",
+      address: settings.address || "",
+      city: settings.city || "",
+      state: settings.state || "",
+      pincode: settings.pincode || "",
+    };
+  };
+
+  const handleSaveStore = async (section) => {
+    const fields = storeSectionFields[section];
+    const store = Object.fromEntries(fields.map((field) => [field, storeData[field]]));
+    setSavingSection(section);
+    setErrorMessage("");
+    try {
+      const { vendor } = await vendorService.updateMySettings({ store });
+      const persistedStore = mapSavedStore(vendor);
+      const savedSection = Object.fromEntries(fields.map((field) => [field, persistedStore[field]]));
+      setStoreData((prev) => ({ ...prev, ...savedSection }));
+      setSavedStoreData((prev) => ({ ...prev, ...savedSection }));
+      if (section === "branding") {
+        if (persistedStore.logo) {
+          localStorage.setItem("vendor_sidebar_logo", persistedStore.logo);
+          localStorage.setItem("brand_sidebar_logo", persistedStore.logo);
+        } else {
+          localStorage.removeItem("vendor_sidebar_logo");
+          localStorage.removeItem("brand_sidebar_logo");
+        }
+        window.dispatchEvent(new Event("vendor_logo_updated"));
+        window.dispatchEvent(new Event("brand_logo_updated"));
+      }
+      const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+      localStorage.setItem("user", JSON.stringify({
+        ...storedUser,
+        vendorProfile: {
+          ...storedUser.vendorProfile,
+          storeName: persistedStore.storeName,
+          businessName: persistedStore.companyName,
+          gstNumber: persistedStore.gstin,
+          category: persistedStore.businessType,
+        },
+      }));
+      const sectionLabels = {
+        branding: "Store branding",
+        legal: "Business details",
+        address: "Dispatch address",
+      };
+      showToast(`${sectionLabels[section]} saved successfully!`);
+    } catch (error) {
+      setErrorMessage(
+        error.details
+          ? `${error.message || "Failed to save store settings."}: ${error.details}`
+          : error.message || "Failed to save store settings."
+      );
+    } finally {
+      setSavingSection("");
+    }
+  };
+
+  const discardStoreSection = (section) => {
+    const fields = storeSectionFields[section];
+    setStoreData((prev) => ({
+      ...prev,
+      ...Object.fromEntries(fields.map((field) => [field, savedStoreData[field]])),
+    }));
   };
 
   return (
@@ -219,7 +408,29 @@ export default function Settings() {
               <span>Store Setting</span>
             </button>
           </div>
-          {activeTab === "profile" && (
+          {isLoading && (
+            <div className="rounded-xl border border-emerald-100 bg-white/70 px-4 py-3 text-sm text-slate-600">
+              Loading settings...
+            </div>
+          )}
+          {(loadError || errorMessage) && (
+            <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              {loadError || errorMessage}
+              {loadError && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsLoading(true);
+                    setReloadKey((key) => key + 1);
+                  }}
+                  className="ml-3 font-bold underline"
+                >
+                  Retry
+                </button>
+              )}
+            </div>
+          )}
+          {!isLoading && !loadError && activeTab === "profile" && (
             <form onSubmit={handleSaveProfile} className="space-y-6 animate-in fade-in duration-200">
               <div className="bg-white/70 backdrop-blur-2xl rounded-2xl border border-white/80 p-5 sm:p-7 shadow-[0_8px_30px_rgba(4,150,105,0.06)]">
                 <h3 className="text-base font-black text-[#1E1B4B] mb-1 flex items-center gap-2">
@@ -229,14 +440,31 @@ export default function Settings() {
                 <p className="text-xs text-slate-400 mb-6">
                   Manage your personal account credentials, contact information, and display avatar.
                 </p>
+                <input
+                  ref={avatarFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarFileUpload}
+                  className="hidden"
+                />
                 <div className="flex flex-col sm:flex-row sm:items-center gap-5 pb-6 border-b border-slate-100">
-                  <div className="relative w-20 h-20 rounded-2xl overflow-hidden border-2 border-emerald-500 shadow-md group shrink-0">
-                    <img
-                      src={profileData.avatar}
-                      alt={profileData.name}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity cursor-pointer">
+                  <div
+                    onClick={() => avatarFileInputRef.current?.click()}
+                    className="relative w-20 h-20 rounded-2xl overflow-hidden border-2 border-emerald-500 shadow-md group shrink-0 cursor-pointer"
+                    title="Click to change profile photo"
+                  >
+                    {profileData.avatar ? (
+                      <img
+                        src={getUploadUrl(profileData.avatar)}
+                        alt={profileData.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-emerald-50 text-emerald-600 font-bold text-2xl">
+                        {profileData.name ? profileData.name.charAt(0).toUpperCase() : <User className="w-8 h-8" />}
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
                       <Camera className="w-5 h-5" />
                     </div>
                   </div>
@@ -250,28 +478,25 @@ export default function Settings() {
                     <div className="flex items-center gap-2 pt-1">
                       <button
                         type="button"
-                        onClick={() =>
-                          setProfileData({
-                            ...profileData,
-                            avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300&h=300&fit=crop&q=80",
-                          })
-                        }
+                        onClick={() => avatarFileInputRef.current?.click()}
                         className="px-3 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-[11px] font-bold text-slate-700 transition cursor-pointer shadow-2xs"
                       >
                         Change Photo
                       </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setProfileData({
-                            ...profileData,
-                            avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=300&fit=crop&q=80",
-                          })
-                        }
-                        className="px-3 py-1 rounded-lg text-[11px] font-bold text-rose-600 hover:bg-rose-50 transition cursor-pointer"
-                      >
-                        Reset
-                      </button>
+                      {profileData.avatar && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setProfileData((prev) => ({
+                              ...prev,
+                              avatar: "",
+                            }))
+                          }
+                          className="px-3 py-1 rounded-lg text-[11px] font-bold text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                        >
+                          Remove Photo
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -307,9 +532,13 @@ export default function Settings() {
                         className="w-full h-11 pl-3.5 pr-24 rounded-xl border border-slate-200 bg-white/90 text-xs sm:text-sm font-semibold text-slate-800 focus:border-[#049669] focus:ring-4 focus:ring-emerald-500/15 outline-none transition"
                         placeholder="vendor@shopmart.com"
                       />
-                      <span className="absolute right-2.5 top-2.5 px-2 py-0.5 rounded-md bg-emerald-50 text-[#049669] border border-emerald-200/80 text-[10px] font-bold inline-flex items-center gap-1">
+                      <span className={`absolute right-2.5 top-2.5 px-2 py-0.5 rounded-md border text-[10px] font-bold inline-flex items-center gap-1 ${
+                        profileData.isVerified
+                          ? "bg-emerald-50 text-[#049669] border-emerald-200/80"
+                          : "bg-amber-50 text-amber-700 border-amber-200/80"
+                      }`}>
                         <BadgeCheck className="w-3 h-3" />
-                        Verified
+                        {profileData.isVerified ? "Verified" : "Unverified"}
                       </span>
                     </div>
                   </div>
@@ -353,30 +582,25 @@ export default function Settings() {
               <div className="flex items-center justify-end gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() =>
-                    setProfileData({
-                      ...profileData,
-                      name: "Vendor Admin",
-                      phone: "+91 98xxxxxxxx",
-                      designation: "Store Owner & Managing Partner",
-                    })
-                  }
+                  onClick={() => setProfileData(savedProfileData)}
                   className="px-5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs sm:text-sm transition cursor-pointer"
+                  disabled={Boolean(savingSection)}
                 >
                   Discard Changes
                 </button>
                 <button
                   type="submit"
                   className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#049669] via-[#059669] to-[#10B981] hover:from-[#03704f] hover:to-[#049669] text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-600/25 flex items-center gap-2 transition cursor-pointer"
+                  disabled={Boolean(savingSection)}
                 >
                   <Save className="w-4 h-4" />
-                  <span>Save Profile</span>
+                  <span>{savingSection === "profile" ? "Saving..." : "Save Profile"}</span>
                 </button>
               </div>
             </form>
           )}
-          {activeTab === "store" && (
-            <form onSubmit={handleSaveStore} className="space-y-6 animate-in fade-in duration-200">
+          {!isLoading && !loadError && activeTab === "store" && (
+            <div className="space-y-6 animate-in fade-in duration-200">
               {/* Store Identity & Banner Card */}
               <div className="bg-white/70 backdrop-blur-2xl rounded-2xl border border-white/80 p-5 sm:p-7 shadow-[0_8px_30px_rgba(4,150,105,0.06)]">
                 <h3 className="text-base font-black text-[#1E1B4B] mb-1 flex items-center gap-2">
@@ -401,11 +625,15 @@ export default function Settings() {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
                       <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-white border border-emerald-200/80 shadow-sm p-1.5 shrink-0 overflow-hidden relative flex items-center justify-center">
-                        <img
-                          src={storeData.logo}
-                          alt="Sidebar Logo Preview"
-                          className="w-full h-full object-contain"
-                        />
+                        {storeData.logo ? (
+                          <img
+                            src={getUploadUrl(storeData.logo)}
+                            alt="Sidebar Logo Preview"
+                            className="w-full h-full object-contain"
+                          />
+                        ) : (
+                          <Store className="w-7 h-7 text-emerald-600" />
+                        )}
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
@@ -439,9 +667,7 @@ export default function Settings() {
                         onClick={() => {
                           const defaultLogo = "https://images.unsplash.com/photo-1542838132-92c53300491e?w=300&h=300&fit=crop&q=80";
                           setStoreData({ ...storeData, logo: defaultLogo });
-                          localStorage.setItem("vendor_sidebar_logo", defaultLogo);
-                          window.dispatchEvent(new Event("vendor_logo_updated"));
-                          showToast("Logo reset to default");
+                          setErrorMessage("");
                         }}
                         className="px-3 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs font-bold transition cursor-pointer"
                         title="Reset to default logo"
@@ -508,6 +734,26 @@ export default function Settings() {
                     />
                   </div>
                 </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => discardStoreSection("branding")}
+                  disabled={Boolean(savingSection)}
+                  className="px-5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs sm:text-sm transition disabled:opacity-60"
+                >
+                  Discard Branding
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSaveStore("branding")}
+                  disabled={Boolean(savingSection)}
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#049669] via-[#059669] to-[#10B981] hover:from-[#03704f] hover:to-[#049669] text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-600/25 flex items-center gap-2 transition disabled:opacity-60"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{savingSection === "branding" ? "Saving..." : "Save Store Branding"}</span>
+                </button>
               </div>
 
               {/* Business Registration & Tax Legal Details */}
@@ -592,6 +838,26 @@ export default function Settings() {
                 </div>
               </div>
 
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => discardStoreSection("legal")}
+                  disabled={Boolean(savingSection)}
+                  className="px-5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs sm:text-sm transition disabled:opacity-60"
+                >
+                  Discard Business Details
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSaveStore("legal")}
+                  disabled={Boolean(savingSection)}
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#049669] via-[#059669] to-[#10B981] hover:from-[#03704f] hover:to-[#049669] text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-600/25 flex items-center gap-2 transition disabled:opacity-60"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{savingSection === "legal" ? "Saving..." : "Save Business Details"}</span>
+                </button>
+              </div>
+
               {/* Physical Warehouse & Dispatch Location */}
               <div className="bg-white/70 backdrop-blur-2xl rounded-2xl border border-white/80 p-5 sm:p-7 shadow-[0_8px_30px_rgba(4,150,105,0.06)]">
                 <h3 className="text-base font-black text-[#1E1B4B] mb-1 flex items-center gap-2">
@@ -653,29 +919,26 @@ export default function Settings() {
                 </div>
               </div>
 
-              {/* Submit Buttons */}
               <div className="flex items-center justify-end gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() =>
-                    setStoreData({
-                      ...storeData,
-                      storeName: "Best Deals Superstore",
-                    })
-                  }
+                  onClick={() => discardStoreSection("address")}
+                  disabled={Boolean(savingSection)}
                   className="px-5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs sm:text-sm transition cursor-pointer"
                 >
-                  Discard Changes
+                  Discard Address
                 </button>
                 <button
-                  type="submit"
+                  type="button"
+                  onClick={() => handleSaveStore("address")}
+                  disabled={Boolean(savingSection)}
                   className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#049669] via-[#059669] to-[#10B981] hover:from-[#03704f] hover:to-[#049669] text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-600/25 flex items-center gap-2 transition cursor-pointer"
                 >
                   <Save className="w-4 h-4" />
-                  <span>Save Store Settings</span>
+                  <span>{savingSection === "address" ? "Saving..." : "Save Dispatch Address"}</span>
                 </button>
               </div>
-            </form>
+            </div>
           )}
         </main>
       </div>

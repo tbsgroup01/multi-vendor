@@ -7,10 +7,11 @@ import {
   Zap,
   Loader2,
   Sparkles,
+  Plus,
+  Minus,
 } from "lucide-react";
-import { productService, getUploadUrl, cartService } from "../../../services";
-
-// Helper: resolve product image from URL or uploads path
+import { productService, getUploadUrl } from "../../../services";
+import { useCart } from "../../../context/CartContext";
 const resolveProductImage = (item) => {
   if (!item) return "";
   let img = item.image;
@@ -34,9 +35,9 @@ const resolveProductImage = (item) => {
 };
 
 export default function SuggestedItem() {
+  const { addToCart, updateQuantity, cartItems, getItemQuantity } = useCart();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [addedItems, setAddedItems] = useState({});
 
   useEffect(() => {
     let isMounted = true;
@@ -67,21 +68,25 @@ export default function SuggestedItem() {
     };
   }, []);
 
-  const handleAddToCart = async (item, e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const id = item.id;
-    setAddedItems((prev) => ({ ...prev, [id]: true }));
-
-    try {
-      await cartService.addToCart({ productId: id, quantity: 1 });
-    } catch {
-      // Local animation fallback
+  const handleAdd = (item, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
     }
+    addToCart(item, 1);
+  };
 
-    setTimeout(() => {
-      setAddedItems((prev) => ({ ...prev, [id]: false }));
-    }, 2000);
+  const handleRemove = (item, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    const cartItem = cartItems.find(
+      (i) => String(i.productId || i.id) === String(item.id)
+    );
+    if (cartItem) {
+      updateQuantity(cartItem.id, -1);
+    }
   };
 
   return (
@@ -132,7 +137,7 @@ export default function SuggestedItem() {
             /* Products Grid Showcase */
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5 sm:gap-4 lg:gap-5">
               {products.map((item) => {
-                const isAdded = !!addedItems[item.id];
+                const qty = getItemQuantity(item.id);
                 const title = item.name || item.title || "Product";
                 const imgUrl = resolveProductImage(item);
                 const sellingPrice =
@@ -214,38 +219,56 @@ export default function SuggestedItem() {
                       </div>
                     </div>
 
-                    {/* Price & Action */}
-                    <div className="pt-2.5 sm:pt-3 border-t border-emerald-100/60 mt-3">
-                      <div className="flex items-baseline gap-1.5 sm:gap-2 mb-2">
-                        <span className="text-sm sm:text-base lg:text-lg font-black text-slate-900 leading-none">
+                    {/* Price & Action (Blinkit Style) */}
+                    <div className="pt-2.5 sm:pt-3 border-t border-emerald-100/60 mt-3 flex items-center justify-between gap-2">
+                      <div className="flex flex-col">
+                        <span className="text-sm sm:text-base font-black text-slate-900 leading-none">
                           ₹{sellingPrice.toLocaleString("en-IN")}
                         </span>
                         {mrp > sellingPrice && (
-                          <span className="text-[10px] sm:text-xs text-slate-400 line-through font-normal">
+                          <span className="text-[10px] sm:text-xs text-slate-400 line-through font-normal mt-0.5">
                             ₹{mrp.toLocaleString("en-IN")}
                           </span>
                         )}
                       </div>
-                      <button
-                        onClick={(e) => handleAddToCart(item, e)}
-                        className={`w-full py-1.5 sm:py-2 px-2.5 sm:px-3 rounded-xl font-bold text-xs transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-95 ${
-                          isAdded
-                            ? "bg-emerald-600 text-white"
-                            : "bg-emerald-50 hover:bg-[#059669] text-[#059669] hover:text-white border border-emerald-200/60 backdrop-blur-md"
-                        }`}
-                      >
-                        {isAdded ? (
-                          <>
-                            <Check className="w-3.5 h-3.5 stroke-[3]" />
-                            <span className="text-xs">Added</span>
-                          </>
-                        ) : (
-                          <>
-                            <ShoppingCart className="w-3.5 h-3.5" />
-                            <span className="text-xs">Add to Cart</span>
-                          </>
-                        )}
-                      </button>
+
+                      {qty === 0 ? (
+                        <button
+                          type="button"
+                          onClick={(e) => handleAdd(item, e)}
+                          className="min-w-[66px] h-8 px-3 rounded-lg font-black text-xs uppercase tracking-wider transition-all duration-150 flex items-center justify-center cursor-pointer shadow-xs active:scale-95 bg-[#f7fcf8] hover:bg-[#0c831f] text-[#0c831f] hover:text-white border border-[#0c831f]"
+                        >
+                          ADD
+                        </button>
+                      ) : (
+                        <div
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }}
+                          className="min-w-[66px] h-8 px-1.5 rounded-lg bg-[#0c831f] text-white flex items-center justify-between shadow-xs font-black text-xs"
+                        >
+                          <button
+                            type="button"
+                            onClick={(e) => handleRemove(item, e)}
+                            className="p-1 hover:bg-[#096918] active:scale-90 rounded transition-colors cursor-pointer"
+                            title="Decrease quantity"
+                          >
+                            <Minus className="w-3.5 h-3.5 stroke-[3]" />
+                          </button>
+                          <span className="px-1.5 font-black text-xs min-w-[16px] text-center">
+                            {qty}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => handleAdd(item, e)}
+                            className="p-1 hover:bg-[#096918] active:scale-90 rounded transition-colors cursor-pointer"
+                            title="Increase quantity"
+                          >
+                            <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </Link>
                 );

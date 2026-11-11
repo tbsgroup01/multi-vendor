@@ -560,14 +560,7 @@ export default function Vendors() {
                 </div>
 
                 <div className="pt-3.5 sm:pt-4 flex flex-wrap items-center gap-3">
-                  <button
-                    onClick={() => setIsAddModalOpen(true)}
-                    className="inline-flex items-center gap-2 px-5 sm:px-6 py-2 sm:py-2.5 rounded-full bg-white text-[#049669] hover:text-[#03704f] hover:bg-emerald-50 font-bold text-xs sm:text-sm shadow-md shadow-emerald-950/20 hover:shadow-lg hover:scale-[1.02] active:scale-98 transition-all duration-200 cursor-pointer"
-                  >
-                    <Plus className="w-4 h-4 stroke-[2.5]" />
-                    <span>Onboard New Vendor</span>
-                  </button>
-
+               
                   <button
                     onClick={fetchVendors}
                     title="Reload Vendors Data"

@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Home from "./features/ui/pages/Home";
 import Login from "./features/auth/Login";
@@ -8,24 +9,38 @@ import Shop from "./features/ui/pages/Shop";
 import Cart from "./features/ui/pages/Cart";
 import MyOrders from "./features/ui/pages/MyOrders";
 import AddAddress from "./features/ui/components/AddAddress";
-import PrivacyPolicies from "./features/ui/pages/PrivacyPolicies";
-import TermsConditions from "./features/ui/pages/TermsConditions";
 import Navbar from "./features/ui/components/Navbar";
-import Dashboard from "./features/vendor/pages/Dashboard";
-import ProductsManagement from "./features/vendor/pages/ProductsManagement";
-import OrdersManagement from "./features/vendor/pages/OrdersManagement";
-import Payments from "./features/vendor/pages/Payments";
-import Settings from "./features/vendor/pages/Settings";
-import Notifications from "./features/vendor/pages/Notifications";
-import AdminDashboard from "./features/admin/pages/Dashboard";
-import AdminVendors from "./features/admin/pages/Vendors";
-import AdminCustomers from "./features/admin/pages/Customers";
-import AdminCategories from "./features/admin/pages/CategoriesManagement";
-import AdminSubCategories from "./features/admin/pages/SubCategoriesManagement";
-import AdminPayments from "./features/admin/pages/Payments";
-import AdminSubscription from "./features/admin/pages/Subscription";
-import AdminSetting from "./features/admin/pages/Setting";
 import { ProtectedRoute, PublicRoute } from "./features/auth/RoleMiddleware";
+import { CartProvider } from "./context/CartContext";
+
+// Lazy-loaded routes for code splitting and instant page refreshes
+const PrivacyPolicies = lazy(() => import("./features/ui/pages/PrivacyPolicies"));
+const TermsConditions = lazy(() => import("./features/ui/pages/TermsConditions"));
+
+// Vendor Routes (Lazy loaded)
+const Dashboard = lazy(() => import("./features/vendor/pages/Dashboard"));
+const ProductsManagement = lazy(() => import("./features/vendor/pages/ProductsManagement"));
+const OrdersManagement = lazy(() => import("./features/vendor/pages/OrdersManagement"));
+const Payments = lazy(() => import("./features/vendor/pages/Payments"));
+const Settings = lazy(() => import("./features/vendor/pages/Settings"));
+const Notifications = lazy(() => import("./features/vendor/pages/Notifications"));
+const VendorPlans = lazy(() => import("./features/vendor/pages/Plans"));
+
+// Admin Routes (Lazy loaded)
+const AdminDashboard = lazy(() => import("./features/admin/pages/Dashboard"));
+const AdminVendors = lazy(() => import("./features/admin/pages/Vendors"));
+const AdminCustomers = lazy(() => import("./features/admin/pages/Customers"));
+const AdminCategories = lazy(() => import("./features/admin/pages/CategoriesManagement"));
+const AdminSubCategories = lazy(() => import("./features/admin/pages/SubCategoriesManagement"));
+const AdminPayments = lazy(() => import("./features/admin/pages/Payments"));
+const AdminSubscription = lazy(() => import("./features/admin/pages/Subscription"));
+const AdminSetting = lazy(() => import("./features/admin/pages/Setting"));
+
+const PageLoader = () => (
+  <div className="min-h-[50vh] w-full flex items-center justify-center">
+    <div className="h-8 w-8 animate-spin rounded-full border-3 border-emerald-600 border-t-transparent" />
+  </div>
+);
 
 export default function App() {
   const location = useLocation();
@@ -34,11 +49,13 @@ export default function App() {
   const isAuthRoute = location.pathname.startsWith("/login") || location.pathname.startsWith("/register");
 
   return (
-    <div className="min-h-screen w-full flex flex-col bg-[#F6F8FD] font-sans overflow-x-clip">
-      {!isVendorRoute && !isAdminRoute && !isAuthRoute && <Navbar />}
-      <div className="flex-1 w-full">
-        <Routes>
-          {/* Public Storefront Routes */}
+    <CartProvider>
+      <div className="min-h-screen w-full flex flex-col bg-[#F6F8FD] font-sans overflow-x-clip">
+        {!isVendorRoute && !isAdminRoute && !isAuthRoute && <Navbar />}
+        <div className="flex-1 w-full">
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              {/* Public Storefront Routes */}
           <Route path="/" element={<Home />} />
           <Route path="/shop" element={<Shop />} />
           <Route path="/cart" element={<Cart />} />
@@ -53,6 +70,7 @@ export default function App() {
           <Route path="/product/:id" element={<ProductDetailspage />} />
           <Route path="/privacy" element={<PrivacyPolicies />} />
           <Route path="/terms" element={<TermsConditions />} />
+          <Route path="/plans" element={<ProtectedRoute allowedRoles={["vendor"]}> <VendorPlans /></ProtectedRoute>} />
           <Route path="/register" element={<Register />} />
 
           {/* Login Route (Redirects already logged in users to their role dashboard) */}
@@ -81,11 +99,16 @@ export default function App() {
           <Route path="/vendor/payments" element={<ProtectedRoute allowedRoles={["vendor"]}> <Payments /></ProtectedRoute>}/>
           <Route path="/vendor/settings" element={<ProtectedRoute allowedRoles={["vendor"]}> <Settings /></ProtectedRoute>}/>
           <Route path="/vendor/notifications" element={<ProtectedRoute allowedRoles={["vendor"]}> <Notifications /></ProtectedRoute>}/>
+          <Route path="/vendor/plans" element={<ProtectedRoute allowedRoles={["vendor"]}> <VendorPlans /></ProtectedRoute>}/>
+          <Route path="/vendor/subscription" element={<Navigate to="/vendor/plans" replace />} />
+          <Route path="/vendor/subscriptions" element={<Navigate to="/vendor/plans" replace />} />
           <Route path="/vendor/*" element={<ProtectedRoute allowedRoles={["vendor"]}> <Dashboard /></ProtectedRoute>}/>
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+      </Suspense>
       </div>
     </div>
+    </CartProvider>
   );
 }

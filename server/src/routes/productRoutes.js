@@ -19,8 +19,8 @@ router.post("/upload", protect, restrictTo("vendor", "admin"), upload.array("ima
 router.post("/upload/variant", protect, restrictTo("vendor", "admin"), upload.array("variantImages", 10), uploadProductImages);
 
 // Vendor-specific routes (Must be placed before /:id)
-router.post("/", protect, restrictTo("vendor"), isApprovedVendor, upload.any(), createProduct);
-router.get("/my-products", protect, restrictTo("vendor"), isApprovedVendor, getMyProducts);
+router.post("/", protect, restrictTo("vendor", "admin"), isApprovedVendor, upload.any(), createProduct);
+router.get("/my-products", protect, restrictTo("vendor", "admin"), isApprovedVendor, getMyProducts);
 
 // Public browsing routes
 router.get("/", getAllProducts);
