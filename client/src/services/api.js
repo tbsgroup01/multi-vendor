@@ -51,7 +51,18 @@ const request = async (endpoint, method = "GET", body = null, params = null) => 
 
   const data = await res.json().catch(() => null);
   if (!res.ok) {
+    if (res.status === 401) {
+      // Invalid / expired token or deleted user in DB -> auto-clear stale session
+      clearAuthToken();
+      try {
+        localStorage.removeItem("user");
+        window.dispatchEvent(new Event("auth_state_changed"));
+      } catch (e) {
+        // Ignore storage errors
+      }
+    }
     const error = new Error(data?.message || res.statusText);
+    error.status = res.status;
     error.details = data?.error;
     throw error;
   }

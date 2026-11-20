@@ -42,8 +42,7 @@ export default function Plans() {
   };
 
   const isStarterPlan = (plan) => {
-    const name = (plan.name || "").toLowerCase();
-    return name.includes("starter") || Number(plan.price) === 0 || plan.id === 1;
+    return Number(plan.price || plan.monthlyPrice || 0) === 0;
   };
 
   // Fetch real plans & vendor's active subscription directly from DB
@@ -57,7 +56,17 @@ export default function Plans() {
       ]);
 
       if (plansRes.status === "fulfilled" && Array.isArray(plansRes.value?.plans)) {
-        setPlans(plansRes.value.plans);
+        // Deduplicate plans by tierKey so duplicate database rows don't show twice
+        const seen = new Set();
+        const uniquePlans = [];
+        for (const p of plansRes.value.plans) {
+          const key = (p.tierKey || p.name || "").toLowerCase().trim();
+          if (!seen.has(key)) {
+            seen.add(key);
+            uniquePlans.push(p);
+          }
+        }
+        setPlans(uniquePlans.length > 0 ? uniquePlans : plansRes.value.plans);
       } else {
         setPlans([]);
       }
@@ -290,7 +299,7 @@ export default function Plans() {
                   Choose Your Vendor Membership Plan
                 </h1>
                 <p className="text-xs sm:text-sm text-emerald-50/95 font-medium leading-relaxed">
-                  Your <strong>Starter Plan</strong> is already active by default. Upgrade anytime to unlock higher product listings, verified trust badge, and 24h settlements via Razorpay.
+                  Select a vendor membership tier to unlock higher product listings, verified trust badge, and 24h settlements via Razorpay.
                 </p>
               </div>
 
@@ -308,8 +317,8 @@ export default function Plans() {
             {/* Billing Cycle Switch */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white/80 backdrop-blur-xl p-4 rounded-2xl border border-slate-100 shadow-sm">
               <div>
-                <h3 className="text-sm font-bold text-slate-800">Available Plans from Database</h3>
-                <p className="text-xs text-slate-500">Starter Plan is complimentary. Paid tiers process securely with Razorpay.</p>
+                <h3 className="text-sm font-bold text-slate-800">Available Membership Plans</h3>
+                <p className="text-xs text-slate-500">Official vendor tiers from database. Paid tiers process securely with Razorpay.</p>
               </div>
 
               <div className="inline-flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200">

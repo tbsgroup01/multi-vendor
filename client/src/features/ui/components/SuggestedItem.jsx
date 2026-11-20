@@ -183,7 +183,7 @@ export default function SuggestedItem() {
                       },
                       categoryName: item.category?.name || "Grocery",
                     }}
-                    className="group relative w-full bg-white/70 backdrop-blur-xl rounded-2xl sm:rounded-3xl border border-white/85 p-3 sm:p-4 flex flex-col justify-between hover:shadow-xl hover:border-emerald-200 hover:-translate-y-1 transition-all duration-300 cursor-pointer shadow-xs overflow-hidden"
+                    className="group relative w-full bg-white/70 backdrop-blur-xl rounded-xl sm:rounded-xl border border-white/85 p-3 sm:p-4 flex flex-col justify-between hover:shadow-xl  hover:-translate-y-1 transition-all duration-300 cursor-pointer shadow-xs overflow-hidden"
                   >
                     <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/80 to-transparent" />
                     <div>

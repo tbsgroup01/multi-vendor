@@ -98,7 +98,7 @@ export default function ProductCategory() {
                     className="group flex flex-col items-center cursor-pointer transition-all duration-200 hover:-translate-y-1"
                   >
                     {/* Clean Frosted Cutout Card */}
-                    <div className="w-full aspect-square rounded-2xl bg-white/70 backdrop-blur-md p-2 flex items-center justify-center overflow-hidden border border-white/85 shadow-xs group-hover:shadow-md group-hover:border-emerald-300 group-hover:bg-white/95 transition-all duration-300">
+                    <div className="w-full aspect-square rounded-2xl bg-white/70 backdrop-blur-md p-2 flex items-center justify-center overflow-hidden border border-white/85 shadow-xs group-hover:shadow-md  group-hover:bg-white/95 transition-all duration-300">
                       <img
                         src={imgUrl}
                         alt={cat.name}

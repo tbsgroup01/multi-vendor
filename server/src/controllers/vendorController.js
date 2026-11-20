@@ -50,7 +50,18 @@ const getMyVendorDashboard = async (req, res) => {
     try {
         const vendor = await Vendor.findOne({ where: { userId: req.user.id } });
         if (!vendor) {
-            return res.status(404).json({ message: "Vendor profile not found" });
+            const userName = req.user.name || "Vendor";
+            vendor = await Vendor.create({
+                userId: req.user.id,
+                storeName: `${userName}'s Store`,
+                businessName: `${userName} Retail`,
+                gstNumber: `GST_${Date.now().toString().slice(-8)}`,
+                category: "General",
+                status: "approved",
+                plan: "starter",
+                productsLimit: 50
+            });
+            vendor.user = req.user;
         }
 
         const weekStart = new Date();
@@ -186,7 +197,18 @@ const getMyVendorNotifications = async (req, res) => {
             vendor = await Vendor.findOne();
         }
         if (!vendor) {
-            return res.status(404).json({ message: "Vendor profile not found" });
+            const userName = req.user.name || "Vendor";
+            vendor = await Vendor.create({
+                userId: req.user.id,
+                storeName: `${userName}'s Store`,
+                businessName: `${userName} Retail`,
+                gstNumber: `GST_${Date.now().toString().slice(-8)}`,
+                category: "General",
+                status: "approved",
+                plan: "starter",
+                productsLimit: 50
+            });
+            vendor.user = req.user;
         }
 
         const items = await OrderItem.findAll({
@@ -313,7 +335,18 @@ const getMyVendorSettings = async (req, res) => {
         }
 
         if (!vendor) {
-            return res.status(404).json({ message: "Vendor profile not found" });
+            const userName = req.user.name || "Vendor";
+            vendor = await Vendor.create({
+                userId: req.user.id,
+                storeName: `${userName}'s Store`,
+                businessName: `${userName} Retail`,
+                gstNumber: `GST_${Date.now().toString().slice(-8)}`,
+                category: "General",
+                status: "approved",
+                plan: "starter",
+                productsLimit: 50
+            });
+            vendor.user = req.user;
         }
 
         let vendorObj = vendor.toJSON ? vendor.toJSON() : vendor;
@@ -342,7 +375,18 @@ const updateMyVendorSettings = async (req, res) => {
             vendor = await Vendor.findOne();
         }
         if (!vendor) {
-            return res.status(404).json({ message: "Vendor profile not found" });
+            const userName = req.user.name || "Vendor";
+            vendor = await Vendor.create({
+                userId: req.user.id,
+                storeName: `${userName}'s Store`,
+                businessName: `${userName} Retail`,
+                gstNumber: `GST_${Date.now().toString().slice(-8)}`,
+                category: "General",
+                status: "approved",
+                plan: "starter",
+                productsLimit: 50
+            });
+            vendor.user = req.user;
         }
 
         const targetUserId = (req.user.role === "admin" && vendor.userId) ? vendor.userId : req.user.id;

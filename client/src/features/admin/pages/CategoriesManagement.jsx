@@ -22,29 +22,8 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 
-// Packshot assets
+// Fallback category placeholder
 import dairyBreadEggsImg from "../../../assets/category/dairy-bread-eggs.png";
-import coldDrinksJuicesImg from "../../../assets/category/cold-drinks-juices.png";
-
-const INITIAL_CATEGORIES = [
-  {
-    id: "CAT-01",
-    name: "Dairy, Bread & Eggs",
-    slug: "dairy-bread-eggs",
-    image: dairyBreadEggsImg,
-    status: "Active",
-    description: "Fresh milk, daily bread, butter, cheese, and farm fresh eggs.",
-  },
-  {
-    id: "CAT-02",
-    name: "Cold Drinks & Juices",
-    slug: "cold-drinks-juices",
-    image: coldDrinksJuicesImg,
-    status: "Active",
-    description: "Refreshing carbonated sodas, natural fruit juices, and cold drinks.",
-  },
-];
-
 
 // Helper to resolve category image URL (whether server upload path, URL, or local packshot)
 const getCategoryImageUrl = (img) => {
@@ -53,7 +32,7 @@ const getCategoryImageUrl = (img) => {
 };
 
 export default function CategoriesManagement() {
-  const [categories, setCategories] = useState(INITIAL_CATEGORIES);
+  const [categories, setCategories] = useState([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All");
@@ -67,11 +46,16 @@ export default function CategoriesManagement() {
     try {
       setLoading(true);
       const res = await adminService.getAllCategories();
-      if (res && Array.isArray(res.categories) && res.categories.length > 0) {
+      if (res && Array.isArray(res.categories)) {
         setCategories(res.categories);
+      } else if (Array.isArray(res)) {
+        setCategories(res);
+      } else {
+        setCategories([]);
       }
     } catch (err) {
-      console.log("Using cached categories:", err?.message);
+      console.warn("Categories fetch error:", err?.message);
+      setCategories([]);
     } finally {
       setLoading(false);
     }
@@ -91,16 +75,67 @@ export default function CategoriesManagement() {
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
-    image: dairyBreadEggsImg,
+    image: "",
     status: "Active",
     description: "",
   });
 
-  const handleImageFileChange = (e) => {
+  // Helper: auto compress category image to stay well below Nginx 1MB 413 limit
+  const compressCategoryFile = (file) => {
+    return new Promise((resolve) => {
+      if (file.size <= 800 * 1024) {
+        return resolve(file);
+      }
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new window.Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const maxDim = 800;
+          let width = img.width;
+          let height = img.height;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                const newFile = new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), {
+                  type: "image/jpeg",
+                });
+                resolve(newFile);
+              } else {
+                resolve(file);
+              }
+            },
+            "image/jpeg",
+            0.85
+          );
+        };
+        img.onerror = () => resolve(file);
+      };
+      reader.onerror = () => resolve(file);
+    });
+  };
+
+  const handleImageFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      setImageFile(file);
-      const previewUrl = URL.createObjectURL(file);
+      const optimizedFile = await compressCategoryFile(file);
+      setImageFile(optimizedFile);
+      const previewUrl = URL.createObjectURL(optimizedFile);
       setImagePreview(previewUrl);
     }
   };
@@ -231,23 +266,13 @@ export default function CategoriesManagement() {
       }
 
       if (editingCategory) {
-        const res = await adminService.updateCategory(editingCategory.id, payload);
-        const updatedCat = res?.category || { ...editingCategory, ...formData };
-        setCategories((prev) =>
-          prev.map((c) =>
-            c.id === editingCategory.id ? { ...c, ...updatedCat } : c
-          )
-        );
+        await adminService.updateCategory(editingCategory.id, payload);
         showToast(`Category "${formData.name}" updated in Database!`);
       } else {
-        const res = await adminService.createCategory(payload);
-        const newCat = res?.category || {
-          id: `CAT-${Date.now().toString().slice(-4)}`,
-          ...formData,
-        };
-        setCategories([newCat, ...categories]);
+        await adminService.createCategory(payload);
         showToast(`Category "${formData.name}" saved to Database!`);
       }
+      await fetchCategories();
       setIsModalOpen(false);
       setImageFile(null);
       setImagePreview("");

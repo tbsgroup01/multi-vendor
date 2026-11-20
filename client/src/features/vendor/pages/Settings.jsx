@@ -110,7 +110,57 @@ export default function Settings() {
         }
       })
       .catch((error) => {
-        if (isMounted) setLoadError(error.message || "Failed to load settings.");
+        if (!isMounted) return;
+        const msg = error?.message || "";
+        const isNotFound =
+          error?.status === 404 ||
+          msg.includes("Not Found") ||
+          msg.includes("not found");
+
+        if (isNotFound) {
+          // Vendor profile record not created in DB yet -> populate initial defaults from logged in user
+          try {
+            const localUser = JSON.parse(localStorage.getItem("user") || "{}");
+            const fallbackProfile = {
+              name: localUser.name || "Vendor",
+              email: localUser.email || "",
+              phone: localUser.phone || "",
+              designation: "Store Owner",
+              avatar: localUser.avatar || "",
+              isVerified: Boolean(localUser.isVerified),
+            };
+            const fallbackStore = {
+              storeName: localUser.name ? `${localUser.name}'s Store` : "My Store",
+              storeSlug: localUser.name
+                ? localUser.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")
+                : "my-store",
+              tagline: "Quality products at best prices",
+              logo: "",
+              banner: "",
+              supportEmail: localUser.email || "",
+              supportPhone: localUser.phone || "",
+              companyName: localUser.name
+                ? `${localUser.name} Enterprise`
+                : "My Enterprise",
+              gstin: "",
+              pan: "",
+              businessType: "General Retail",
+              address: "",
+              city: "",
+              state: "",
+              pincode: "",
+            };
+            setProfileData(fallbackProfile);
+            setSavedProfileData(fallbackProfile);
+            setStoreData(fallbackStore);
+            setSavedStoreData(fallbackStore);
+            setLoadError("");
+          } catch {
+            setLoadError(error.message || "Failed to load settings.");
+          }
+        } else {
+          setLoadError(error.message || "Failed to load settings.");
+        }
       })
       .finally(() => {
         if (isMounted) setIsLoading(false);
@@ -121,38 +171,68 @@ export default function Settings() {
     };
   }, [reloadKey]);
 
-  const handleLogoFileUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      setErrorMessage("Store logo must be smaller than 2 MB.");
-      e.target.value = "";
-      return;
-    }
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const dataUrl = typeof reader.result === "string" ? reader.result : "";
-      setStoreData((prev) => ({ ...prev, logo: dataUrl }));
-      setErrorMessage("");
-    };
-    reader.readAsDataURL(file);
+  // Helper: Client-side auto-compress image to ensure Base64 stays well below Nginx 1MB limit (< 100KB)
+  const compressImage = (file, maxWidth = 500, maxHeight = 500, quality = 0.85) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new window.Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          let width = img.width;
+          let height = img.height;
+
+          if (width > maxWidth || height > maxHeight) {
+            if (width > height) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            } else {
+              width = Math.round((width * maxHeight) / height);
+              height = maxHeight;
+            }
+          }
+
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Use JPEG for tiny size (< 80KB), or PNG for small transparent assets
+          const isPng = file.type === "image/png";
+          const mime = isPng && file.size < 400 * 1024 ? "image/png" : "image/jpeg";
+          const compressedDataUrl = canvas.toDataURL(mime, quality);
+          resolve(compressedDataUrl);
+        };
+        img.onerror = (err) => reject(err);
+      };
+      reader.onerror = (err) => reject(err);
+    });
   };
 
-  const handleAvatarFileUpload = (e) => {
+  const handleLogoFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      setErrorMessage("Profile photo must be smaller than 2 MB.");
-      e.target.value = "";
-      return;
-    }
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const dataUrl = typeof reader.result === "string" ? reader.result : "";
-      setProfileData((prev) => ({ ...prev, avatar: dataUrl }));
+    try {
       setErrorMessage("");
-    };
-    reader.readAsDataURL(file);
+      const compressedDataUrl = await compressImage(file, 600, 600, 0.85);
+      setStoreData((prev) => ({ ...prev, logo: compressedDataUrl }));
+    } catch {
+      setErrorMessage("Could not process store logo. Please try a different image.");
+    }
+  };
+
+  const handleAvatarFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setErrorMessage("");
+      const compressedDataUrl = await compressImage(file, 500, 500, 0.85);
+      setProfileData((prev) => ({ ...prev, avatar: compressedDataUrl }));
+    } catch {
+      setErrorMessage("Could not process profile photo. Please try a different image.");
+    }
   };
 
   const handleSaveProfile = async (e) => {
