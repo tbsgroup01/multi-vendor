@@ -458,7 +458,10 @@ export default function Customers() {
     {
       id: "total-spend",
       title: "Total Customer Spend",
-      value: `₹${(totalSpend / 100000).toFixed(2)}L`,
+      value:
+        totalSpend >= 100000
+          ? `₹${(totalSpend / 100000).toFixed(2)}L`
+          : `₹${totalSpend.toLocaleString("en-IN")}`,
       icon: CircleDollarSign,
       iconColor:
         "text-white bg-gradient-to-tr from-[#049669] via-emerald-600 to-teal-600 border-emerald-400/40 shadow-md shadow-emerald-600/25",
@@ -542,14 +545,6 @@ export default function Customers() {
 
                 <div className="pt-3.5 sm:pt-4 flex flex-wrap items-center gap-3">
                   <button
-                    onClick={() => setIsAddModalOpen(true)}
-                    className="inline-flex items-center gap-2 px-5 sm:px-6 py-2 sm:py-2.5 rounded-full bg-white text-[#049669] hover:text-[#03704f] hover:bg-emerald-50 font-bold text-xs sm:text-sm shadow-md shadow-emerald-950/20 hover:shadow-lg hover:scale-[1.02] active:scale-98 transition-all duration-200 cursor-pointer"
-                  >
-                    <Plus className="w-4 h-4 stroke-[2.5]" />
-                    <span>Add New Customer</span>
-                  </button>
-
-                  <button
                     onClick={fetchCustomers}
                     title="Reload from Database"
                     className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-900/40 hover:bg-emerald-900/60 backdrop-blur-md border border-emerald-300/30 text-emerald-100 text-xs font-semibold cursor-pointer transition"
@@ -557,7 +552,6 @@ export default function Customers() {
                     <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
                     <span>Refresh DB</span>
                   </button>
-
                   <div className="hidden sm:inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-900/40 backdrop-blur-md border border-emerald-300/30 text-emerald-100 text-xs font-semibold">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-300" />
                     <span>{totalCount} Verified Buyers Active</span>

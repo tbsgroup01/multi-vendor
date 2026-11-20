@@ -112,10 +112,10 @@ export default function Register() {
           category: formData.category,
         });
 
-        setSuccessMsg(res?.message || "Vendor account created successfully! Redirecting to Vendor Panel...");
+        setSuccessMsg(res?.message || "Vendor account created successfully! Redirecting to Membership Plans...");
         setSubmitted(true);
         setTimeout(() => {
-          navigate("/vendor");
+          navigate("/vendor/plans");
         }, 800);
       }
     } catch (err) {

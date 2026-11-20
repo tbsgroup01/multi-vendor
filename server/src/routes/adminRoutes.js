@@ -21,7 +21,8 @@ const {
     getAllProductPayments,
     deletePaymentOrder,
     getAdminProfile,
-    updateAdminProfile
+    updateAdminProfile,
+    getDashboardStats
 } = require("../controllers/adminController");
 
 const {
@@ -40,6 +41,9 @@ router.all("/dropexist", dropDatabase);
 
 // All admin routes require authentication and admin role
 router.use(protect, restrictTo("admin"));
+
+// Admin Dashboard stats & metrics
+router.get("/dashboard-stats", getDashboardStats);
 
 // Admin Profile management
 router.get("/profile", getAdminProfile);

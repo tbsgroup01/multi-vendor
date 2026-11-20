@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { authService } from "../../services";
 import { getRoleRedirectPath } from "./RoleMiddleware";
+import { useCart } from "../../context/CartContext";
 import {
   User,
   Store,
@@ -26,30 +27,22 @@ import Img from "../../assets/multi.png";
 
 export default function Login() {
   const navigate = useNavigate();
-
-  // Active Login Role Tab: "customer" (OTP) | "staff" (Vendor/Admin Password)
+  const location = useLocation();
+  const { syncGuestCartToDb } = useCart();
   const [activeTab, setActiveTab] = useState("customer");
-
-  // Customer OTP Login States
   const [customerIdentifier, setCustomerIdentifier] = useState("");
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [otpCountdown, setOtpCountdown] = useState(0);
   const [devOtpHint, setDevOtpHint] = useState("");
-
-  // Vendor / Admin Password Login States
   const [passwordFormData, setPasswordFormData] = useState({
     emailOrPhone: "",
     password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
-
-  // Common UI States
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
-
-  // OTP Resend Countdown Timer
   useEffect(() => {
     let timer;
     if (otpCountdown > 0) {
@@ -59,16 +52,12 @@ export default function Login() {
     }
     return () => clearInterval(timer);
   }, [otpCountdown]);
-
-  // Tab switch handler
   const handleTabSwitch = (tab) => {
     setActiveTab(tab);
     setError("");
     setSuccessMsg("");
     setDevOtpHint("");
   };
-
-  // 1. Send OTP for Customer
   const handleSendOtp = async (e) => {
     e.preventDefault();
     setError("");
@@ -119,9 +108,26 @@ export default function Login() {
         otp: otp.trim(),
       });
 
+      // Merge guest cart items into DB
+      try {
+        await syncGuestCartToDb();
+      } catch (syncErr) {
+        console.warn("Cart sync notice:", syncErr);
+      }
+
+      let returnUrl = "/";
+      const requestedFrom = location.state?.from;
+      if (
+        requestedFrom &&
+        typeof requestedFrom === "string" &&
+        !requestedFrom.startsWith("/admin") &&
+        !requestedFrom.startsWith("/vendor")
+      ) {
+        returnUrl = requestedFrom;
+      }
       setSuccessMsg("Logged in successfully! Redirecting...");
       setTimeout(() => {
-        navigate("/", { replace: true });
+        navigate(returnUrl, { replace: true });
       }, 600);
     } catch (err) {
       setError(err.message || "Invalid or expired OTP. Please try again.");
@@ -148,8 +154,28 @@ export default function Login() {
         password: passwordFormData.password,
       });
 
+      // Merge guest cart items into DB
+      try {
+        await syncGuestCartToDb();
+      } catch (syncErr) {
+        console.warn("Cart sync notice:", syncErr);
+      }
+
       const role = res?.user?.role;
-      const targetPath = getRoleRedirectPath(role);
+      let targetPath = getRoleRedirectPath(role);
+      const requestedFrom = location.state?.from;
+
+      if (requestedFrom && typeof requestedFrom === "string") {
+        const normRole = (role || "").toLowerCase();
+        if (normRole.includes("admin") && !requestedFrom.startsWith("/vendor")) {
+          targetPath = requestedFrom;
+        } else if (
+          (normRole.includes("vendor") || normRole.includes("seller")) &&
+          !requestedFrom.startsWith("/admin")
+        ) {
+          targetPath = requestedFrom;
+        }
+      }
 
       setSuccessMsg(`Welcome back, ${res?.user?.name || "User"}! Redirecting...`);
       setTimeout(() => {

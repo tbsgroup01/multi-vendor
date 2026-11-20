@@ -96,7 +96,7 @@ export default function Footer() {
   ];
 
   const customerCare = [
-    { label: "Track Your Order", href: "/orders?tab=orders" },
+    { label: "My Order", href: "/orders?tab=orders" },
     { label: "Customer Support", href: "/terms" },
     { label: "Shipping Policy", href: "/shipping" },
     { label: "Privacy Policy", href: "/privacy" },
@@ -235,74 +235,7 @@ export default function Footer() {
               ))}
             </ul>
           </div>
-
-      
-
         </div>
-
-        {/* ================= SUB-FOOTER BOTTOM BAR ================= */}
-        <div className="pt-6 border-t border-[#151D42] flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-400">
-          
-          {/* Copyright */}
-          <p className="tracking-wide">
-            © 2025 <span className="text-[#059669] font-bold">ShopMart</span>. All rights reserved.
-          </p>
-
-          {/* Center Links */}
-          <div className="flex items-center gap-3 text-slate-400">
-            <Link to="/privacy" className="hover:text-white transition-colors">
-              Privacy Policy
-            </Link>
-            <span className="text-slate-600">|</span>
-            <Link to="/terms" className="hover:text-white transition-colors">
-              Terms & Conditions
-            </Link>
-           
-          </div>
-
-          {/* Right Payment Badges */}
-          <div className="flex items-center gap-2">
-            
-            {/* VISA */}
-            <div className="h-6 px-2.5 rounded bg-white flex items-center justify-center shadow-xs">
-              <span className="text-[#1A1F71] font-black italic text-xs tracking-tighter">
-                VISA
-              </span>
-            </div>
-
-            {/* Mastercard */}
-            <div className="h-6 px-2 rounded bg-[#18181B] border border-slate-700/60 flex items-center justify-center shadow-xs">
-              <div className="flex items-center -space-x-1.5">
-                <div className="w-3.5 h-3.5 rounded-full bg-[#EB001B]" />
-                <div className="w-3.5 h-3.5 rounded-full bg-[#F79E1B] opacity-90" />
-              </div>
-            </div>
-
-            {/* RuPay */}
-            <div className="h-6 px-2.5 rounded bg-white flex items-center justify-center shadow-xs">
-              <span className="font-extrabold text-[11px] tracking-tight text-[#0971B8]">
-                Ru<span className="text-[#F37021]">Pay</span>
-              </span>
-            </div>
-
-            {/* UPI */}
-            <div className="h-6 px-2 rounded bg-white flex items-center justify-center shadow-xs">
-              <span className="font-black text-[11px] tracking-tight text-[#097939]">
-                U<span className="text-[#097939]">P</span><span className="text-[#ED6B22]">I</span>
-              </span>
-            </div>
-
-            {/* AMEX */}
-            <div className="h-6 px-2 rounded bg-[#006FCF] flex items-center justify-center shadow-xs">
-              <span className="text-white font-bold text-[9px] tracking-tighter uppercase leading-none">
-                AMEX
-              </span>
-            </div>
-
-          </div>
-
-        </div>
-
       </div>
     </footer>
   );

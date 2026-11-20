@@ -83,14 +83,17 @@ const ensureTableColumns = async () => {
 
         // Users columns
         await checkAndAddColumn("Users", "avatar", "TEXT NULL");
+        await checkAndAddColumn("Users", "designation", "VARCHAR(255) NULL");
         await checkAndAddColumn("Users", "isVerified", "TINYINT(1) DEFAULT 0");
         await checkAndAddColumn("Users", "resetPasswordOtp", "VARCHAR(255) NULL");
         await checkAndAddColumn("Users", "resetPasswordOtpExpires", "DATETIME NULL");
         await checkAndAddColumn("Users", "isResetOtpVerified", "TINYINT(1) DEFAULT 0");
+        await checkAndAddColumn("Users", "addresses", "JSON NULL");
 
         // Vendors columns
         await checkAndAddColumn("Vendors", "status", "ENUM('pending', 'approved', 'rejected') DEFAULT 'pending'");
         await checkAndAddColumn("Vendors", "productsLimit", "INT DEFAULT 10");
+        await checkAndAddColumn("Vendors", "storeSettings", "JSON NULL");
 
         // Products columns
         await checkAndAddColumn("Products", "subCategoryId", "INT NULL");

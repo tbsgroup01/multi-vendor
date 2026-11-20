@@ -7,7 +7,8 @@ const {
     removeFromCart,
     clearCart,
     checkoutPreview,
-    checkout
+    checkout,
+    syncCart
 } = require("../controllers/cartController");
 const { protect } = require("../middlewares/authMiddleware");
 
@@ -34,5 +35,8 @@ router.get("/checkout-preview", checkoutPreview);
 
 // 7. Place Order / Checkout
 router.post("/checkout", checkout);
+
+// 8. Sync/Merge guest cart into user cart
+router.post("/sync", syncCart);
 
 module.exports = router;

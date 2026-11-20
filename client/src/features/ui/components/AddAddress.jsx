@@ -14,13 +14,16 @@ import {
   ShieldCheck,
   Check,
 } from "lucide-react";
+import { authService } from "../../../services";
+import { getStoredUser } from "../../auth/RoleMiddleware";
 
 export default function AddAddress({ onSave, onClose }) {
   const navigate = useNavigate();
+  const user = getStoredUser();
 
   const [formData, setFormData] = useState({
-    receiver: "",
-    phone: "",
+    receiver: user?.name || "",
+    phone: user?.phone ? user.phone.replace(/\D/g, "").slice(-10) : "",
     addressLine: "",
     area: "",
     landmark: "",
@@ -136,7 +139,7 @@ export default function AddAddress({ onSave, onClose }) {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
 
@@ -147,7 +150,14 @@ export default function AddAddress({ onSave, onClose }) {
       phone: "+91 " + formData.phone.replace(/\D/g, "").slice(-10),
     };
 
-    // Save to localStorage for instant persistence across pages
+    // Save directly to MySQL Database via Backend API
+    try {
+      await authService.saveAddress(newAddress);
+    } catch (apiErr) {
+      console.warn("Could not save address to DB via API:", apiErr);
+    }
+
+    // Also update localStorage cache for instant UI responsiveness
     try {
       const stored = JSON.parse(localStorage.getItem("user_addresses") || "[]");
       let updated;
@@ -213,7 +223,7 @@ export default function AddAddress({ onSave, onClose }) {
                 </h1>
               </div>
               <p className="text-xs sm:text-sm text-slate-500 mt-1 pl-4">
-                Enter your complete address for instant, contactless grocery delivery
+                Enter your complete address for fast, contactless delivery
               </p>
             </div>
           </div>

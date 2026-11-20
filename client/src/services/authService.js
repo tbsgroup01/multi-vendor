@@ -28,6 +28,21 @@ export const authService = {
     return data;
   },
   getCurrentUser: () => api.get("/auth/me"),
+  getAddresses: async () => {
+    try {
+      const res = await api.get("/auth/addresses");
+      return res?.addresses || [];
+    } catch (e) {
+      console.warn("Failed to fetch addresses from API:", e);
+      return [];
+    }
+  },
+  saveAddress: async (addressData) => {
+    return await api.post("/auth/addresses", addressData);
+  },
+  deleteAddress: async (id) => {
+    return await api.delete(`/auth/addresses/${id}`);
+  },
   forgotPassword: (email) => api.post("/auth/forgot-password", { email }),
   verifyOtp: (payload) => api.post("/auth/verify-otp", payload),
   resetPassword: (payload) => api.post("/auth/reset-password", payload),

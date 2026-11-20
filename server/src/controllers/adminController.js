@@ -1023,6 +1023,184 @@ const updateAdminProfile = async (req, res) => {
     }
 };
 
+// 20. Get Admin Dashboard Stats & Activity (Connected to DB)
+const getDashboardStats = async (req, res) => {
+    try {
+        // 1. GMV / Total Sales
+        const gmvResult = await Order.sum("totalAmount", {
+            where: {
+                orderStatus: { [Op.ne]: "cancelled" }
+            }
+        });
+        const totalGMV = Number(gmvResult || 0);
+
+        // 2. Active Vendors
+        const activeVendors = await Vendor.count({
+            where: { status: "approved" }
+        });
+
+        // 3. Registered Customers / Users
+        const registeredUsers = await User.count({
+            where: { role: "customer" }
+        });
+        const totalUsers = await User.count();
+
+        // 4. Pending Vendor Approvals
+        const pendingApprovals = await Vendor.count({
+            where: { status: "pending" }
+        });
+
+        // 5. Pending Vendors List (for Store Approvals queue)
+        const pendingVendorsList = await Vendor.findAll({
+            where: { status: "pending" },
+            include: [
+                {
+                    model: User,
+                    as: "user",
+                    attributes: ["id", "name", "email", "phone"]
+                }
+            ],
+            order: [["createdAt", "DESC"]],
+            limit: 10
+        });
+
+        const formattedPendingVendors = pendingVendorsList.map((v) => ({
+            id: v.id,
+            storeName: v.storeName || v.businessName,
+            owner: v.user?.name || v.businessName || "Vendor Owner",
+            category: v.category || "Retail Merchant",
+            appliedDate: v.createdAt
+                ? new Date(v.createdAt).toLocaleDateString("en-IN", {
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit"
+                  })
+                : "Recently",
+            status: "KYC Pending"
+        }));
+
+        // 6. Recent Marketplace Transactions / Orders
+        const recentOrdersList = await Order.findAll({
+            include: [
+                {
+                    model: User,
+                    as: "user",
+                    attributes: ["id", "name", "email", "phone"]
+                },
+                {
+                    model: OrderItem,
+                    as: "items",
+                    include: [
+                        { model: Vendor, as: "vendor", attributes: ["id", "storeName"] }
+                    ]
+                }
+            ],
+            order: [["createdAt", "DESC"]],
+            limit: 6
+        });
+
+        const formattedRecentOrders = recentOrdersList.map((ord) => {
+            const rawAmount = Number(ord.totalAmount || 0);
+            const vendorName = ord.items?.[0]?.vendor?.storeName || "ShopMart Express";
+
+            let statusColor = "bg-emerald-50 text-[#049669] border-emerald-200/80";
+            const s = (ord.orderStatus || "").toLowerCase();
+            if (s === "processing" || s === "placed") {
+                statusColor = "bg-teal-50 text-teal-700 border-teal-200/80";
+            } else if (s === "shipped") {
+                statusColor = "bg-blue-50 text-blue-700 border-blue-200/80";
+            } else if (s === "cancelled") {
+                statusColor = "bg-rose-50 text-rose-700 border-rose-200/80";
+            } else if (s === "delivered") {
+                statusColor = "bg-emerald-50 text-[#049669] border-emerald-200/80";
+            }
+
+            return {
+                id: ord.orderNumber || `#ORD-${String(ord.id).padStart(4, "0")}`,
+                customer: ord.user?.name || "Marketplace Guest",
+                store: vendorName,
+                amount: `₹${rawAmount.toLocaleString("en-IN")}`,
+                status: ord.orderStatus ? ord.orderStatus.charAt(0).toUpperCase() + ord.orderStatus.slice(1) : "Placed",
+                statusColor
+            };
+        });
+
+        // 7. Last 7 Days GMV Sales Curve Calculation
+        const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        const now = new Date();
+        const past7Days = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date(now);
+            d.setDate(d.getDate() - i);
+            d.setHours(0, 0, 0, 0);
+            const nextD = new Date(d);
+            nextD.setDate(nextD.getDate() + 1);
+
+            past7Days.push({
+                day: dayNames[d.getDay()],
+                startDate: d,
+                endDate: nextD
+            });
+        }
+
+        const chartDays = await Promise.all(
+            past7Days.map(async (item, index) => {
+                const daySum = await Order.sum("totalAmount", {
+                    where: {
+                        createdAt: {
+                            [Op.gte]: item.startDate,
+                            [Op.lt]: item.endDate
+                        },
+                        orderStatus: { [Op.ne]: "cancelled" }
+                    }
+                });
+                const salesNum = Number(daySum || 0);
+                return {
+                    day: item.day,
+                    salesNum,
+                    sales: `₹${salesNum.toLocaleString("en-IN")}`
+                };
+            })
+        );
+
+        const xCoords = [120, 260, 400, 540, 680, 820, 960];
+        const maxSales = Math.max(...chartDays.map((d) => d.salesNum), 1000);
+        const mappedChartDays = chartDays.map((d, idx) => {
+            const pct = Math.max(15, Math.min(95, Math.round((d.salesNum / maxSales) * 100)));
+            const y = Math.round(170 - (pct / 100) * 135);
+            return {
+                day: d.day,
+                sales: d.salesNum > 0 ? d.sales : "₹0",
+                heightPct: pct,
+                x: xCoords[idx] || 120 + idx * 140,
+                y
+            };
+        });
+
+        res.status(200).json({
+            success: true,
+            stats: {
+                totalGMV,
+                formattedGMV: `₹${totalGMV.toLocaleString("en-IN")}`,
+                activeVendors,
+                registeredUsers: registeredUsers > 0 ? registeredUsers : totalUsers,
+                pendingApprovals
+            },
+            pendingVendors: formattedPendingVendors,
+            recentOrders: formattedRecentOrders,
+            chartDays: mappedChartDays
+        });
+    } catch (error) {
+        console.error("Error fetching admin dashboard stats:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch dashboard stats",
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     createPlan,
     getAllPlans,
@@ -1043,5 +1221,6 @@ module.exports = {
     getAllProductPayments,
     deletePaymentOrder,
     getAdminProfile,
-    updateAdminProfile
+    updateAdminProfile,
+    getDashboardStats
 };

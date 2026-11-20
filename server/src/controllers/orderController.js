@@ -20,6 +20,7 @@ const getMyOrders = async (req, res) => {
                     model: OrderItem,
                     as: "items",
                     include: [
+                        { model: Product, as: "product", attributes: ["id", "name", "images", "price"] },
                         { model: Vendor, as: "vendor", attributes: ["id", "storeName", "businessName"] },
                         { model: ProductVariant, as: "variant", attributes: ["id", "name", "sku", "images", "attributes"] }
                     ]
@@ -90,7 +91,10 @@ const getOrderById = async (req, res) => {
 // 3. Vendor view: Get all order items placed for their store
 const getVendorOrders = async (req, res) => {
     try {
-        const vendor = await Vendor.findOne({ where: { userId: req.user.id } });
+        let vendor = await Vendor.findOne({ where: { userId: req.user.id } });
+        if (!vendor && req.user.role === "admin") {
+            vendor = await Vendor.findOne();
+        }
         if (!vendor) {
             return res.status(404).json({ message: "Vendor profile not found" });
         }

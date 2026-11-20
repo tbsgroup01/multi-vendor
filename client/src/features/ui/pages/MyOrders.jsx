@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   Package,
@@ -17,13 +17,26 @@ import {
   Zap,
   ArrowRight,
   Sparkles,
+  Loader2,
+  ShoppingBag,
 } from "lucide-react";
 import Footer from "../components/Footer";
+import { orderService, authService, getUploadUrl } from "../../../services";
+import { getStoredUser } from "../../auth/RoleMiddleware";
 
 export default function MyOrders() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = searchParams.get("tab") || "orders";
   const [activeTab, setActiveTab] = useState(initialTab);
+
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const user = getStoredUser();
+  const userName = user?.name || "Customer";
+  const userPhone = user?.phone || "+91 9800000000";
+  const userInitial = (userName[0] || "C").toUpperCase();
 
   // Synchronize query param
   const handleTabChange = (tab) => {
@@ -31,140 +44,183 @@ export default function MyOrders() {
     setSearchParams({ tab });
   };
 
-  // Mock Orders Data (Blinkit Style)
-  const [orders, setOrders] = useState([
-    {
-      id: "ORD-982314",
-      date: "Today, 11:42 AM",
-      status: "Delivered",
-      statusColor: "bg-emerald-50 text-emerald-700 border-emerald-200",
-      deliveryTime: "Delivered in 12 mins",
-      address: "Home - B Block, Sector 63, Noida",
-      total: 190,
-      itemsCount: 3,
-      items: [
-        {
-          name: "Amul Taaza Fresh Toned Milk",
-          unit: "1 L",
-          quantity: 2,
-          price: 54,
-          image:
-            "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=200&h=200&fit=crop&q=80",
-        },
-        {
-          name: "Harvest Gold White Sandwich Bread",
-          unit: "400 g",
-          quantity: 1,
-          price: 40,
-          image:
-            "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=200&h=200&fit=crop&q=80",
-        },
-        {
-          name: "Farm Fresh Brown Table Eggs",
-          unit: "Pack of 6",
-          quantity: 1,
-          price: 68,
-          image:
-            "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=200&h=200&fit=crop&q=80",
-        },
-      ],
-    },
-    {
-      id: "ORD-741289",
-      date: "Yesterday, 6:15 PM",
-      status: "Delivered",
-      statusColor: "bg-emerald-50 text-emerald-700 border-emerald-200",
-      deliveryTime: "Delivered in 14 mins",
-      address: "Home - B Block, Sector 63, Noida",
-      total: 155,
-      itemsCount: 2,
-      items: [
-        {
-          name: "Coca-Cola Original Taste Can",
-          unit: "300 ml",
-          quantity: 2,
-          price: 40,
-          image:
-            "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=200&h=200&fit=crop&q=80",
-        },
-        {
-          name: "Haldiram's Classic Bhujia Sev",
-          unit: "200 g",
-          quantity: 1,
-          price: 55,
-          image:
-            "https://images.unsplash.com/photo-1599490659213-e2b9527bd087?w=200&h=200&fit=crop&q=80",
-        },
-      ],
-    },
-    {
-      id: "ORD-519842",
-      date: "24 Oct 2026, 8:30 PM",
-      status: "Delivered",
-      statusColor: "bg-emerald-50 text-emerald-700 border-emerald-200",
-      deliveryTime: "Delivered in 11 mins",
-      address: "Office - Tech Park, Sector 62, Noida",
-      total: 320,
-      itemsCount: 2,
-      items: [
-        {
-          name: "Shimla Crisp Royal Gala Apples",
-          unit: "4 pcs (~600 g)",
-          quantity: 1,
-          price: 140,
-          image:
-            "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=200&h=200&fit=crop&q=80",
-        },
-        {
-          name: "Tropicana 100% Orange Fruit Juice",
-          unit: "1 L",
-          quantity: 1,
-          price: 125,
-          image:
-            "https://images.unsplash.com/photo-1613478223719-2ab802602423?w=200&h=200&fit=crop&q=80",
-        },
-      ],
-    },
-  ]);
+  // Fetch Real Orders from Database
+  useEffect(() => {
+    let isMounted = true;
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        const res = await orderService.getMyOrders({ limit: 50 });
+        if (!isMounted) return;
 
-  // Saved Addresses with localStorage persistence
-  const [addresses, setAddresses] = useState(() => {
-    try {
-      const stored = localStorage.getItem("user_addresses");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (res && res.orders && Array.isArray(res.orders)) {
+          const mapped = res.orders.map((ord) => {
+            let parsedAddr = "";
+            try {
+              const a =
+                typeof ord.shippingAddress === "string"
+                  ? JSON.parse(ord.shippingAddress)
+                  : ord.shippingAddress;
+              if (a) {
+                parsedAddr = [
+                  a.addressLine1 || a.addressLine,
+                  a.city,
+                  a.state,
+                  a.postalCode || a.pincode,
+                ]
+                  .filter(Boolean)
+                  .join(", ");
+              }
+            } catch (e) {
+              parsedAddr = ord.shippingAddress || "";
+            }
+
+            const dateObj = new Date(ord.createdAt);
+            const dateStr = !isNaN(dateObj.getTime())
+              ? dateObj.toLocaleDateString("en-IN", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "Recent";
+
+            const items = (ord.items || []).map((item) => {
+              let img = item.productImage;
+              if (!img && item.product?.images) {
+                const imgs = item.product.images;
+                if (Array.isArray(imgs) && imgs.length > 0) img = imgs[0];
+                else if (typeof imgs === "string") {
+                  try {
+                    const p = JSON.parse(imgs);
+                    if (Array.isArray(p)) img = p[0];
+                    else img = imgs;
+                  } catch (e) {
+                    img = imgs.split(",")[0]?.trim();
+                  }
+                }
+              }
+
+              return {
+                name: item.productName || item.product?.name || "Product",
+                unit: item.variantName || "1 unit",
+                quantity: item.quantity || 1,
+                price: Number(item.productPrice || 0),
+                image:
+                  getUploadUrl(img) ||
+                  "https://images.unsplash.com/photo-1542838132-92c53300491e?w=200&h=200&fit=crop&q=80",
+              };
+            });
+
+            const rawStatus = (ord.orderStatus || ord.status || "placed").toLowerCase();
+            const statusFormatted =
+              rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1);
+
+            let statusColor = "bg-emerald-50 text-emerald-700 border-emerald-200";
+            if (rawStatus === "cancelled") {
+              statusColor = "bg-rose-50 text-rose-700 border-rose-200";
+            } else if (rawStatus === "processing" || rawStatus === "placed") {
+              statusColor = "bg-blue-50 text-blue-700 border-blue-200";
+            } else if (rawStatus === "shipped") {
+              statusColor = "bg-amber-50 text-amber-700 border-amber-200";
+            }
+
+            const paymentDisplay =
+              ord.paymentMethod === "cod"
+                ? "Cash on Delivery"
+                : ord.paymentStatus === "completed"
+                ? "Paid Online"
+                : "Payment Pending";
+
+            return {
+              id: ord.orderNumber || `ORD-${ord.id}`,
+              date: dateStr,
+              status: statusFormatted,
+              statusColor,
+              deliveryTime:
+                rawStatus === "delivered"
+                  ? "Delivered"
+                  : "Order Confirmed",
+              address: parsedAddr || "Saved Delivery Address",
+              total: Number(ord.totalAmount || 0),
+              itemsCount:
+                items.length > 0
+                  ? items.reduce((sum, it) => sum + it.quantity, 0)
+                  : 1,
+              paymentMethod: paymentDisplay,
+              items,
+            };
+          });
+          setOrders(mapped);
+        } else {
+          setOrders([]);
+        }
+      } catch (err) {
+        if (isMounted) {
+          console.warn("Could not load orders from DB:", err);
+          setError("Failed to load orders from database");
+          setOrders([]);
+        }
+      } finally {
+        if (isMounted) setLoading(false);
       }
-    } catch (e) {}
-    const defaults = [
-      {
-        id: "addr-1",
-        tag: "Home",
-        isDefault: true,
-        addressLine: "B-42, 2nd Floor, Sector 63",
-        area: "Noida, Gautam Buddha Nagar, Uttar Pradesh",
-        pincode: "201301",
-        receiver: "Shashank",
-        phone: "+91 9800000000",
-      },
-      {
-        id: "addr-2",
-        tag: "Work",
-        isDefault: false,
-        addressLine: "Tech Park, Tower C, 4th Floor",
-        area: "Sector 62, Noida, Uttar Pradesh",
-        pincode: "201309",
-        receiver: "Shashank",
-        phone: "+91 9800000000",
-      },
-    ];
-    try {
-      localStorage.setItem("user_addresses", JSON.stringify(defaults));
-    } catch (e) {}
-    return defaults;
-  });
+    };
 
-  const handleDeleteAddress = (id) => {
+    fetchOrders();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Saved Addresses with database & fallback persistence
+  const [addresses, setAddresses] = useState([]);
+  const [loadingAddresses, setLoadingAddresses] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchAddresses = async () => {
+      try {
+        setLoadingAddresses(true);
+        const data = await authService.getAddresses();
+        if (!isMounted) return;
+        if (Array.isArray(data) && data.length > 0) {
+          setAddresses(data);
+          try {
+            localStorage.setItem("user_addresses", JSON.stringify(data));
+          } catch (e) {}
+        } else {
+          // If DB returned empty, check localStorage cache
+          const cached = localStorage.getItem("user_addresses");
+          if (cached) {
+            try {
+              const parsed = JSON.parse(cached);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                setAddresses(parsed);
+              }
+            } catch (e) {}
+          }
+        }
+      } catch (err) {
+        console.warn("Could not fetch addresses:", err);
+      } finally {
+        if (isMounted) setLoadingAddresses(false);
+      }
+    };
+
+    fetchAddresses();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleDeleteAddress = async (id) => {
+    try {
+      await authService.deleteAddress(id);
+    } catch (e) {
+      console.warn("Delete address API failed:", e);
+    }
     setAddresses((prev) => {
       const updated = prev.filter((a) => a.id !== id);
       try {
@@ -217,11 +273,11 @@ export default function MyOrders() {
             {/* User Profile Card */}
             <div className="flex items-center gap-3 p-3 mb-3 bg-slate-50 rounded-xl border border-slate-100">
               <div className="w-11 h-11 rounded-full bg-emerald-100 text-emerald-800 font-black text-base flex items-center justify-center shrink-0">
-                S
+                {userInitial}
               </div>
               <div className="min-w-0">
-                <h2 className="text-sm font-bold text-slate-900 truncate">Shashank</h2>
-                <p className="text-xs text-slate-500 truncate">+91 9800000000</p>
+                <h2 className="text-sm font-bold text-slate-900 truncate">{userName}</h2>
+                <p className="text-xs text-slate-500 truncate">{userPhone}</p>
               </div>
             </div>
 
@@ -275,94 +331,122 @@ export default function MyOrders() {
                       Past Orders
                     </h1>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Showing {orders.length} delivered fast
+                      {loading
+                        ? "Loading orders from database..."
+                        : `Showing ${orders.length} order${orders.length === 1 ? "" : "s"}`}
                     </p>
                   </div>
                 </div>
 
-                {orders.map((ord) => {
-                  const isReordered = reorderSuccess === ord.id;
-
-                  return (
-                    <article
-                      key={ord.id}
-                      className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-6 shadow-xs hover:border-slate-300 transition-all"
+                {loading ? (
+                  <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center shadow-xs flex flex-col items-center justify-center gap-3">
+                    <Loader2 className="w-7 h-7 text-emerald-600 animate-spin" />
+                    <p className="text-xs font-semibold text-slate-500">
+                      Fetching your orders from database...
+                    </p>
+                  </div>
+                ) : orders.length === 0 ? (
+                  <div className="bg-white rounded-2xl border border-slate-200/80 p-10 sm:p-14 text-center shadow-xs flex flex-col items-center justify-center">
+                    <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
+                      <ShoppingBag className="w-7 h-7" />
+                    </div>
+                    <h3 className="text-base font-bold text-slate-900 mb-1">
+                      No orders placed yet
+                    </h3>
+                    <p className="text-xs text-slate-500 max-w-sm mb-4">
+                      Looks like you haven't placed any orders yet. Discover fresh groceries and daily essentials!
+                    </p>
+                    <Link
+                      to="/shop"
+                      className="px-5 py-2.5 rounded-xl bg-[#0c831f] hover:bg-[#096918] text-white font-black text-xs uppercase tracking-wider transition-all shadow-md shadow-emerald-700/20 active:scale-95"
                     >
-                      {/* Order Header */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
-                            <Zap className="w-5 h-5 fill-emerald-600" />
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-black text-slate-900">
-                                Order #{ord.id}
-                              </span>
-                              <span
-                                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${ord.statusColor}`}
-                              >
-                                <CheckCircle2 className="w-3 h-3" />
-                                {ord.status}
-                              </span>
+                      Start Shopping
+                    </Link>
+                  </div>
+                ) : (
+                  orders.map((ord) => {
+                    const isReordered = reorderSuccess === ord.id;
+
+                    return (
+                      <article
+                        key={ord.id}
+                        className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-6 shadow-xs hover:border-slate-300 transition-all"
+                      >
+                        {/* Order Header */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
+                              <Zap className="w-5 h-5 fill-emerald-600" />
                             </div>
-                            <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1.5">
-                              <span>{ord.date}</span> &bull; <span>{ord.deliveryTime}</span>
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Order Total */}
-                        <div className="text-left sm:text-right">
-                          <span className="text-base sm:text-lg font-black text-slate-900">
-                            ₹{ord.total}
-                          </span>
-                          <span className="text-[11px] text-slate-400 block">
-                            {ord.itemsCount} items &bull; Paid Online
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Items Preview */}
-                      <div className="py-4 space-y-3">
-                        {ord.items.map((item, idx) => (
-                          <div key={idx} className="flex items-center justify-between gap-3 text-xs">
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div className="w-11 h-11 rounded-lg bg-slate-50 border border-slate-200/70 p-1 shrink-0 overflow-hidden">
-                                <img
-                                  src={item.image}
-                                  alt={item.name}
-                                  className="w-full h-full object-contain mix-blend-multiply rounded p-0.5"
-                                />
-                              </div>
-                              <div className="min-w-0">
-                                <span className="font-semibold text-slate-800 block truncate">
-                                  {item.name}
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-black text-slate-900">
+                                  Order #{ord.id}
                                 </span>
-                                <span className="text-[11px] text-slate-400">
-                                  {item.unit} &times; {item.quantity}
+                                <span
+                                  className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${ord.statusColor}`}
+                                >
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  {ord.status}
                                 </span>
                               </div>
+                              <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1.5">
+                                <span>{ord.date}</span> &bull; <span>{ord.deliveryTime}</span>
+                              </p>
                             </div>
-                            <span className="font-black text-slate-800 shrink-0">
-                              ₹{item.price * item.quantity}
+                          </div>
+
+                          {/* Order Total */}
+                          <div className="text-left sm:text-right">
+                            <span className="text-base sm:text-lg font-black text-slate-900">
+                              ₹{ord.total}
+                            </span>
+                            <span className="text-[11px] text-slate-400 block">
+                              {ord.itemsCount} items &bull; {ord.paymentMethod}
                             </span>
                           </div>
-                        ))}
-                      </div>
+                        </div>
 
-                      {/* Footer Actions & Address */}
-                      <div className="pt-3.5 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <p className="text-xs text-slate-500 flex items-center gap-1 truncate">
-                          <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                          <span className="truncate">{ord.address}</span>
-                        </p>
+                        {/* Items Preview */}
+                        <div className="py-4 space-y-3">
+                          {ord.items.map((item, idx) => (
+                            <div key={idx} className="flex items-center justify-between gap-3 text-xs">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className="w-11 h-11 rounded-lg bg-slate-50 border border-slate-200/70 p-1 shrink-0 overflow-hidden">
+                                  <img
+                                    src={item.image}
+                                    alt={item.name}
+                                    className="w-full h-full object-contain mix-blend-multiply rounded p-0.5"
+                                  />
+                                </div>
+                                <div className="min-w-0">
+                                  <span className="font-semibold text-slate-800 block truncate">
+                                    {item.name}
+                                  </span>
+                                  <span className="text-[11px] text-slate-400">
+                                    {item.unit} &times; {item.quantity}
+                                  </span>
+                                </div>
+                              </div>
+                              <span className="font-black text-slate-800 shrink-0">
+                                ₹{item.price * item.quantity}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
 
-                      </div>
+                        {/* Footer Actions & Address */}
+                        <div className="pt-3.5 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <p className="text-xs text-slate-500 flex items-center gap-1 truncate">
+                            <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                            <span className="truncate">{ord.address}</span>
+                          </p>
+                        </div>
 
-                    </article>
-                  );
-                })}
+                      </article>
+                    );
+                  })
+                )}
               </div>
             )}
 
@@ -388,60 +472,83 @@ export default function MyOrders() {
                   </Link>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {addresses.map((addr) => (
-                    <div
-                      key={addr.id}
-                      className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-all"
+                {loadingAddresses ? (
+                  <div className="bg-white rounded-2xl border border-slate-200/80 p-8 flex items-center justify-center gap-2 text-slate-500 shadow-xs">
+                    <Loader2 className="w-5 h-5 animate-spin text-emerald-600" />
+                    <span className="text-xs font-bold">Loading saved addresses...</span>
+                  </div>
+                ) : addresses.length === 0 ? (
+                  <div className="bg-white rounded-2xl border border-slate-200/80 p-8 text-center shadow-xs">
+                    <MapPin className="w-10 h-10 text-slate-300 mx-auto mb-2.5" />
+                    <h3 className="text-sm sm:text-base font-bold text-slate-800">
+                      No Saved Addresses Yet
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                      Add your home or work delivery address for fast doorstep delivery.
+                    </p>
+                    <Link
+                      to="/add-address"
+                      className="inline-flex items-center gap-1.5 mt-4 px-4 py-2 rounded-xl bg-[#059669] hover:bg-[#047857] text-white font-bold text-xs transition-colors shadow-2xs cursor-pointer"
                     >
-                      <div>
-                        {/* Tag & Default Badge */}
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 font-extrabold text-xs border border-emerald-200">
-                            {addr.tag === "Home" ? (
-                              <HomeIcon className="w-3.5 h-3.5" />
-                            ) : (
-                              <Briefcase className="w-3.5 h-3.5" />
-                            )}
-                            {addr.tag}
-                          </span>
-                          {addr.isDefault && (
-                            <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                              Default
+                      <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                      <span>Add New Address</span>
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {addresses.map((addr) => (
+                      <div
+                        key={addr.id}
+                        className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-all"
+                      >
+                        <div>
+                          {/* Tag & Default Badge */}
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 font-extrabold text-xs border border-emerald-200">
+                              {addr.tag === "Home" ? (
+                                <HomeIcon className="w-3.5 h-3.5" />
+                              ) : (
+                                <Briefcase className="w-3.5 h-3.5" />
+                              )}
+                              {addr.tag}
                             </span>
-                          )}
+                            {addr.isDefault && (
+                              <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                                Default
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Full Address Details */}
+                          <h3 className="text-sm font-bold text-slate-900 leading-snug">
+                            {addr.addressLine}
+                          </h3>
+                          <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                            {addr.area} - <span className="font-semibold text-slate-700">{addr.pincode}</span>
+                          </p>
+                          <p className="text-xs text-slate-400 mt-2 font-medium">
+                            Receiver: <span className="text-slate-700 font-semibold">{addr.receiver}</span> ({addr.phone})
+                          </p>
                         </div>
 
-                        {/* Full Address Details */}
-                        <h3 className="text-sm font-bold text-slate-900 leading-snug">
-                          {addr.addressLine}
-                        </h3>
-                        <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                          {addr.area} - <span className="font-semibold text-slate-700">{addr.pincode}</span>
-                        </p>
-                        <p className="text-xs text-slate-400 mt-2 font-medium">
-                          Receiver: <span className="text-slate-700 font-semibold">{addr.receiver}</span> ({addr.phone})
-                        </p>
-                      </div>
+                        {/* Actions */}
+                        <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold">
+                          <span className="text-[11px] text-slate-400 font-medium">
+                            {addr.city}, {addr.state}
+                          </span>
+                          <button
+                            onClick={() => handleDeleteAddress(addr.id)}
+                            className="text-slate-400 hover:text-red-600 flex items-center gap-1 cursor-pointer transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Delete</span>
+                          </button>
+                        </div>
 
-                      {/* Actions */}
-                      <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold">
-                        <button className="text-emerald-700 hover:text-emerald-900 flex items-center gap-1 cursor-pointer">
-                          <Edit2 className="w-3.5 h-3.5" />
-                          <span>Edit</span>
-                        </button>
-                        <button
-                          onClick={() => handleDeleteAddress(addr.id)}
-                          className="text-slate-400 hover:text-red-600 flex items-center gap-1 cursor-pointer transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>Delete</span>
-                        </button>
                       </div>
-
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 

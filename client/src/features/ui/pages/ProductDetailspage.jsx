@@ -15,9 +15,11 @@ import {
   ThumbsDown,
   ThumbsUp,
   Loader2,
+  Sparkles,
 } from "lucide-react";
 import Footer from "../components/Footer";
-import { productService, getUploadUrl, cartService } from "../../../services";
+import { productService, getUploadUrl } from "../../../services";
+import { useCart } from "../../../context/CartContext";
 
 // Helper: parse product images safely into an array of URLs
 const parseImages = (prod) => {
@@ -328,13 +330,50 @@ export default function ProductDetailspage() {
     description: "Carefully selected and freshly packaged for guaranteed quality and superior taste.",
   };
 
-  const [quantity, setQuantity] = useState(1);
-  const [isAdded, setIsAdded] = useState(false);
+  const { addToCart, updateQuantity, cartItems, getItemQuantity } = useCart();
   const [selectedRating, setSelectedRating] = useState(0);
   const [expandedReviews, setExpandedReviews] = useState({});
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [selectedUnitIndex, setSelectedUnitIndex] = useState(0);
+  const [categoryProducts, setCategoryProducts] = useState([]);
+  const [loadingCategoryProducts, setLoadingCategoryProducts] = useState(false);
   const reviewsRef = useRef(null);
+
+  // Fetch items from the same category directly from database
+  useEffect(() => {
+    let isMounted = true;
+    const fetchCategoryProducts = async () => {
+      try {
+        setLoadingCategoryProducts(true);
+        const catId = product?.categoryId || product?.category?.id;
+        const res = await productService.getAllProducts({
+          categoryId: catId || undefined,
+          limit: 15,
+          status: "active",
+        });
+
+        if (isMounted && res && res.products && Array.isArray(res.products)) {
+          let list = res.products.filter((p) => String(p.id) !== String(id));
+          if (list.length === 0) {
+            const fallbackRes = await productService.getAllProducts({ limit: 12, status: "active" });
+            if (fallbackRes?.products) {
+              list = fallbackRes.products.filter((p) => String(p.id) !== String(id));
+            }
+          }
+          setCategoryProducts(list);
+        }
+      } catch (err) {
+        console.warn("Could not fetch category products:", err);
+      } finally {
+        if (isMounted) setLoadingCategoryProducts(false);
+      }
+    };
+
+    fetchCategoryProducts();
+    return () => {
+      isMounted = false;
+    };
+  }, [id, product?.categoryId, product?.category?.id]);
 
   const name = product.name || product.title;
   const categoryName =
@@ -352,6 +391,8 @@ export default function ProductDetailspage() {
     ? product.variants
     : [{ unit: product.unit || "1 unit", price: product.price, mrp: product.mrp }];
   const selectedUnit = units[selectedUnitIndex] || units[0];
+  const currentQty = getItemQuantity(product.id, selectedUnit?.id);
+  const isAdded = currentQty > 0;
   const price = Number(
     selectedUnit.price ??
       (product.discountPrice && Number(product.discountPrice) > 0
@@ -373,12 +414,34 @@ export default function ProductDetailspage() {
     typeof reviews === "number" ? reviews.toLocaleString("en-IN") : reviews;
 
   const handleAddToCart = async () => {
-    setQuantity(1);
-    setIsAdded(true);
     try {
-      await cartService.addToCart({ productId: product.id, quantity: 1 });
+      await addToCart(product, 1, selectedUnit);
     } catch {
       // Local fallback
+    }
+  };
+
+  const handleIncreaseQty = async () => {
+    try {
+      await addToCart(product, 1, selectedUnit);
+    } catch {
+      // Local fallback
+    }
+  };
+
+  const handleDecreaseQty = async () => {
+    const pId = Number(product.id) || product.id;
+    const vId = selectedUnit?.id ? Number(selectedUnit.id) : null;
+    const item = cartItems.find(
+      (i) =>
+        (Number(i.productId) === Number(pId) ||
+          String(i.productId) === String(pId) ||
+          String(i.id) === String(pId) ||
+          i.id === `guest_${pId}_${vId || "base"}`) &&
+        (vId ? Number(i.variantId) === vId : true)
+    );
+    if (item) {
+      await updateQuantity(item.id, -1);
     }
   };
 
@@ -497,11 +560,6 @@ export default function ProductDetailspage() {
                               : "border-slate-200 hover:border-slate-300 bg-white"
                           }`}
                         >
-                          {optionSavings > 0 && (
-                            <span className="absolute -top-2 left-2 rounded-md bg-emerald-600 px-1.5 py-0.5 text-[9px] font-bold text-white shadow-2xs">
-                              Save ₹{optionSavings}
-                            </span>
-                          )}
                           <span className="block text-xs font-semibold text-slate-700">{option.unit || "1 unit"}</span>
                           <span className="mt-0.5 block text-sm font-black text-slate-900">
                             ₹{optionPrice.toLocaleString("en-IN")}
@@ -525,11 +583,6 @@ export default function ProductDetailspage() {
                       {mrp > price && (
                         <span className="text-xs text-slate-400 line-through">MRP ₹{mrp.toLocaleString("en-IN")}</span>
                       )}
-                      {savings > 0 && (
-                        <span className="rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 px-1.5 py-0.5 text-[10px] font-bold">
-                          Save ₹{savings}
-                        </span>
-                      )}
                     </div>
                     <p className="mt-0.5 text-[11px] text-slate-400">(Inclusive of all taxes)</p>
                   </div>
@@ -539,35 +592,28 @@ export default function ProductDetailspage() {
                       type="button"
                       disabled={!inStock}
                       onClick={handleAddToCart}
-                      className="h-11 min-w-32 rounded-xl bg-[#049669] hover:bg-[#03704f] px-6 text-sm font-bold text-white transition disabled:cursor-not-allowed disabled:bg-slate-300 shadow-md shadow-emerald-600/20 cursor-pointer"
+                      className="h-11 min-w-36 rounded-xl bg-[#0c831f] hover:bg-[#096918] px-6 text-sm font-black text-white uppercase tracking-wider transition disabled:cursor-not-allowed disabled:bg-slate-300 shadow-md shadow-emerald-700/20 cursor-pointer active:scale-95"
                     >
                       Add to cart
                     </button>
                   ) : (
-                    <div className="inline-flex h-11 items-center rounded-xl bg-[#049669] px-1 text-white shadow-md shadow-emerald-600/20">
+                    <div className="inline-flex h-11 items-center rounded-xl bg-[#0c831f] px-2 text-white shadow-md shadow-emerald-700/20 font-black">
                       <button
                         type="button"
                         aria-label="Decrease quantity"
-                        onClick={() => {
-                          if (quantity <= 1) {
-                            setQuantity(1);
-                            setIsAdded(false);
-                          } else {
-                            setQuantity((value) => value - 1);
-                          }
-                        }}
-                        className="flex h-9 w-8 items-center justify-center rounded-lg hover:bg-[#047857] cursor-pointer"
+                        onClick={handleDecreaseQty}
+                        className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-[#096918] cursor-pointer active:scale-90"
                       >
-                        <Minus className="h-4 w-4 stroke-[2.5]" />
+                        <Minus className="h-4 w-4 stroke-[3]" />
                       </button>
-                      <span className="w-8 text-center text-sm font-black">{quantity}</span>
+                      <span className="w-10 text-center text-sm font-black">{currentQty}</span>
                       <button
                         type="button"
                         aria-label="Increase quantity"
-                        onClick={() => setQuantity((value) => value + 1)}
-                        className="flex h-9 w-8 items-center justify-center rounded-lg hover:bg-[#047857] cursor-pointer"
+                        onClick={handleIncreaseQty}
+                        className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-[#096918] cursor-pointer active:scale-90"
                       >
-                        <Plus className="h-4 w-4 stroke-[2.5]" />
+                        <Plus className="h-4 w-4 stroke-[3]" />
                       </button>
                     </div>
                   )}
@@ -690,6 +736,107 @@ export default function ProductDetailspage() {
               ))}
             </div>
           </section>
+
+          {/* Similar Products in Category (Below Customer Reviews) */}
+          {categoryProducts.length > 0 && (
+            <section className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-7 shadow-xs">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-emerald-600" />
+                    Similar Products in {categoryName}
+                  </h2>
+                  <p className="mt-0.5 text-xs text-slate-500">More fresh &amp; quality items from this category</p>
+                </div>
+                <Link
+                  to={`/category/${categorySlug}`}
+                  className="text-xs font-bold text-emerald-700 hover:text-emerald-800 transition-colors flex items-center gap-1"
+                >
+                  View all &rarr;
+                </Link>
+              </div>
+
+              <div className="flex items-stretch gap-4 overflow-x-auto pb-2 pt-1 scrollbar-thin scrollbar-thumb-slate-200">
+                {categoryProducts.map((catProd) => {
+                  const prodImg = parseImages(catProd)[0] || catProd.image;
+                  const prodPrice = Number(
+                    catProd.discountPrice && catProd.discountPrice > 0
+                      ? catProd.discountPrice
+                      : catProd.price
+                  );
+                  const prodMrp =
+                    Number(catProd.price) > prodPrice ? Number(catProd.price) : null;
+                  const qty = getItemQuantity(catProd.id);
+
+                  return (
+                    <div
+                      key={catProd.id}
+                      className="w-[160px] sm:w-[185px] shrink-0 rounded-2xl border border-slate-200/80 bg-white p-3 flex flex-col justify-between hover:border-emerald-500/70 hover:shadow-md transition-all group"
+                    >
+                      <Link to={`/product/${catProd.id}`} className="block">
+                        <div className="w-full aspect-square rounded-xl bg-slate-50 p-2 flex items-center justify-center mb-2.5 overflow-hidden">
+                          <img
+                            src={prodImg}
+                            alt={catProd.name}
+                            className="w-full h-full object-contain group-hover:scale-105 transition-transform mix-blend-multiply"
+                          />
+                        </div>
+                        <h4 className="text-xs font-bold text-slate-800 leading-snug line-clamp-2 min-h-[34px] group-hover:text-emerald-700 transition-colors">
+                          {catProd.name}
+                        </h4>
+                        {catProd.unit && (
+                          <span className="text-[11px] text-slate-400 font-medium block mt-1">
+                            {catProd.unit}
+                          </span>
+                        )}
+                      </Link>
+
+                      <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-1.5">
+                        <div>
+                          <span className="text-sm font-black text-slate-900 block leading-none">
+                            ₹{prodPrice}
+                          </span>
+                          {prodMrp && (
+                            <span className="text-[10px] text-slate-400 line-through block mt-1">
+                              ₹{prodMrp}
+                            </span>
+                          )}
+                        </div>
+
+                        {qty === 0 ? (
+                          <button
+                            type="button"
+                            onClick={() => addToCart(catProd, 1)}
+                            className="h-7 px-3 rounded-lg border border-emerald-600 bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white text-[11px] font-extrabold uppercase transition-all shadow-2xs active:scale-95 cursor-pointer"
+                          >
+                            + Add
+                          </button>
+                        ) : (
+                          <div className="flex items-center h-7 rounded-lg bg-emerald-700 text-white shadow-2xs overflow-hidden">
+                            <button
+                              type="button"
+                              onClick={() => updateQuantity(catProd.id, -1)}
+                              className="px-2 h-full hover:bg-emerald-800 flex items-center justify-center cursor-pointer"
+                            >
+                              <Minus className="w-3 h-3 stroke-[3]" />
+                            </button>
+                            <span className="px-1.5 text-xs font-black">{qty}</span>
+                            <button
+                              type="button"
+                              onClick={() => addToCart(catProd, 1)}
+                              className="px-2 h-full hover:bg-emerald-800 flex items-center justify-center cursor-pointer"
+                            >
+                              <Plus className="w-3 h-3 stroke-[3]" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
 
         </div>
       </main>
