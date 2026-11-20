@@ -65,7 +65,9 @@ export default function Navbar({ onToggleSidebar }) {
           }
         }
       } catch (err) {
-        console.warn("Could not fetch vendor profile from DB:", err);
+        if (err?.status !== 404) {
+          console.warn("Could not fetch vendor profile from DB:", err);
+        }
       }
     };
     fetchDbProfile();
@@ -110,7 +112,11 @@ export default function Navbar({ onToggleSidebar }) {
   // 3. Fetch real unread notifications count (Orders & Payments)
   useEffect(() => {
     let isMounted = true;
+    let isPollingStopped = false;
+    let intervalId = null;
+
     const fetchUnreadCount = async () => {
+      if (isPollingStopped || !isMounted) return;
       try {
         const res = await vendorService.getMyNotifications();
         if (isMounted && res && Array.isArray(res.notifications)) {
@@ -119,16 +125,28 @@ export default function Navbar({ onToggleSidebar }) {
           const unread = res.notifications.filter((n) => !deletedIds.has(n.id) && !readIds.has(n.id)).length;
           setUnreadNotificationsCount(unread);
         }
-      } catch {
-        // ignore
+      } catch (err) {
+        // If vendor profile doesn't exist on server (404), stop polling permanently
+        if (err?.status === 404) {
+          isPollingStopped = true;
+          if (intervalId) clearInterval(intervalId);
+        }
       }
     };
 
     fetchUnreadCount();
-    const intervalId = setInterval(fetchUnreadCount, 30000);
+    intervalId = setInterval(() => {
+      if (!isPollingStopped) {
+        fetchUnreadCount();
+      } else if (intervalId) {
+        clearInterval(intervalId);
+      }
+    }, 30000);
 
     const handleNotificationsUpdate = () => {
-      fetchUnreadCount();
+      if (!isPollingStopped) {
+        fetchUnreadCount();
+      }
     };
 
     window.addEventListener("vendor_notifications_updated", handleNotificationsUpdate);
@@ -136,7 +154,8 @@ export default function Navbar({ onToggleSidebar }) {
 
     return () => {
       isMounted = false;
-      clearInterval(intervalId);
+      isPollingStopped = true;
+      if (intervalId) clearInterval(intervalId);
       window.removeEventListener("vendor_notifications_updated", handleNotificationsUpdate);
       window.removeEventListener("storage", handleNotificationsUpdate);
     };

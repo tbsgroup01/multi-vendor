@@ -1,5 +1,6 @@
 const bcrypt = require("bcryptjs");
 const { Op } = require("sequelize");
+const { sequelize } = require("../config/db");
 const { User, Vendor, SubscriptionPlan, VendorSubscription, Order } = require("../models");
 const transporter = require("../config/mail");
 const { generateToken, verifyToken } = require("../utils/jwt");
@@ -86,61 +87,75 @@ const register = async (req, res) => {
         // Vendor accounts require Admin approval before verification; other accounts are verified
         const isVerified = userRole === "vendor" ? false : true;
 
-        const user = await User.create({
-            name: userName,
-            email: userEmail,
-            phone: userPhone,
-            password: hashedPassword,
-            role: userRole,
-            isVerified: isVerified
-        });
-
+        let user = null;
         let vendorProfile = null;
-        if (userRole === "vendor") {
-            const starterPlan = await SubscriptionPlan.findOne({
-                where: {
-                    [Op.or]: [
-                        { name: { [Op.like]: "%starter%" } },
-                        { id: 1 }
-                    ],
-                    isActive: true
-                }
-            });
 
-            const productLimit = starterPlan ? starterPlan.productLimit : 50;
+        // Atomic transaction ensures data integrity across tables
+        const t = await sequelize.transaction();
+        try {
+            // 1. All accounts (customer, vendor, admin) store basic credentials in Users table
+            user = await User.create({
+                name: userName,
+                email: userEmail,
+                phone: userPhone,
+                password: hashedPassword,
+                role: userRole,
+                isVerified: isVerified
+            }, { transaction: t });
 
-            vendorProfile = await Vendor.create({
-                userId: user.id,
-                businessName: vendorBusinessName,
-                storeName: vendorStoreName,
-                gstNumber: vendorGstNumber,
-                category: vendorCategory,
-                status: "pending",
-                plan: "starter",
-                productsLimit: productLimit
-            });
-
-            if (starterPlan) {
-                const startDate = new Date();
-                const durationDays = starterPlan.durationInDays || 30;
-                const endDate = new Date(startDate.getTime() + durationDays * 24 * 60 * 60 * 1000);
-                const invoiceNumber = `INV-${vendorProfile.id}-${Date.now().toString().slice(-6)}`;
-                const transactionId = `STARTER_AUTO_${Date.now().toString().slice(-8)}`;
-
-                await VendorSubscription.create({
-                    vendorId: vendorProfile.id,
-                    planId: starterPlan.id,
-                    invoiceNumber,
-                    transactionId,
-                    startDate,
-                    endDate,
-                    pricePaid: 0,
-                    productLimit: starterPlan.productLimit,
-                    status: "active",
-                    paymentStatus: "completed",
-                    paymentMethod: "free_starter"
+            // 2. If Vendor: store specific business, store & tax profile in Vendors table
+            if (userRole === "vendor") {
+                const starterPlan = await SubscriptionPlan.findOne({
+                    where: {
+                        [Op.or]: [
+                            { name: { [Op.like]: "%starter%" } },
+                            { id: 1 }
+                        ],
+                        isActive: true
+                    },
+                    transaction: t
                 });
+
+                const productLimit = starterPlan ? starterPlan.productLimit : 50;
+
+                vendorProfile = await Vendor.create({
+                    userId: user.id,
+                    businessName: vendorBusinessName,
+                    storeName: vendorStoreName,
+                    gstNumber: vendorGstNumber,
+                    category: vendorCategory,
+                    status: "pending",
+                    plan: "starter",
+                    productsLimit: productLimit
+                }, { transaction: t });
+
+                if (starterPlan) {
+                    const startDate = new Date();
+                    const durationDays = starterPlan.durationInDays || 30;
+                    const endDate = new Date(startDate.getTime() + durationDays * 24 * 60 * 60 * 1000);
+                    const invoiceNumber = `INV-${vendorProfile.id}-${Date.now().toString().slice(-6)}`;
+                    const transactionId = `STARTER_AUTO_${Date.now().toString().slice(-8)}`;
+
+                    await VendorSubscription.create({
+                        vendorId: vendorProfile.id,
+                        planId: starterPlan.id,
+                        invoiceNumber,
+                        transactionId,
+                        startDate,
+                        endDate,
+                        pricePaid: 0,
+                        productLimit: starterPlan.productLimit,
+                        status: "active",
+                        paymentStatus: "completed",
+                        paymentMethod: "free_starter"
+                    }, { transaction: t });
+                }
             }
+
+            await t.commit();
+        } catch (trxError) {
+            await t.rollback();
+            throw trxError;
         }
 
         try {
@@ -229,6 +244,25 @@ const login = async (req, res) => {
 
 
         if (user.role === "vendor") {
+            // Auto-heal: If vendor user does not have a vendor profile in Vendors table, create one
+            if (!user.vendorProfile) {
+                try {
+                    const createdVendor = await Vendor.create({
+                        userId: user.id,
+                        businessName: user.name || "Vendor Business",
+                        storeName: user.name ? `${user.name} Store` : "Vendor Store",
+                        gstNumber: `GST${Date.now().toString().slice(-10)}`,
+                        category: "General",
+                        status: user.isVerified ? "approved" : "pending",
+                        plan: "starter",
+                        productsLimit: 50
+                    });
+                    user.vendorProfile = createdVendor;
+                } catch (autoErr) {
+                    console.error("Auto vendor creation on login failed:", autoErr.message);
+                }
+            }
+
             const vendorStatus = user.vendorProfile ? user.vendorProfile.status : (user.isVerified ? "approved" : "pending");
             if (vendorStatus !== "approved" || user.isVerified === false) {
                 const message = vendorStatus === "rejected"

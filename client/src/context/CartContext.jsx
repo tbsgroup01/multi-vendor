@@ -88,7 +88,22 @@ export function CartProvider({ children }) {
         setCartItems(mockItems);
       }
     } catch (err) {
-      console.error("Failed to fetch cart from DB, switching to guest cart:", err);
+      if (
+        err?.status === 401 ||
+        err?.message?.includes("authorization denied") ||
+        err?.message?.includes("User not found")
+      ) {
+        console.warn("User session expired or not found. Switched to guest cart.");
+        try {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          window.dispatchEvent(new Event("auth_state_changed"));
+        } catch (e) {
+          // ignore
+        }
+      } else {
+        console.error("Failed to fetch cart from DB, switching to guest cart:", err);
+      }
       setCartItems(getGuestCart());
     } finally {
       setLoading(false);
@@ -108,7 +123,21 @@ export function CartProvider({ children }) {
         const remainingMock = guestItems.filter((i) => isNaN(Number(i.productId)));
         localStorage.setItem(GUEST_CART_KEY, JSON.stringify(remainingMock));
       } catch (err) {
-        console.error("Failed to sync guest cart to DB:", err);
+        if (
+          err?.status === 401 ||
+          err?.message?.includes("authorization denied") ||
+          err?.message?.includes("User not found")
+        ) {
+          try {
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            window.dispatchEvent(new Event("auth_state_changed"));
+          } catch (e) {
+            // ignore
+          }
+        } else {
+          console.error("Failed to sync guest cart to DB:", err);
+        }
       }
     }
     await fetchDbCart();
